@@ -93,8 +93,30 @@ const updateRepairStatus = async (req, res) => {
   }
 };
 
+// @desc    Get all repairs
+// @route   GET /api/repairs
+// @access  Private (Admin/Technician)
+const getAllRepairs = async (req, res) => {
+  try {
+    const repairs = await RepairOrder.find({})
+      .populate('device')
+      .populate({
+        path: 'customer',
+        populate: {
+          path: 'userId',
+          select: 'fullName email phoneNumber profileImage'
+        }
+      });
+    res.json(repairs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   bookRepair,
   getMyRepairs,
   updateRepairStatus,
+  getAllRepairs,
 };
+

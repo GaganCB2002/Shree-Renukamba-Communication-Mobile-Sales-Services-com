@@ -43,6 +43,10 @@ const productSchema = new mongoose.Schema(
       type: Map,
       of: String, // Key-value pairs like "Color": "Black", "Storage": "128GB"
     },
+    model3d: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,

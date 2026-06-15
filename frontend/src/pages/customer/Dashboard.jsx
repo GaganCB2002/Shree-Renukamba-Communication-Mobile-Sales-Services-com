@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Bell, Wrench, ShoppingBag, Star, ArrowRight, RefreshCw } from 'lucide-react';
 import { getMyRepairs } from '../../api/repairsApi';
+import { getMyInvoices } from '../../api/invoicesApi';
 import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import EmptyState from '../../components/EmptyState';
@@ -27,28 +28,33 @@ const statusIcons = {
 const Dashboard = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const [repairs, setRepairs] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchRepairs();
+    fetchDashboardData();
   }, []);
 
-  const fetchRepairs = async () => {
+  const fetchDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getMyRepairs();
-      setRepairs(data);
+      const [repairsData, invoicesData] = await Promise.all([
+        getMyRepairs(),
+        getMyInvoices()
+      ]);
+      setRepairs(repairsData);
+      setInvoices(invoicesData);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load repairs');
+      setError(err.response?.data?.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
   };
 
   if (loading) return <PageLoading />;
-  if (error) return <ErrorMessage message={error} onRetry={fetchRepairs} />;
+  if (error) return <ErrorMessage message={error} onRetry={fetchDashboardData} />;
 
   const activeRepairs = repairs.filter(r => r.repairStatus !== 'Delivered' && r.repairStatus !== 'Cancelled');
   const currentRepair = activeRepairs[0];
@@ -181,6 +187,7 @@ const Dashboard = () => {
                       <th className="pb-4 font-bold text-secondary-500 uppercase tracking-wider text-xs">Device</th>
                       <th className="pb-4 font-bold text-secondary-500 uppercase tracking-wider text-xs">Status</th>
                       <th className="pb-4 font-bold text-secondary-500 uppercase tracking-wider text-xs text-right">Cost</th>
+                      <th className="pb-4 font-bold text-secondary-500 uppercase tracking-wider text-xs text-right">Bill</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -197,10 +204,59 @@ const Dashboard = () => {
                         <td className="py-4 font-bold text-primary-950 text-right">
                           {repair.finalCost ? `₹${repair.finalCost}` : repair.estimatedCost ? `₹${repair.estimatedCost}` : '-'}
                         </td>
+                        <td className="py-4 text-right">
+                          {(() => {
+                            const inv = invoices.find(i => i.repairOrder?.repairId === repair.repairId || i.repairOrder === repair._id);
+                            return inv ? (
+                              <Link to={`/invoices/${inv._id}`} className="text-xs font-bold text-indigo-600 hover:underline">
+                                View Bill
+                              </Link>
+                            ) : (
+                              <span className="text-xs text-slate-400 font-medium">-</span>
+                            );
+                          })()}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {invoices.length > 0 && (
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-border mt-6">
+              <h2 className="text-xl font-bold text-primary-950 mb-6">My Invoices & Bills</h2>
+              <div className="space-y-4">
+                {invoices.map((inv) => (
+                  <div key={inv._id} className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center justify-between hover:bg-slate-50 transition-all">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                        📄
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800 text-sm">Invoice {inv.invoiceId}</p>
+                        <p className="text-[10px] text-slate-400 font-mono font-bold mt-0.5">Due Date: {new Date(inv.dueDate).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="font-extrabold text-sm text-slate-900">₹{inv.totalAmount.toLocaleString('en-IN')}</p>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                          inv.status === 'Paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'
+                        }`}>
+                          {inv.status}
+                        </span>
+                      </div>
+                      <Link 
+                        to={`/invoices/${inv._id}`}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 border border-slate-200 bg-white hover:bg-slate-50 rounded-lg px-3 py-1.5 shadow-sm transition-colors"
+                      >
+                        View Invoice
+                      </Link>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShoppingCart, User, LogOut, Menu, X, Wrench } from 'lucide-react';
+import { ShoppingCart, Heart, User, LogOut, Menu, X, Wrench } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -11,6 +11,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { userInfo } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.cart);
+  const wishlistItems = useSelector((state) => state.wishlist?.items || []);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = () => {
@@ -62,6 +63,14 @@ const Navbar = () => {
             >
               {lang === 'en' ? 'ಕನ್ನಡ' : 'EN'}
             </button>
+            <Link to="/wishlist" className="relative text-secondary-600 hover:text-red-500 transition-colors">
+              <Heart size={20} />
+              {wishlistItems.length > 0 && (
+                <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {wishlistItems.length}
+                </span>
+              )}
+            </Link>
             <Link to="/cart" className="relative text-secondary-600 hover:text-primary-600 transition-colors">
               <ShoppingCart size={20} />
               {cartCount > 0 && (
@@ -103,6 +112,7 @@ const Navbar = () => {
             <Link to="/smartphones" className="block px-4 py-2 text-secondary-700 font-medium rounded-lg hover:bg-secondary-50" onClick={() => setMobileOpen(false)}>{t('nav.smartphones')}</Link>
             <Link to="/laptops" className="block px-4 py-2 text-secondary-700 font-medium rounded-lg hover:bg-secondary-50" onClick={() => setMobileOpen(false)}>{t('nav.laptops')}</Link>
             <Link to="/accessories" className="block px-4 py-2 text-secondary-700 font-medium rounded-lg hover:bg-secondary-50" onClick={() => setMobileOpen(false)}>{t('nav.accessories')}</Link>
+            <Link to="/wishlist" className="block px-4 py-2 text-secondary-700 font-medium rounded-lg hover:bg-secondary-50" onClick={() => setMobileOpen(false)}>Wishlist</Link>
             <Link to={userInfo ? "/dashboard/repairs/new" : "/login"} className="block px-4 py-2 text-secondary-700 font-medium rounded-lg hover:bg-secondary-50" onClick={() => setMobileOpen(false)}>{t('nav.repairs')}</Link>
             <Link to="/about" className="block px-4 py-2 text-secondary-700 font-medium rounded-lg hover:bg-secondary-50" onClick={() => setMobileOpen(false)}>{t('nav.about')}</Link>
             <Link to="/contact" className="block px-4 py-2 text-secondary-700 font-medium rounded-lg hover:bg-secondary-50" onClick={() => setMobileOpen(false)}>{t('nav.contact')}</Link>

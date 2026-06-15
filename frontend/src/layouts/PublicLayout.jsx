@@ -1,24 +1,45 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Search, ShoppingBag, Menu, X, Globe, MapPin, Phone, Mail } from 'lucide-react';
+import { Search, ShoppingBag, Heart, Menu, X, Globe, MapPin, Phone, Mail, ChevronDown } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getCategories } from '../api/productsApi';
+import SearchSuggest from '../components/SearchSuggest';
+import CookieConsent from '../components/CookieConsent';
 import '../pages/LandingPage.css';
 
 const PublicLayout = () => {
   const { t, lang, switchLang } = useLanguage();
+  const location = useLocation();
+  const isLoginPage = location.pathname === '/login';
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [logoModalOpen, setLogoModalOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   
   // Safely get cart items count, handle case where cart state might be undefined or array might not exist
-  const cartItems = useSelector((state) => state.cart?.items || []);
+  const cartItems = useSelector((state) => state.cart?.cartItems || []);
   const totalItems = cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
+  const wishlistItems = useSelector((state) => state.wishlist?.items || []);
+  const wishlistCount = wishlistItems.length;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const fetchCats = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data);
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+      }
+    };
+    fetchCats();
   }, []);
 
   return (
@@ -37,7 +58,53 @@ const PublicLayout = () => {
               <div style={{ fontSize: '0.5rem', color: 'inherit', opacity: 0.6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Mobile &amp; Electronics</div>
             </Link>
           </div>
-          <nav className="lp-nav">
+          <nav className="lp-nav" style={{ alignItems: 'center' }}>
+            <div 
+              className="relative"
+              onMouseEnter={() => setDropdownOpen(true)}
+              onMouseLeave={() => setDropdownOpen(false)}
+              style={{ display: 'inline-block' }}
+            >
+              <Link 
+                to="/shop" 
+                className="flex items-center gap-1"
+                style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+              >
+                All Products <ChevronDown size={14} className={`transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+              </Link>
+              {dropdownOpen && (
+                <div 
+                  className="absolute left-0 mt-2 bg-white rounded-xl shadow-lg z-50 border border-border py-2 min-w-[200px]"
+                  style={{
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                    background: '#fff',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(0,0,0,0.08)'
+                  }}
+                >
+                  <Link 
+                    to="/shop" 
+                    onClick={() => setDropdownOpen(false)}
+                    className="block px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-primary-600 hover:bg-slate-50 transition-colors"
+                    style={{ textDecoration: 'none', color: 'var(--clr-primary)', display: 'block' }}
+                  >
+                    All Categories
+                  </Link>
+                  <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)', margin: '4px 0' }}></div>
+                  {categories.map((cat) => (
+                    <Link
+                      key={cat._id}
+                      to={`/shop?category=${cat._id}`}
+                      onClick={() => setDropdownOpen(false)}
+                      className="block px-4 py-2.5 text-xs font-medium hover:bg-slate-50 transition-colors"
+                      style={{ textDecoration: 'none', color: '#1e293b', display: 'block' }}
+                    >
+                      {cat.categoryName}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
             <Link to="/smartphones">{t('nav.smartphones')}</Link>
             <Link to="/laptops">{t('nav.laptops')}</Link>
             <Link to="/accessories">{t('nav.accessories')}</Link>
@@ -45,6 +112,7 @@ const PublicLayout = () => {
             <Link to="/contact">{t('nav.contact')}</Link>
           </nav>
           <div className="lp-header-actions">
+            <SearchSuggest headerScrolled={scrolled} />
             <button
               onClick={() => switchLang(lang === 'en' ? 'kn' : 'en')}
               className="lp-icon-btn"
@@ -53,7 +121,16 @@ const PublicLayout = () => {
             >
               {lang === 'en' ? 'ಕನ್ನಡ' : 'EN'}
             </button>
-            <Link to="/shop" className="lp-icon-btn" aria-label="Search"><Search size={18} /></Link>
+            <Link to="/wishlist" style={{ position: 'relative', display: 'flex', alignItems: 'center', color: 'inherit', textDecoration: 'none' }} className="lp-icon-btn" aria-label="Wishlist">
+              <Heart size={18} />
+              {wishlistCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: '-2px', right: '-2px', background: '#ef4444', color: '#fff',
+                  fontSize: '0.55rem', fontWeight: 700, width: '15px', height: '15px',
+                  borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>{wishlistCount}</span>
+              )}
+            </Link>
             <Link to="/cart" style={{ position: 'relative', display: 'flex', alignItems: 'center', color: 'inherit', textDecoration: 'none' }} className="lp-icon-btn" aria-label="Cart">
               <ShoppingBag size={18} />
               {totalItems > 0 && (
@@ -64,7 +141,7 @@ const PublicLayout = () => {
                 }}>{totalItems}</span>
               )}
             </Link>
-            <Link to="/login" className="lp-btn-outline lp-btn-sm">{t('nav.signIn')}</Link>
+            {!isLoginPage && <Link to="/login" className="lp-btn-outline lp-btn-sm">{t('nav.signIn')}</Link>}
             <button className="lp-menu-toggle" onClick={() => setMenuOpen(true)} aria-label="Menu"><Menu size={24} /></button>
           </div>
         </div>
@@ -77,9 +154,22 @@ const PublicLayout = () => {
             <button onClick={() => setMenuOpen(false)} aria-label="Close"><X size={24} /></button>
           </div>
           <nav className="lp-mobile-nav">
+            <Link to="/shop" onClick={() => setMenuOpen(false)} style={{ fontWeight: 700 }}>All Products</Link>
+            {categories.map((cat) => (
+              <Link 
+                key={cat._id} 
+                to={`/shop?category=${cat._id}`} 
+                onClick={() => setMenuOpen(false)}
+                style={{ paddingLeft: '20px', fontSize: '1.1rem', opacity: 0.8 }}
+              >
+                — {cat.categoryName}
+              </Link>
+            ))}
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '10px 0' }}></div>
             <Link to="/smartphones" onClick={() => setMenuOpen(false)}>{t('nav.smartphones')}</Link>
             <Link to="/laptops" onClick={() => setMenuOpen(false)}>{t('nav.laptops')}</Link>
             <Link to="/accessories" onClick={() => setMenuOpen(false)}>{t('nav.accessories')}</Link>
+            <Link to="/wishlist" onClick={() => setMenuOpen(false)}>Wishlist</Link>
             <Link to="/about" onClick={() => setMenuOpen(false)}>{t('nav.about')}</Link>
             <Link to="/contact" onClick={() => setMenuOpen(false)}>{t('nav.contact')}</Link>
             <button
@@ -90,7 +180,7 @@ const PublicLayout = () => {
             </button>
           </nav>
           <div className="lp-mobile-actions">
-            <Link to="/login" className="lp-btn-primary" onClick={() => setMenuOpen(false)}>{t('nav.signIn')}</Link>
+            {!isLoginPage && <Link to="/login" className="lp-btn-primary" onClick={() => setMenuOpen(false)}>{t('nav.signIn')}</Link>}
           </div>
         </div>
       )}
@@ -156,9 +246,9 @@ const PublicLayout = () => {
           <div className="lp-footer-bottom">
             <p>&copy; {new Date().getFullYear()} Shree Renukamba Communication. {t('footer.rights')}</p>
             <div className="lp-footer-links">
-              <a href="#privacy">{t('footer.privacy')}</a>
-              <a href="#terms">{t('footer.terms')}</a>
-              <a href="#cookies">{t('footer.cookies')}</a>
+              <Link to="/privacy">{t('footer.privacy')}</Link>
+              <Link to="/terms">{t('footer.terms')}</Link>
+              <Link to="/privacy">{t('footer.cookies')}</Link>
             </div>
           </div>
         </div>
@@ -190,6 +280,7 @@ const PublicLayout = () => {
           </div>
         </div>
       )}
+      <CookieConsent />
     </div>
   );
 };

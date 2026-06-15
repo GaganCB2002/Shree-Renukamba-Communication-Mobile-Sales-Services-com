@@ -2,6 +2,14 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
+:root {
+  --color-background: #F6F8FD;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-text-main: #0F172A;
+  --color-text-muted: #64748B;
+}
+
 /* ── Entrance Keyframes ── */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(30px); }

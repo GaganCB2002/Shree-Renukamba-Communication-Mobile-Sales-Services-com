@@ -99,6 +99,7 @@ html {
 .lp-nav {
   display: flex;
   gap: 32px;
+  align-items: center;
 }
 
 .lp-nav a {
@@ -109,7 +110,10 @@ html {
   color: rgba(255,255,255,0.85);
   transition: color var(--transition);
   position: relative;
-  padding: 4px 0;
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  line-height: 1;
 }
 
 .lp-nav a::after {
@@ -146,7 +150,7 @@ html {
 .lp-header-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .lp-icon-btn {

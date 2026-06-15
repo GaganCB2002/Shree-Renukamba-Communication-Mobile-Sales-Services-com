@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { ShoppingCart, Star, Search, ChevronDown, Headphones, Smartphone, Laptop, Tablet, Watch, Eye, CheckCircle, Package } from 'lucide-react';
-import { getProducts, getCategories } from '../../api/productsApi';
+import { useDispatch, useSelector } from 'react-redux';
+import { ShoppingCart, Star, Search, ChevronDown, Package, Eye, CheckCircle, Heart, Smartphone, Laptop, Tablet, Headphones } from 'lucide-react';
+import { getProducts } from '../../api/productsApi';
 import { addToCart } from '../../redux/slices/cartSlice';
+import { toggleWishlist } from '../../redux/slices/wishlistSlice';
+import { useToast } from '../../contexts/ToastContext';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import CategoryBadge from '../../components/CategoryBadge';
 
 const accessoryImages = [
   'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=600',
@@ -31,6 +34,8 @@ const catColors = {
 
 const Accessories = () => {
   const dispatch = useDispatch();
+  const { showToast } = useToast();
+  const wishlistItems = useSelector((state) => state.wishlist?.items || []);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +72,14 @@ const Accessories = () => {
 
   const handleAddToCart = (product) => {
     dispatch(addToCart(product));
+    showToast('Item added to cart successfully!');
+  };
+
+  const isLiked = (product) => wishlistItems.some((x) => x._id === product._id || x.id === product.id);
+
+  const handleLike = (product) => {
+    dispatch(toggleWishlist(product));
+    showToast(isLiked(product) ? 'Removed from wishlist' : 'Added to wishlist');
   };
 
   const filteredProducts = products.filter((p) => {
@@ -236,9 +249,12 @@ const Accessories = () => {
                   </Link>
                   <div className="p-5">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2.5 py-0.5 rounded-full">
-                        {product.productId}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <CategoryBadge category={product.category} />
+                        <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2.5 py-0.5 rounded-full">
+                          {product.productId}
+                        </span>
+                      </div>
                       {product.stock > 5 ? (
                         <span className="text-xs text-green-600 flex items-center gap-1">
                           <CheckCircle size={12} /> In Stock
@@ -272,6 +288,14 @@ const Accessories = () => {
                         <div className="text-xl font-bold text-primary-950">₹{discountedPrice(product)}</div>
                       </div>
                       <div className="flex gap-2">
+                        <button onClick={() => handleLike(product)}
+                          className={`p-2.5 rounded-xl transition-colors ${
+                            isLiked(product)
+                              ? 'bg-red-50 text-red-500'
+                              : 'bg-secondary-100 hover:bg-secondary-200 text-secondary-700'
+                          }`}>
+                          <Heart size={18} fill={isLiked(product) ? 'currentColor' : 'none'} />
+                        </button>
                         <Link
                           to={`/products/${product._id}`}
                           className="bg-secondary-100 hover:bg-secondary-200 text-secondary-700 p-2.5 rounded-xl transition-colors"

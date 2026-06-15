@@ -48,6 +48,7 @@ app.use('/api/repairs', require('./routes/repairRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/inventory', require('./routes/inventoryRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/invoices', require('./routes/invoiceRoutes'));
 
 app.use(notFound);
 app.use(errorHandler);
@@ -55,5 +56,5 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`); // Auto-restart trigger
 });

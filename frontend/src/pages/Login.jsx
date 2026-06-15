@@ -1,34 +1,83 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Mail, Lock, Eye, EyeOff, Loader2, UserCog, User, Smartphone } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, UserCog, User, UserPlus, Phone, CheckCircle, ArrowLeft, HelpCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { login, clearError } from '../redux/slices/authSlice';
+import { login, register, clearError } from '../redux/slices/authSlice';
+import { getSecurityQuestions, forgotPassword } from '../api/authApi';
+
+const securityQuestionOptions = [
+  "What is your mother's maiden name?",
+  'What was the name of your first pet?',
+  'What city were you born in?',
+  'What is your favorite book?',
+  'What is the name of your best friend?',
+  'What was your childhood nickname?',
+  'What is your favorite food?',
+  'What is your dream destination?',
+];
 
 const testAccounts = [
-  {
-    label: 'Admin',
-    email: 'admin@electrofix.com',
-    password: 'admin123',
-    role: 'admin',
-    icon: UserCog,
-  },
-  {
-    label: 'Customer',
-    email: 'john@example.com',
-    password: 'customer123',
-    role: 'customer',
-    icon: User,
-  },
+  { label: 'Admin', email: 'admin@electrofix.com', password: 'admin123', role: 'admin', icon: UserCog },
+  { label: 'Customer', email: 'john@example.com', password: 'customer123', role: 'customer', icon: User },
 ];
+
+const inputStyle = {
+  width: '100%', height: '45px', background: 'transparent', border: 'none', outline: 'none',
+  fontSize: '1em', color: '#fff', padding: '0 35px 0 5px', lineHeight: '45px',
+};
+const labelStyle = (up) => ({
+  position: 'absolute', top: up ? '-12px' : '50%', left: '5px',
+  transform: up ? 'translateY(0)' : 'translateY(-50%)',
+  fontSize: up ? '0.8em' : '1em', color: up ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)',
+  pointerEvents: 'none', transition: 'all 0.25s ease',
+  background: up ? 'rgba(0,0,0,0.3)' : 'transparent',
+  padding: up ? '0 6px' : '0', borderRadius: '4px',
+});
+const iconStyle = { position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.6)', display: 'flex' };
+const fieldWrap = { position: 'relative', marginBottom: '20px', borderBottom: '2px solid rgba(255,255,255,0.5)' };
+const btnStyle = (disabled) => ({
+  width: '100%', height: '45px', background: '#fff', border: 'none', outline: 'none',
+  borderRadius: '40px', cursor: disabled ? 'not-allowed' : 'pointer',
+  fontSize: '1em', color: '#000', fontWeight: 500, display: 'flex',
+  alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: disabled ? 0.7 : 1,
+});
+const glassCard = {
+  position: 'relative', width: '100%', maxWidth: '420px',
+  background: 'rgba(0,0,0,0.35)', border: '2px solid rgba(255, 255, 255, .5)',
+  borderRadius: '20px', backdropFilter: 'blur(15px)', padding: '30px 20px', zIndex: 10,
+  maxHeight: '90vh', overflowY: 'auto',
+};
 
 const Login = () => {
   const { t } = useLanguage();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { userInfo, loading, error } = useSelector((state) => state.auth);
+  const [mode, setMode] = useState('login'); // login | register | forgot
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [rememberMe, setRememberMe] = useState(false);
+  const [localError, setLocalError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
+  const [focused, setFocused] = useState({});
+  const [formData, setFormData] = useState({
+    email: '', password: '', fullName: '', phoneNumber: '', confirmPassword: '',
+  });
+  const [sq, setSq] = useState([
+    { question: '', answer: '' },
+    { question: '', answer: '' },
+    { question: '', answer: '' },
+  ]);
+  // Forgot password flow
+  const [forgotStep, setForgotStep] = useState('email'); // email | question | reset
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotQuestion, setForgotQuestion] = useState('');
+  const [forgotQuestionIndex, setForgotQuestionIndex] = useState(0);
+  const [forgotAnswer, setForgotAnswer] = useState('');
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [recoveryMode, setRecoveryMode] = useState(''); // '' | 'changePassword'
+  const [answerError, setAnswerError] = useState(false);
 
   useEffect(() => {
     if (userInfo) {
@@ -42,256 +91,447 @@ const Login = () => {
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setLocalError('');
   };
+  const handleFocus = (e) => setFocused((prev) => ({ ...prev, [e.target.name]: true }));
+  const handleBlur = (e) => setFocused((prev) => ({ ...prev, [e.target.name]: false }));
+  const labelUp = (field) => focused[field] || formData[field];
 
   const fillTestAccount = (acc) => {
-    setFormData({ email: acc.email, password: acc.password });
+    setFormData((prev) => ({ ...prev, email: acc.email, password: acc.password }));
+  };
+
+  const switchMode = (m) => {
+    setMode(m);
+    setFocused({});
+    setLocalError('');
+    setForgotSuccess('');
+    setForgotStep('email');
+    setForgotEmail('');
+    setForgotQuestion('');
+    setForgotAnswer('');
+    setForgotNewPassword('');
+    setRecoveryMode('');
+    setAnswerError(false);
+    dispatch(clearError());
+  };
+
+  const handleSQChange = (idx, field, value) => {
+    const updated = [...sq];
+    updated[idx][field] = value;
+    setSq(updated);
   };
 
   const submitHandler = (e) => {
     e.preventDefault();
-    if (formData.email && formData.password) {
-      dispatch(login(formData));
+    if (mode === 'login') {
+      if (formData.email && formData.password) {
+        dispatch(login({ email: formData.email, password: formData.password }));
+      }
+    } else if (mode === 'register') {
+      if (formData.password !== formData.confirmPassword) {
+        setLocalError('Passwords do not match');
+        return;
+      }
+      if (formData.password.length < 6) {
+        setLocalError('Password must be at least 6 characters');
+        return;
+      }
+      if (sq.some((s) => !s.question || !s.answer)) {
+        setLocalError('Please answer all 3 security questions');
+        return;
+      }
+      const { confirmPassword, ...registerData } = formData;
+      dispatch(register({ ...registerData, securityQuestions: sq }));
     }
   };
 
+  const handleForgotEmail = async () => {
+    if (!forgotEmail) { setLocalError('Please enter your email'); return; }
+    setForgotLoading(true);
+    setLocalError('');
+    setAnswerError(false);
+    setRecoveryMode('');
+    try {
+      const data = await getSecurityQuestions(forgotEmail);
+      setForgotQuestion(data.questions[data.askIndex].question);
+      setForgotQuestionIndex(data.askIndex);
+      setForgotStep('question');
+    } catch (err) {
+      setLocalError(err.response?.data?.message || 'Email not found');
+      setRecoveryMode('showOptions');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleForgotAnswer = async () => {
+    if (!forgotAnswer) { setLocalError('Please enter your answer'); return; }
+    setLocalError('');
+    setForgotStep('reset');
+  };
+
+  const handleForgotReset = async () => {
+    if (forgotNewPassword.length < 6) {
+      setLocalError('Password must be at least 6 characters');
+      return;
+    }
+    setForgotLoading(true);
+    setLocalError('');
+    try {
+      await forgotPassword({
+        email: forgotEmail,
+        questionIndex: forgotQuestionIndex,
+        answer: forgotAnswer,
+        newPassword: forgotNewPassword,
+      });
+      setForgotSuccess('Password updated successfully! You can now login.');
+      setForgotStep('email');
+      setMode('login');
+    } catch (err) {
+      setLocalError(err.response?.data?.message || 'Failed to reset password');
+      setAnswerError(true);
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const displayError = localError || error;
+
+  // ─── Shared input builder ───
+  const renderField = (name, label, icon, extraStyles = {}, type = 'text') => (
+    <div style={{ ...fieldWrap, ...extraStyles }}>
+      <input
+        type={type} name={name} value={formData[name] || ''}
+        onChange={handleChange} onFocus={handleFocus} onBlur={handleBlur} required
+        style={type === 'password' && name === 'password'
+          ? { ...inputStyle, padding: '0 60px 0 5px' }
+          : inputStyle}
+      />
+      <label style={labelStyle(labelUp(name))}>{label}</label>
+      {name === 'password' ? (
+        <div style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: '2px' }}>
+          <button type="button" onClick={() => setShowPassword((prev) => !prev)}
+            style={{ color: 'rgba(255,255,255,0.6)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex' }}>
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+          <span style={{ color: 'rgba(255,255,255,0.6)', display: 'flex' }}><Lock size={18} /></span>
+        </div>
+      ) : (
+        <span style={iconStyle}>{icon}</span>
+      )}
+    </div>
+  );
+
+  // ─── Security Question field for register ───
+  const renderSQField = (idx) => (
+    <div key={idx} style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)' }}>
+      <div style={{ fontSize: '0.75em', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', fontWeight: 600 }}>Security Question #{idx + 1}</div>
+      <select
+        value={sq[idx].question}
+        onChange={(e) => handleSQChange(idx, 'question', e.target.value)}
+        required
+        style={{
+          width: '100%', height: '38px', background: 'rgba(0,0,0,0.3)', color: '#fff',
+          border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px',
+          padding: '0 10px', fontSize: '0.8em', outline: 'none', marginBottom: '8px',
+        }}
+      >
+        <option value="" style={{ color: '#000' }}>Select a question</option>
+        {securityQuestionOptions.map((q) => (
+          <option key={q} value={q} style={{ color: '#000' }}>{q}</option>
+        ))}
+      </select>
+      <input
+        type="text"
+        placeholder="Your answer"
+        value={sq[idx].answer}
+        onChange={(e) => handleSQChange(idx, 'answer', e.target.value)}
+        required
+        style={{
+          width: '100%', height: '38px', background: 'rgba(0,0,0,0.3)', color: '#fff',
+          border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px',
+          padding: '0 10px', fontSize: '0.8em', outline: 'none',
+        }}
+      />
+    </div>
+  );
+
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center py-10 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-br from-indigo-900 via-gray-900 to-slate-900">
-      {/* Background image with gradient overlay */}
-      <div className="absolute inset-0">
-        <img
-          src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=1920"
-          alt=""
-          className="w-full h-full object-cover opacity-40"
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/85 via-gray-900/80 to-slate-900/85"></div>
+    <div className="min-h-screen flex flex-col justify-center items-center py-10 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <style>{`
+        @keyframes hueRotate {
+          100% { filter: hue-rotate(360deg); }
+        }
+        .animate-hue { animation: hueRotate 5s linear infinite; }
+        select option { background: #1e293b; color: #fff; }
+      `}</style>
+      <div className="absolute inset-0 animate-hue">
+        <img src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&q=80&w=1920" alt="" className="w-full h-full object-cover" />
       </div>
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(15,23,42,0.75) 50%, rgba(0,0,0,0.7) 100%)' }}></div>
 
-      {/* Decorative orbs */}
-      <div className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-500/10 blur-[120px] pointer-events-none"></div>
+      <div style={glassCard}>
+        {/* ─── HEADER ─── */}
+        {mode !== 'forgot' && (
+          <>
+            <h2 style={{ fontSize: '2em', color: '#fff', textAlign: 'center', marginBottom: '4px', fontWeight: 600 }}>
+              {mode === 'login' ? 'Login' : 'Register'}
+            </h2>
+            <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: '0.85em', marginBottom: '18px' }}>
+              {mode === 'login' ? t('login.welcome') : 'Create your account to get started.'}
+            </p>
+          </>
+        )}
 
-      {/* Form card */}
-      <div className="bg-white/95 backdrop-blur-xl p-6 sm:p-8 md:p-10 rounded-[2rem] shadow-glass border border-white/40 w-full max-w-md z-10 relative mx-auto">
-        {/* Logo & Brand */}
-        <div className="text-center mb-6">
-          <div className="flex flex-col items-center gap-1 mb-2">
-            <img src="/logo.png" alt="Logo" className="h-16 w-16 object-cover rounded-full mb-2 shadow-sm" onError={(e) => e.target.style.display='none'} />
-            <span className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">SHREE RENUKAMBA</span>
-            <span className="text-xs sm:text-sm font-medium text-gray-500 tracking-widest uppercase">Communication</span>
+        {/* ─── FORGOT PASSWORD HEADER ─── */}
+        {mode === 'forgot' && (
+          <>
+            <h2 style={{ fontSize: '1.6em', color: '#fff', textAlign: 'center', marginBottom: '4px', fontWeight: 600 }}>
+              {forgotStep === 'email' ? 'Forgot Password' : forgotStep === 'question' ? 'Security Question' : 'Reset Password'}
+            </h2>
+            <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: '0.85em', marginBottom: '18px' }}>
+              {forgotStep === 'email' ? 'Enter your email to verify your identity' :
+               forgotStep === 'question' ? 'Answer the security question to proceed' :
+               'Create a new password for your account'}
+            </p>
+          </>
+        )}
+
+        {/* ─── ERROR / SUCCESS ─── */}
+        {displayError && (
+          <div style={{ background: 'rgba(255, 0, 0, 0.15)', border: '1px solid rgba(255,0,0,0.3)', color: '#ff8a8a', padding: '10px 14px', borderRadius: '10px', fontSize: '0.85em', marginBottom: '15px', textAlign: 'center' }}>
+            {displayError}
           </div>
-          <p className="text-gray-500 text-sm mt-1">{t('login.welcome')}</p>
-        </div>
-
-        {/* Login / Register Tabs */}
-        <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
-          <div className="flex-1 bg-white text-indigo-600 font-bold text-sm py-2.5 rounded-lg shadow-sm text-center transition-all">
-            {t('login.login')}
-          </div>
-          <Link
-            to="/register"
-            className="flex-1 text-gray-500 font-medium text-sm py-2.5 rounded-lg text-center hover:text-gray-800 transition-colors"
-          >
-            {t('login.register')}
-          </Link>
-        </div>
-
-        {/* Error Alert */}
-        {error && (
-          <div
-            role="alert"
-            className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium mb-5 flex items-center gap-2"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
-            {error}
+        )}
+        {forgotSuccess && (
+          <div style={{ background: 'rgba(0, 200, 0, 0.15)', border: '1px solid rgba(0,200,0,0.3)', color: '#8aff8a', padding: '10px 14px', borderRadius: '10px', fontSize: '0.85em', marginBottom: '15px', textAlign: 'center' }}>
+            {forgotSuccess}
           </div>
         )}
 
-        {/* Test Accounts */}
-        <div className="mb-6">
-          <p className="text-xs text-gray-400 font-medium text-center mb-3">
-            {t('login.testAccounts')}
-          </p>
-          <div className="grid grid-cols-2 gap-2.5">
-            {testAccounts.map((acc) => {
-              const Icon = acc.icon;
-              return (
-                <button
-                  key={acc.label}
-                  type="button"
-                  onClick={() => fillTestAccount(acc)}
-                  className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-xl border border-gray-200 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 hover:shadow-sm transition-all text-left group"
-                >
-                  <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                      acc.role === 'admin'
-                        ? 'bg-indigo-100 text-indigo-600 group-hover:bg-indigo-200'
-                        : 'bg-teal-100 text-teal-600 group-hover:bg-teal-200'
-                    }`}
-                  >
-                    <Icon size={16} />
+        {/* ─── LOGIN ─── */}
+        {mode === 'login' && (
+          <>
+            {/* Test accounts */}
+            <div style={{ marginBottom: '18px' }}>
+              <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '0.75em', marginBottom: '8px' }}>{t('login.testAccounts')}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                {testAccounts.map((acc) => {
+                  const Icon = acc.icon;
+                  return (
+                    <button key={acc.label} type="button" onClick={() => fillTestAccount(acc)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', color: '#fff', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)' }}
+                    >
+                      <div style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: acc.role === 'admin' ? 'rgba(99,102,241,0.3)' : 'rgba(20,184,166,0.3)', flexShrink: 0 }}>
+                        <Icon size={14} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: '0.75em', fontWeight: 700 }}>{t(`login.${acc.label.toLowerCase()}`)}</div>
+                        <div style={{ fontSize: '0.6em', opacity: 0.6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{acc.email}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <form onSubmit={submitHandler}>
+              {renderField('email', 'Email', <Mail size={18} />)}
+              {renderField('password', 'Password', null, {}, showPassword ? 'text' : 'password')}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85em', color: '#fff', margin: '-5px 0 15px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ accentColor: '#fff' }} />
+                  Remember Me
+                </label>
+                <button type="button" onClick={() => switchMode('forgot')}
+                  style={{ color: '#fff', textDecoration: 'none', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85em' }}
+                  onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                  onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                >Forgot Password?</button>
+              </div>
+
+              <button type="submit" disabled={loading} style={btnStyle(loading)}>
+                {loading ? <Loader2 size={18} className="animate-spin" /> : null}
+                {loading ? t('login.signingIn') : t('login.signIn')}
+              </button>
+
+              <div style={{ fontSize: '0.85em', color: '#fff', textAlign: 'center', margin: '16px 0 0' }}>
+                Don't have an account?{' '}
+                <button type="button" onClick={() => switchMode('register')}
+                  style={{ color: '#fff', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9em' }}
+                  onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                  onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                >Register</button>
+              </div>
+            </form>
+          </>
+        )}
+
+        {/* ─── REGISTER ─── */}
+        {mode === 'register' && (
+          <form onSubmit={submitHandler}>
+            {renderField('fullName', 'Full Name', <User size={18} />)}
+            {renderField('email', 'Email', <Mail size={18} />)}
+            {renderField('phoneNumber', 'Phone Number', <Phone size={18} />)}
+            {renderField('password', 'Password', null, {}, showPassword ? 'text' : 'password')}
+            {renderField('confirmPassword', 'Confirm Password', <CheckCircle size={18} />, {}, 'password')}
+
+            {/* Security Questions */}
+            <div style={{ marginTop: '20px', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                <HelpCircle size={16} color="rgba(255,255,255,0.6)" />
+                <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.85em', fontWeight: 600 }}>Security Questions</span>
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7em', marginBottom: '10px' }}>
+                Set 3 security questions for password recovery
+              </p>
+              {[0, 1, 2].map((idx) => renderSQField(idx))}
+            </div>
+
+            <button type="submit" disabled={loading} style={btnStyle(loading)}>
+              {loading ? <Loader2 size={18} className="animate-spin" /> : <UserPlus size={18} />}
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </button>
+
+            <div style={{ fontSize: '0.85em', color: '#fff', textAlign: 'center', margin: '16px 0 0' }}>
+              Already have an account?{' '}
+              <button type="button" onClick={() => switchMode('login')}
+                style={{ color: '#fff', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9em' }}
+                onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+              >Login</button>
+            </div>
+          </form>
+        )}
+
+        {/* ─── FORGOT PASSWORD ─── */}
+        {mode === 'forgot' && (
+          <>
+            {forgotStep === 'email' && (
+              <div>
+                {recoveryMode === 'changePassword' && (
+                  <div style={{ background: 'rgba(255, 200, 0, 0.12)', border: '1px solid rgba(255,200,0,0.3)', color: '#ffd700', padding: '10px 14px', borderRadius: '10px', fontSize: '0.8em', marginBottom: '15px', textAlign: 'center' }}>
+                    Enter your registered email address to change your password
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-gray-800">
-                      {t(`login.${acc.label.toLowerCase()}`)}
-                    </div>
-                    <div className="text-[10px] text-gray-400 truncate leading-tight">
-                      {acc.email}
-                    </div>
-                  </div>
+                )}
+                <div style={{ position: 'relative', marginBottom: '20px', borderBottom: '2px solid rgba(255,255,255,0.5)' }}>
+                  <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)}
+                    onFocus={() => setFocused((p) => ({ ...p, forgotEmail: true }))}
+                    onBlur={() => setFocused((p) => ({ ...p, forgotEmail: false }))}
+                    required style={inputStyle} />
+                  <label style={labelStyle(focused.forgotEmail || forgotEmail)}>Email</label>
+                  <span style={iconStyle}><Mail size={18} /></span>
+                </div>
+                <button type="button" onClick={handleForgotEmail} disabled={forgotLoading} style={btnStyle(forgotLoading)}>
+                  {forgotLoading ? <Loader2 size={18} className="animate-spin" /> : null}
+                  {forgotLoading ? 'Verifying...' : 'Verify Email'}
                 </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Login Form */}
-        <form onSubmit={submitHandler} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-800 mb-1.5">
-              {t('login.email')}
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                <Mail size={18} />
+                {recoveryMode === 'showOptions' && (
+                  <div style={{ marginTop: '14px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '14px' }}>
+                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8em', marginBottom: '8px' }}>Didn't find your account?</div>
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                      <button type="button" onClick={() => setRecoveryMode('changePassword')}
+                        style={{ color: '#ffd700', background: 'rgba(255,200,0,0.1)', border: '1px solid rgba(255,200,0,0.3)', borderRadius: '20px', cursor: 'pointer', fontSize: '0.8em', padding: '6px 18px' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,200,0,0.2)' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,200,0,0.1)' }}
+                      >Change Password</button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all outline-none text-sm font-medium text-gray-900 placeholder:text-gray-400"
-                placeholder={t('login.email')}
-                required
-                autoComplete="email"
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-1.5">
-              <label className="block text-xs font-bold text-gray-800">
-                {t('login.password')}
-              </label>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                }}
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors bg-transparent border-none p-0 cursor-pointer"
-              >
-                {t('login.forgotPassword')}
-              </button>
-            </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                <Lock size={18} />
-              </div>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all outline-none text-sm font-medium text-gray-900 placeholder:text-gray-400"
-                placeholder="••••••••"
-                required
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 disabled:from-gray-300 disabled:to-gray-300 disabled:text-gray-500 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/30 disabled:shadow-none"
-          >
-            {loading ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <Lock size={16} />
             )}
-            {loading ? t('login.signingIn') : t('login.signIn')}
-          </button>
-        </form>
 
-        {/* Divider */}
-        <div className="mt-6 flex items-center justify-center gap-4">
-          <div className="h-px bg-gray-200 flex-1"></div>
-          <span className="text-xs font-medium text-gray-400 shrink-0">
-            {t('login.orContinue')}
-          </span>
-          <div className="h-px bg-gray-200 flex-1"></div>
-        </div>
+            {forgotStep === 'question' && (
+              <div>
+                <div style={{ padding: '14px', background: 'rgba(255,255,255,0.08)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)', marginBottom: '20px' }}>
+                  <div style={{ fontSize: '0.75em', color: 'rgba(255,255,255,0.5)', marginBottom: '6px' }}>Security Question</div>
+                  <div style={{ color: '#fff', fontSize: '0.95em', fontWeight: 500 }}>{forgotQuestion}</div>
+                </div>
+                <div style={{ position: 'relative', marginBottom: '20px', borderBottom: '2px solid rgba(255,255,255,0.5)' }}>
+                  <input type="text" value={forgotAnswer} onChange={(e) => { setForgotAnswer(e.target.value); setAnswerError(false); }}
+                    onFocus={() => setFocused((p) => ({ ...p, forgotAnswer: true }))}
+                    onBlur={() => setFocused((p) => ({ ...p, forgotAnswer: false }))}
+                    required style={inputStyle} />
+                  <label style={labelStyle(focused.forgotAnswer || forgotAnswer)}>Your Answer</label>
+                  <span style={iconStyle}><HelpCircle size={18} /></span>
+                </div>
+                <button type="button" onClick={handleForgotAnswer} style={btnStyle(false)}>Continue</button>
+                {answerError && (
+                  <div style={{ marginTop: '14px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '14px' }}>
+                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8em', marginBottom: '8px' }}>Wrong answer?</div>
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <button type="button" onClick={() => { setForgotStep('question'); setForgotAnswer(''); setLocalError(''); setAnswerError(false); }}
+                        style={{ color: '#fff', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '20px', cursor: 'pointer', fontSize: '0.8em', padding: '6px 18px' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
+                      >Try Again</button>
+                      <button type="button" onClick={() => { setForgotStep('email'); setForgotEmail(forgotEmail); setAnswerError(false); setLocalError(''); setRecoveryMode('changePassword'); }}
+                        style={{ color: '#ffd700', background: 'rgba(255,200,0,0.1)', border: '1px solid rgba(255,200,0,0.3)', borderRadius: '20px', cursor: 'pointer', fontSize: '0.8em', padding: '6px 18px' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,200,0,0.2)' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,200,0,0.1)' }}
+                      >Change Password</button>
+                    </div>
+                  </div>
+                )}
+                <div style={{ fontSize: '0.8em', color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginTop: answerError ? '8px' : '10px' }}>
+                  <button type="button" onClick={() => { setForgotStep('email'); setAnswerError(false); }}
+                    style={{ color: 'rgba(255,255,255,0.7)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85em' }}
+                    onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                  >&larr; Use different email</button>
+                </div>
+              </div>
+            )}
 
-        {/* Social Buttons */}
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            className="flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
-          >
-            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              />
-            </svg>
-            Google
-          </button>
-          <button
-            type="button"
-            className="flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
-          >
-            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-              <path
-                fill="currentColor"
-                d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"
-              />
-            </svg>
-            Apple
-          </button>
-        </div>
+            {forgotStep === 'reset' && (
+              <div>
+                <div style={{ padding: '14px', background: 'rgba(0,200,0,0.1)', borderRadius: '12px', border: '1px solid rgba(0,200,0,0.3)', marginBottom: '20px' }}>
+                  <div style={{ color: '#8aff8a', fontSize: '0.85em', textAlign: 'center' }}>Answer verified! Now set a new password.</div>
+                </div>
+                <div style={{ position: 'relative', marginBottom: '20px', borderBottom: '2px solid rgba(255,255,255,0.5)' }}>
+                  <input type="password" value={forgotNewPassword} onChange={(e) => setForgotNewPassword(e.target.value)}
+                    onFocus={() => setFocused((p) => ({ ...p, forgotNewPassword: true }))}
+                    onBlur={() => setFocused((p) => ({ ...p, forgotNewPassword: false }))}
+                    required style={{ ...inputStyle, padding: '0 35px 0 5px' }} />
+                  <label style={labelStyle(focused.forgotNewPassword || forgotNewPassword)}>New Password</label>
+                  <span style={iconStyle}><Lock size={18} /></span>
+                </div>
+                <button type="button" onClick={handleForgotReset} disabled={forgotLoading} style={btnStyle(forgotLoading)}>
+                  {forgotLoading ? <Loader2 size={18} className="animate-spin" /> : null}
+                  {forgotLoading ? 'Resetting...' : 'Reset Password'}
+                </button>
+              </div>
+            )}
 
-        {/* Terms */}
-        <p className="mt-6 text-center text-xs text-gray-400 font-medium leading-relaxed">
-          {t('login.terms')}{' '}
-          <button
-            type="button"
-            onClick={(e) => e.preventDefault()}
-            className="text-indigo-600 hover:text-indigo-700 hover:underline bg-transparent border-none p-0 cursor-pointer font-medium"
-          >
-            {t('login.termsOfService')}
-          </button>{' '}
-          {t('login.and')}{' '}
-          <button
-            type="button"
-            onClick={(e) => e.preventDefault()}
-            className="text-indigo-600 hover:text-indigo-700 hover:underline bg-transparent border-none p-0 cursor-pointer font-medium"
-          >
-            {t('login.privacyPolicy')}
-          </button>
-          .
-        </p>
+            <div style={{ fontSize: '0.85em', color: '#fff', textAlign: 'center', margin: '16px 0 0' }}>
+              <button type="button" onClick={() => switchMode('login')}
+                style={{ color: '#fff', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9em' }}
+                onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+              >Back to Login</button>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Back to home */}
+      <Link to="/" style={{
+        position: 'absolute', top: '20px', left: '20px', zIndex: 20,
+        display: 'flex', alignItems: 'center', gap: '6px',
+        color: 'rgba(255,255,255,0.7)', fontSize: '0.85em', fontWeight: 500,
+        textDecoration: 'none', background: 'rgba(255,255,255,0.1)', padding: '8px 16px',
+        borderRadius: '20px', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', transition: 'all 0.2s',
+      }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = '#fff' }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+      >
+        <ArrowLeft size={16} />
+        <span>Back to Home</span>
+      </Link>
     </div>
   );
 };

@@ -1,15 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { ShoppingCart, Star, Shield, Truck, RotateCcw, CheckCircle, Package, ChevronLeft, Minus, Plus, Heart, Share2 } from 'lucide-react';
 import { getProductById, getProducts } from '../../api/productsApi';
 import { addToCart } from '../../redux/slices/cartSlice';
+import { toggleWishlist } from '../../redux/slices/wishlistSlice';
+import { useToast } from '../../contexts/ToastContext';
+import CategoryBadge from '../../components/CategoryBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
+import Product3DViewer from '../../components/Product3DViewer';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
+  const { showToast } = useToast();
+  const wishlistItems = useSelector((state) => state.wishlist?.items || []);
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,6 +23,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [viewMode, setViewMode] = useState('2d');
 
   useEffect(() => {
     fetchProduct();
@@ -43,7 +50,28 @@ const ProductDetail = () => {
       dispatch(addToCart(product));
     }
     setAddedToCart(true);
+    showToast('Item added to cart successfully!');
     setTimeout(() => setAddedToCart(false), 2000);
+  };
+
+  const isLiked = product ? wishlistItems.some((x) => x._id === product._id || x.id === product.id) : false;
+
+  const handleLike = () => {
+    if (!product) return;
+    dispatch(toggleWishlist(product));
+    showToast(isLiked ? 'Removed from wishlist' : 'Added to wishlist');
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: product?.title || 'Check this product', url });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      showToast('Link copied to clipboard!');
+    }
   };
 
   const discountedPrice = (p) => {
@@ -72,31 +100,62 @@ const ProductDetail = () => {
           <div className="grid md:grid-cols-2 gap-0">
             <div className="p-8 md:p-10 bg-secondary-50">
               <div className="relative">
-                <div className="aspect-square rounded-2xl overflow-hidden bg-white shadow-sm mb-4">
-                  <img
-                    src={allImages[selectedImage]}
-                    alt={product.title}
-                    className="w-full h-full object-cover"
-                  />
+                {/* 2D/3D Toggle Tabs */}
+                <div className="flex gap-2 mb-4 justify-start">
+                  <button
+                    onClick={() => setViewMode('2d')}
+                    className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                      viewMode === '2d'
+                        ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                        : 'bg-white text-secondary-600 border-border hover:bg-secondary-50'
+                    }`}
+                  >
+                    2D Images
+                  </button>
+                  <button
+                    onClick={() => setViewMode('3d')}
+                    className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+                      viewMode === '3d'
+                        ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                        : 'bg-white text-secondary-600 border-border hover:bg-secondary-50'
+                    }`}
+                  >
+                    Interactive 3D View
+                  </button>
                 </div>
-                {product.discount > 0 && (
-                  <span className="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-3 py-1.5 rounded-full">
-                    -{product.discount}% OFF
-                  </span>
+
+                <div className="aspect-square rounded-2xl overflow-hidden bg-white shadow-sm mb-4 relative flex items-center justify-center">
+                  {viewMode === '3d' ? (
+                    <Product3DViewer product={product} />
+                  ) : (
+                    <img
+                      src={allImages[selectedImage]}
+                      alt={product.title}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                  {product.discount > 0 && viewMode === '2d' && (
+                    <span className="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full z-10">
+                      -{product.discount}% OFF
+                    </span>
+                  )}
+                </div>
+
+                {viewMode === '2d' && (
+                  <div className="flex gap-3 mt-4 overflow-x-auto pb-1">
+                    {allImages.map((img, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setSelectedImage(i)}
+                        className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
+                          selectedImage === i ? 'border-primary-600 shadow-md' : 'border-border hover:border-primary-300'
+                        }`}
+                      >
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
                 )}
-                <div className="flex gap-3 mt-4">
-                  {allImages.map((img, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedImage(i)}
-                      className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
-                        selectedImage === i ? 'border-primary-600 shadow-md' : 'border-border hover:border-primary-300'
-                      }`}
-                    >
-                      <img src={img} alt="" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
 
@@ -104,6 +163,7 @@ const ProductDetail = () => {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
+                    <CategoryBadge category={product.category} size="md" />
                     <span className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full uppercase tracking-wider">
                       {product.category?.categoryName || 'Uncategorized'}
                     </span>
@@ -125,10 +185,14 @@ const ProductDetail = () => {
                   <p className="text-sm text-secondary-500 font-mono">SKU: {product.productId}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button className="p-2.5 rounded-xl border border-border text-secondary-400 hover:text-red-500 hover:border-red-200 transition-all">
-                    <Heart size={20} />
+                  <button onClick={handleLike} className={`p-2.5 rounded-xl border transition-all ${
+                    isLiked
+                      ? 'border-red-200 text-red-500 bg-red-50'
+                      : 'border-border text-secondary-400 hover:text-red-500 hover:border-red-200'
+                  }`}>
+                    <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
                   </button>
-                  <button className="p-2.5 rounded-xl border border-border text-secondary-400 hover:text-primary-600 hover:border-primary-200 transition-all">
+                  <button onClick={handleShare} className="p-2.5 rounded-xl border border-border text-secondary-400 hover:text-primary-600 hover:border-primary-200 transition-all">
                     <Share2 size={20} />
                   </button>
                 </div>

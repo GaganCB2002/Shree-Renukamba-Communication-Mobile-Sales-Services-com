@@ -14,3 +14,8 @@ export const updateRepairStatus = async (id, data) => {
   const response = await api.put(`/repairs/${id}/status`, data);
   return response.data;
 };
+
+export const getAllRepairs = async () => {
+  const response = await api.get('/repairs');
+  return response.data;
+};

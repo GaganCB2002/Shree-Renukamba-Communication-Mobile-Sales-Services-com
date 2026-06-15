@@ -24,6 +24,11 @@ const seed = async () => {
       email: 'admin@electrofix.com',
       password: 'admin123',
       role: 'admin',
+      securityQuestions: [
+        { question: 'What is your favorite food?', answer: 'Biryani' },
+        { question: 'What city were you born in?', answer: 'Bengaluru' },
+        { question: 'What was your childhood nickname?', answer: 'Admin' },
+      ],
     });
     console.log(`Admin created: ${admin.email} / admin123`);
 
@@ -33,6 +38,11 @@ const seed = async () => {
       email: 'john@example.com',
       password: 'customer123',
       role: 'customer',
+      securityQuestions: [
+        { question: 'What is your favorite food?', answer: 'Pizza' },
+        { question: 'What city were you born in?', answer: 'Mumbai' },
+        { question: 'What was your childhood nickname?', answer: 'Johnny' },
+      ],
     });
     console.log(`Customer created: ${customer.email} / customer123`);
 
@@ -98,7 +108,7 @@ const seed = async () => {
         stock: 35,
         price: 49,
         discount: 0,
-        images: ['https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&q=80&w=600'],
+        images: ['https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&q=80&w=600'],
         specifications: { Material: 'Aluminum', Height: 'Adjustable', Compatibility: 'All laptops' },
       },
       {
@@ -109,7 +119,7 @@ const seed = async () => {
         stock: 18,
         price: 99,
         discount: 0,
-        images: ['https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&q=80&w=600'],
+        images: ['https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&q=80&w=600'],
         specifications: { Type: 'Wireless Mouse', DPI: '8000', Battery: '70 days' },
       },
       {
@@ -186,7 +196,7 @@ const seed = async () => {
         stock: 50,
         price: 39,
         discount: 0,
-        images: ['https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&q=80&w=600'],
+        images: ['https://images.unsplash.com/photo-1622445262465-2481c8573326?auto=format&fit=crop&q=80&w=600'],
         specifications: { Type: 'Wireless', Power: '15W' },
       },
       {
@@ -197,7 +207,7 @@ const seed = async () => {
         stock: 100,
         price: 19,
         discount: 0,
-        images: ['https://images.unsplash.com/photo-1598532163257-ae3c6b2524b6?auto=format&fit=crop&q=80&w=600'],
+        images: ['https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&q=80&w=600'],
         specifications: { Compatible: 'iPhone 14 Series', Hardness: '9H' },
       },
       {
