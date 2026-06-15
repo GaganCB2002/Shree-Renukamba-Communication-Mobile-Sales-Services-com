@@ -2,12 +2,22 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --color-background: #F6F8FD;
   --color-surface: #FFFFFF;
   --color-border: #E2E8F0;
   --color-text-main: #0F172A;
   --color-text-muted: #64748B;
+}
+
+.dark {
+  --color-background: #0F172A;
+  --color-surface: #1E293B;
+  --color-border: #334155;
+  --color-text-main: #F1F5F9;
+  --color-text-muted: #94A3B8;
 }
 
 /* ── Entrance Keyframes ── */
@@ -133,6 +143,9 @@
 .sparkle:nth-child(7)  { left: 60%; top: 70%; animation: sparkleFloat2 3.6s ease-out 0.8s infinite; }
 .sparkle:nth-child(8)  { left: 90%; top: 50%; animation: sparkleFloat 3.4s ease-out 1.5s infinite; }
 
+::-webkit-scrollbar { display: none; }
+* { -ms-overflow-style: none; scrollbar-width: none; }
+
 @layer base {
   body {
     background-color: var(--color-background);
@@ -149,6 +162,28 @@
 }
 
 @layer components {
+  .dark .btn-primary {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+  .dark .btn-primary:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  .dark .btn-secondary {
+    background-color: var(--color-surface);
+    color: var(--color-text-main);
+    border-color: var(--color-border);
+  }
+  .dark .btn-secondary:hover {
+    background-color: #334155;
+  }
+
+  .dark .input-field {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: var(--color-border);
+    color: var(--color-text-main);
+  }
+
   .btn-primary {
     display: inline-flex;
     align-items: center;
@@ -199,3 +234,13 @@
     border-color: var(--color-primary-500);
   }
 }
+
+/* ── Global Scrollbar Hiding ── */
+*::-webkit-scrollbar {
+  display: none !important;
+}
+* {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+

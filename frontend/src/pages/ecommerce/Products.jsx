@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Heart, ShoppingCart, ChevronDown, CheckCircle2, Sparkles, Search, Loader2 } from 'lucide-react';
+import { Heart, ShoppingCart, ChevronDown, CheckCircle2, Sparkles, Search, X } from 'lucide-react';
 import { getProducts, getCategories } from '../../api/productsApi';
 import { addToCart } from '../../redux/slices/cartSlice';
 import { toggleWishlist } from '../../redux/slices/wishlistSlice';
@@ -26,16 +26,33 @@ const Products = () => {
   const [selectedCondition, setSelectedCondition] = useState('');
   const [sortBy, setSortBy] = useState('recommended');
   const [sortOpen, setSortOpen] = useState(false);
+  const [newArrivals, setNewArrivals] = useState(false);
+  const [newProducts, setNewProducts] = useState(false);
+  const [recentLaunches, setRecentLaunches] = useState(false);
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
 
   const conditions = ['Excellent', 'Like New', 'Good'];
+
+  const now = new Date();
 
   useEffect(() => {
     const cat = searchParams.get('category') || '';
     const keyword = searchParams.get('keyword') || '';
     const cond = searchParams.get('condition') || '';
+    const na = searchParams.get('newArrivals') === 'true';
+    const np = searchParams.get('newProducts') === 'true';
+    const rl = searchParams.get('recentLaunches') === 'true';
+    const pMin = searchParams.get('priceMin') || '';
+    const pMax = searchParams.get('priceMax') || '';
     setSelectedCategory(cat);
     setSearchTerm(keyword);
     setSelectedCondition(cond);
+    setNewArrivals(na);
+    setNewProducts(np);
+    setRecentLaunches(rl);
+    setPriceMin(pMin);
+    setPriceMax(pMax);
   }, [searchParams]);
 
   useEffect(() => {
@@ -69,6 +86,12 @@ const Products = () => {
     const params = {};
     if (searchTerm) params.keyword = searchTerm;
     if (selectedCategory) params.category = selectedCategory;
+    if (selectedCondition) params.condition = selectedCondition;
+    if (newArrivals) params.newArrivals = 'true';
+    if (newProducts) params.newProducts = 'true';
+    if (recentLaunches) params.recentLaunches = 'true';
+    if (priceMin) params.priceMin = priceMin;
+    if (priceMax) params.priceMax = priceMax;
     setSearchParams(params);
   };
 
@@ -104,6 +127,18 @@ const Products = () => {
       const cond = p.condition || p.specifications?.Condition || '';
       return cond.toLowerCase() === selectedCondition.toLowerCase();
     }
+    return true;
+  }).filter((p) => {
+    const createdAt = p.createdAt ? new Date(p.createdAt) : null;
+    const daysSinceCreated = createdAt ? Math.floor((now - createdAt) / (1000 * 60 * 60 * 24)) : 999;
+    if (newArrivals && daysSinceCreated > 30) return false;
+    if (newProducts && daysSinceCreated > 60) return false;
+    if (recentLaunches && daysSinceCreated > 90) return false;
+    return true;
+  }).filter((p) => {
+    const price = p.discount > 0 ? p.price * (1 - p.discount / 100) : p.price;
+    if (priceMin && price < Number(priceMin)) return false;
+    if (priceMax && price > Number(priceMax)) return false;
     return true;
   });
 
@@ -201,8 +236,119 @@ const Products = () => {
 
             <div className="w-full h-px bg-border mb-8"></div>
 
+            <div className="mb-8">
+              <h3 className="text-xs font-bold text-secondary-500 uppercase tracking-wider mb-4">Price Range</h3>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={priceMin}
+                  onChange={(e) => setPriceMin(e.target.value)}
+                  placeholder="Min"
+                  className="w-full px-3 py-2 bg-secondary-50 border border-border rounded-xl text-sm focus:outline-none focus:border-primary-400"
+                />
+                <span className="text-secondary-400">-</span>
+                <input
+                  type="number"
+                  value={priceMax}
+                  onChange={(e) => setPriceMax(e.target.value)}
+                  placeholder="Max"
+                  className="w-full px-3 py-2 bg-secondary-50 border border-border rounded-xl text-sm focus:outline-none focus:border-primary-400"
+                />
+              </div>
+              <button
+                onClick={() => {
+                  const params = {};
+                  if (searchTerm) params.keyword = searchTerm;
+                  if (selectedCategory) params.category = selectedCategory;
+                  if (selectedCondition) params.condition = selectedCondition;
+                  if (newArrivals) params.newArrivals = 'true';
+                  if (newProducts) params.newProducts = 'true';
+                  if (recentLaunches) params.recentLaunches = 'true';
+                  if (priceMin) params.priceMin = priceMin;
+                  if (priceMax) params.priceMax = priceMax;
+                  setSearchParams(params);
+                }}
+                className="mt-2 w-full py-2 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-colors"
+              >
+                Apply Price
+              </button>
+            </div>
+
+            <div className="w-full h-px bg-border mb-8"></div>
+
+            <div className="mb-8">
+              <h3 className="text-xs font-bold text-secondary-500 uppercase tracking-wider mb-4">Availability</h3>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={newArrivals}
+                    onChange={() => {
+                      setNewArrivals(!newArrivals);
+                      const params = {};
+                      if (searchTerm) params.keyword = searchTerm;
+                      if (selectedCategory) params.category = selectedCategory;
+                      if (selectedCondition) params.condition = selectedCondition;
+                      if (priceMin) params.priceMin = priceMin;
+                      if (priceMax) params.priceMax = priceMax;
+                      if (!newArrivals) params.newArrivals = 'true';
+                      if (newProducts) params.newProducts = 'true';
+                      if (recentLaunches) params.recentLaunches = 'true';
+                      setSearchParams(params);
+                    }}
+                    className="w-4 h-4 rounded border-secondary-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="text-sm text-secondary-700">Newly Arrived</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={newProducts}
+                    onChange={() => {
+                      setNewProducts(!newProducts);
+                      const params = {};
+                      if (searchTerm) params.keyword = searchTerm;
+                      if (selectedCategory) params.category = selectedCategory;
+                      if (selectedCondition) params.condition = selectedCondition;
+                      if (priceMin) params.priceMin = priceMin;
+                      if (priceMax) params.priceMax = priceMax;
+                      if (newArrivals) params.newArrivals = 'true';
+                      if (!newProducts) params.newProducts = 'true';
+                      if (recentLaunches) params.recentLaunches = 'true';
+                      setSearchParams(params);
+                    }}
+                    className="w-4 h-4 rounded border-secondary-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="text-sm text-secondary-700">New Products</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={recentLaunches}
+                    onChange={() => {
+                      setRecentLaunches(!recentLaunches);
+                      const params = {};
+                      if (searchTerm) params.keyword = searchTerm;
+                      if (selectedCategory) params.category = selectedCategory;
+                      if (selectedCondition) params.condition = selectedCondition;
+                      if (priceMin) params.priceMin = priceMin;
+                      if (priceMax) params.priceMax = priceMax;
+                      if (newArrivals) params.newArrivals = 'true';
+                      if (newProducts) params.newProducts = 'true';
+                      if (!recentLaunches) params.recentLaunches = 'true';
+                      setSearchParams(params);
+                    }}
+                    className="w-4 h-4 rounded border-secondary-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="text-sm text-secondary-700">Recent Launches</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="w-full h-px bg-border mb-8"></div>
+
             <button
-              onClick={() => { setSelectedCategory(''); setSelectedCondition(''); setSearchTerm(''); setSearchParams({}); setSortBy('recommended'); }}
+              onClick={() => { setSelectedCategory(''); setSelectedCondition(''); setSearchTerm(''); setNewArrivals(false); setNewProducts(false); setRecentLaunches(false); setPriceMin(''); setPriceMax(''); setSearchParams({}); setSortBy('recommended'); }}
               className="w-full py-2.5 text-sm font-medium text-secondary-600 hover:text-primary-600 border border-border rounded-xl hover:bg-secondary-50 transition-colors"
             >
               Clear All Filters
@@ -263,9 +409,9 @@ const Products = () => {
           {sortedProducts.length === 0 ? (
             <EmptyState
               title="No products found"
-              description="Try adjusting your filters or search terms."
+              description={(priceMin || priceMax) ? "No products available on this budget. Try adjusting your price range." : "Try adjusting your filters or search terms."}
               action={
-                <Link to="/shop" className="btn-primary text-sm" onClick={() => { setSelectedCategory(''); setSelectedCondition(''); setSearchTerm(''); setSearchParams({}); }}>
+                <Link to="/shop" className="btn-primary text-sm" onClick={() => { setSelectedCategory(''); setSelectedCondition(''); setSearchTerm(''); setNewArrivals(false); setNewProducts(false); setRecentLaunches(false); setPriceMin(''); setPriceMax(''); setSearchParams({}); }}>
                   View All Products
                 </Link>
               }

@@ -135,7 +135,7 @@ const PrivacyPolicy = () => (
             <p className="mt-2">
               <strong>Email:</strong> info@shreerenukamba.com<br />
               <strong>Phone:</strong> +91 98765 43210<br />
-              <strong>Address:</strong> 123 MG Road, Bengaluru, Karnataka, India
+              <strong>Address:</strong> Guttur Colony, Harihar, Karnataka, India
             </p>
           </section>
         </div>

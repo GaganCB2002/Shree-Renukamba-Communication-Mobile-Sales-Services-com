@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Star, Shield, Truck, RotateCcw, Package, ShoppingCart, Sparkles, Clock, Wrench, Smartphone, Battery, Droplets, Cpu, Heart, ArrowRight } from 'lucide-react';
+import { ChevronRight, Star, Shield, Truck, RotateCcw, Package, ShoppingCart, Sparkles, Clock, Wrench, Smartphone, Battery, Droplets, Cpu, Heart, ArrowRight, Search, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getProducts, getCategories } from '../api/productsApi';
+import { trackOrder } from '../api/ordersApi';
 import { addToCart } from '../redux/slices/cartSlice';
 import { toggleWishlist } from '../redux/slices/wishlistSlice';
 import { useToast } from '../contexts/ToastContext';
@@ -69,17 +70,26 @@ export default function LandingPage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+  const [trackId, setTrackId] = useState('');
+  const [trackResult, setTrackResult] = useState(null);
+  const [trackLoading, setTrackLoading] = useState(false);
+  const [trackError, setTrackError] = useState('');
+  const [trackSearched, setTrackSearched] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setFetchError(null);
         const [productsData, categoriesData] = await Promise.all([
           getProducts(),
           getCategories()
         ]);
-        setProducts(productsData);
-        setCategories(categoriesData);
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       } catch (err) {
+        console.error('Failed to fetch landing data:', err);
+        setFetchError(err.response?.data?.message || err.message || 'Failed to load data');
       } finally {
         setLoading(false);
       }
@@ -89,11 +99,33 @@ export default function LandingPage() {
 
   const bestSellers = products.slice(0, 4);
   const newStocks = products.filter(p => p.stock > 0).slice(0, 8);
-  const discountedPrice = (p) => p.discount > 0 ? (p.price * (1 - p.discount / 100)).toFixed(2) : p.price;
+  const discountedPrice = (p) => {
+    const price = Number(p.price) || 0;
+    const disc = Number(p.discount) || 0;
+    return disc > 0 ? (price * (1 - disc / 100)).toFixed(2) : price;
+  };
   const isLiked = (product) => wishlistItems.some((x) => x._id === product._id || x.id === product.id);
   const handleLike = (product) => {
+    const liked = isLiked(product);
     dispatch(toggleWishlist(product));
-    showToast(isLiked(product) ? 'Removed from wishlist' : 'Added to wishlist');
+    showToast(liked ? 'Removed from wishlist' : 'Added to wishlist');
+  };
+
+  const handleTrackOrder = async (e) => {
+    e.preventDefault();
+    if (!trackId.trim()) return;
+    setTrackLoading(true);
+    setTrackError('');
+    setTrackResult(null);
+    setTrackSearched(true);
+    try {
+      const data = await trackOrder(trackId.trim());
+      setTrackResult(data);
+    } catch (err) {
+      setTrackError(err.response?.data?.message || 'Order not found');
+    } finally {
+      setTrackLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -104,6 +136,8 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
+    const els = document.querySelectorAll('.reveal');
+    els.forEach(el => el.classList.add('revealed'));
     observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
@@ -116,13 +150,12 @@ export default function LandingPage() {
       { threshold: 0.1, rootMargin: '0px 0px -60px 0px' }
     );
 
-    const els = document.querySelectorAll('.reveal');
     els.forEach(el => observerRef.current?.observe(el));
     return () => observerRef.current?.disconnect();
   }, [loading]);
 
   useEffect(() => {
-    document.title = 'SR Communication - Mobile Sales & Services';
+    document.title = 'Shree Renukamba Communication - Mobile Sales & Services';
   }, []);
 
   return (
@@ -138,7 +171,9 @@ export default function LandingPage() {
         ))}
         <div className="lp-hero-overlay" />
         <div className="lp-hero-content">
-          <div className="lp-hero-badge reveal">{t('home.heroBadge')}</div>
+          <div className="reveal" style={{ width: 150, height: 150, margin: '0 auto 28px', borderRadius: '50%', background: 'var(--clr-card-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 4px rgba(255,255,255,0.3), 0 12px 40px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+            <img src="/logo.png" alt="Shree Renukamba Communication" style={{ width: '92%', height: '92%', objectFit: 'contain' }} />
+          </div>
           <h1 className="lp-hero-title reveal">
             {t('home.heroTitle1')} <span className="lp-hero-highlight">{t('home.heroTitle2')}</span>
             <span className="lp-hero-highlight">{t('home.heroTitle3')}</span>
@@ -170,7 +205,7 @@ export default function LandingPage() {
           </div>
           <div className="lp-hero-dots">
             {heroImages.map((_, i) => (
-              <button
+              <button type="button"
                 key={i}
                 className={`lp-hero-dot${i === slideIndex ? ' active' : ''}`}
                 onClick={() => setSlideIndex(i)}
@@ -189,38 +224,38 @@ export default function LandingPage() {
               <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--clr-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid var(--clr-border)', overflow: 'hidden', transition: 'all 0.2s' }}>
                 <span style={{ fontSize: '1.3rem' }}>🛍️</span>
               </div>
-              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>All Products</span>
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--clr-text-on-light)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>All Products</span>
             </Link>
             
             {categories.map((cat) => (
               <Link key={cat._id} to={`/shop?category=${cat._id}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textDecoration: 'none', gap: '8px', flexShrink: 0 }} className="quick-cat-link">
                 <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--clr-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid var(--clr-border)', overflow: 'hidden', transition: 'all 0.2s' }}>
-                  {cat.categoryImage ? (
-                    <img src={cat.categoryImage} alt={cat.categoryName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {cat.categoryImage ? (
+                    <img src={cat.categoryImage} alt={cat.categoryName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none'; }} />
                   ) : (
                     <span style={{ fontSize: '1.3rem' }}>📱</span>
                   )}
                 </div>
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{cat.categoryName}</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--clr-text-on-light)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{cat.categoryName}</span>
               </Link>
             ))}
 
             <Link to="/dashboard/repairs/new" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textDecoration: 'none', gap: '8px', flexShrink: 0 }} className="quick-cat-link">
-              <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid #E2E8F0', overflow: 'hidden', transition: 'all 0.2s' }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--clr-icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid #E2E8F0', overflow: 'hidden', transition: 'all 0.2s' }}>
                 <span style={{ fontSize: '1.3rem' }}>🔧</span>
               </div>
-              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Book Repair</span>
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--clr-text-on-light)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Book Repair</span>
             </Link>
           </div>
         </div>
       </div>
 
       {/* ── ACCESSORIES SHOWCASE (MARQUEE) — MOVED TO TOP 3RD POSITION ── */}
-      <section style={{ padding: '60px 0', background: '#F1F5F9', overflow: 'hidden' }}>
+      <section className="lp-section-alt" style={{ padding: '60px 0', overflow: 'hidden' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: '#4F46E5' }}>Accessories Showcase</span>
-          <h2 style={{ fontSize: '2rem', color: '#0F172A', marginBottom: 8 }}>All Types of Mobile Accessories</h2>
-          <p style={{ color: '#64748B' }}>Screen guards, back cases, chargers, and everything your device needs.</p>
+          <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: 'var(--clr-accent-brand)' }}>Accessories Showcase</span>
+          <h2 style={{ fontSize: '2rem', color: 'var(--clr-text)', marginBottom: 8 }}>All Types of Mobile Accessories</h2>
+          <p style={{ color: 'var(--clr-text-light)' }}>Screen guards, back cases, chargers, and everything your device needs.</p>
         </div>
         
         <div className="accessories-marquee-container">
@@ -228,7 +263,7 @@ export default function LandingPage() {
             {[...slidingAccessories, ...slidingAccessories].map((item, idx) => (
               <div key={idx} className="marquee-item">
                 <div className="marquee-img-wrap">
-                  <img src={item.image} alt={item.title} />
+                  <img src={item.image} alt={item.title} onError={e => { e.target.style.display = 'none'; }} />
                 </div>
                 <div className="marquee-details">
                   <h4>{item.title}</h4>
@@ -244,10 +279,10 @@ export default function LandingPage() {
             width: 100%;
             overflow: hidden;
             position: relative;
-            background: #fff;
+            background: var(--clr-white);
             padding: 30px 0;
-            border-top: 1px solid #E2E8F0;
-            border-bottom: 1px solid #E2E8F0;
+            border-top: 1px solid var(--clr-border);
+            border-bottom: 1px solid var(--clr-border);
           }
           .accessories-marquee {
             display: flex;
@@ -261,10 +296,10 @@ export default function LandingPage() {
           }
           .marquee-item {
             width: 200px;
-            background: #F8FAFC;
+            background: var(--clr-cream);
             border-radius: 12px;
             overflow: hidden;
-            border: 1px solid #E2E8F0;
+            border: 1px solid var(--clr-border);
             flex-shrink: 0;
             transition: transform 0.3s ease;
           }
@@ -275,8 +310,8 @@ export default function LandingPage() {
           .marquee-img-wrap {
             height: 140px;
             width: 100%;
-            background: #fff;
-            border-bottom: 1px solid #E2E8F0;
+            background: var(--clr-white);
+            border-bottom: 1px solid var(--clr-border);
           }
           .marquee-img-wrap img {
             width: 100%;
@@ -290,7 +325,7 @@ export default function LandingPage() {
           }
           .marquee-details h4 {
             font-size: 0.85rem;
-            color: #0F172A;
+            color: var(--clr-text);
             margin: 0 0 4px 0;
             white-space: nowrap;
             overflow: hidden;
@@ -298,7 +333,7 @@ export default function LandingPage() {
           }
           .marquee-details span {
             font-size: 0.8rem;
-            color: #4F46E5;
+            color: var(--clr-primary);
             font-weight: 600;
           }
           @keyframes marqueeScroll {
@@ -315,7 +350,7 @@ export default function LandingPage() {
           {/* Main Coupon Banner (Dotted Ticket Style) */}
           <div className="promo-coupon-banner">
             <div className="promo-coupon-left">
-              <div style={{ textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 800, letterSpacing: '2px', color: '#E0C098', marginBottom: '8px' }}>Special Repair Deal</div>
+              <div style={{ textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 800, letterSpacing: '2px', color: 'var(--clr-accent)', marginBottom: '8px' }}>Special Repair Deal</div>
               <h3 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 8px 0', lineHeight: 1.2 }}>Flat ₹500 Off on Screen &amp; Battery Replacements!</h3>
               <p style={{ margin: 0, fontSize: '0.82rem', opacity: 0.9 }}>Get your device fixed by professional technicians today. Offer valid this week only.</p>
             </div>
@@ -334,7 +369,7 @@ export default function LandingPage() {
             {/* Banner 1 */}
             <Link to="/shop" style={{ textDecoration: 'none' }} className="promo-card">
               <div className="promo-card-img-wrap">
-                <img src="https://images.unsplash.com/photo-1598327105666-5b89351cb31b?auto=format&fit=crop&q=80&w=600" alt="Mobiles Offer" />
+                <img src="https://images.unsplash.com/photo-1598327105666-5b89351cb31b?auto=format&fit=crop&q=80&w=600" alt="Mobiles Offer" onError={e => { e.target.style.display = 'none'; }} />
               </div>
               <div className="promo-card-content">
                 <div>
@@ -351,7 +386,7 @@ export default function LandingPage() {
             {/* Banner 2 */}
             <Link to="/shop" style={{ textDecoration: 'none' }} className="promo-card">
               <div className="promo-card-img-wrap">
-                <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=600" alt="Laptops Offer" />
+                <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=600" alt="Laptops Offer" onError={e => { e.target.style.display = 'none'; }} />
               </div>
               <div className="promo-card-content">
                 <div>
@@ -368,7 +403,7 @@ export default function LandingPage() {
             {/* Banner 3 */}
             <Link to="/shop" style={{ textDecoration: 'none' }} className="promo-card">
               <div className="promo-card-img-wrap">
-                <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=600" alt="Accessories Offer" />
+                <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=600" alt="Accessories Offer" onError={e => { e.target.style.display = 'none'; }} />
               </div>
               <div className="promo-card-content">
                 <div>
@@ -389,24 +424,35 @@ export default function LandingPage() {
       <section className="lp-section-alt">
         <div className="container" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
           <div className="lp-section-head reveal">
-            <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: '#4F46E5' }}>{t('home.newStocks')}</span>
+            <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: 'var(--clr-accent-brand)' }}>{t('home.newStocks')}</span>
             <h2>{t('home.newStocks')}</h2>
             <p>{t('home.newStocksDesc')}</p>
           </div>
-          {newStocks.length > 0 ? (
+          {fetchError && (
+            <div style={{ textAlign: 'center', padding: '12px', marginBottom: '24px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '12px', color: '#B91C1C', fontSize: '0.85rem' }}>
+              {fetchError}
+            </div>
+          )}
+          {loading ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
+              {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
+                <div key={i} style={{ height: 350, background: 'var(--clr-white)', borderRadius: 16, opacity: 0.5, border: '1px solid var(--clr-border)' }} />
+              ))}
+            </div>
+          ) : newStocks.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
               {newStocks.map((product, i) => (
                 <div key={product._id} className="reveal" style={{ borderRadius: 16, overflow: 'hidden', background: 'var(--clr-white)', border: '1px solid var(--clr-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                   <Link to={`/products/${product._id}`} style={{ display: 'block', textDecoration: 'none' }}>
-                    <div style={{ height: 200, background: '#F1F5F9', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ height: 200, background: 'var(--clr-icon-bg)', position: 'relative', overflow: 'hidden' }}>
                       {product.images && product.images[0] ? (
-                        <img src={product.images[0]} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Package size={40} color="#94A3B8" />
-                        </div>
-                      )}
-                      <span style={{ position: 'absolute', top: 10, right: 10, background: '#4F46E5', color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '4px 10px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <img src={product.images[0]} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={e => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex'; }} />
+                      ) : null}
+                      <div style={{ width: '100%', height: '100%', display: product.images && product.images[0] ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Package size={40} color="var(--clr-text-muted)" />
+                      </div>
+                      <span style={{ position: 'absolute', top: 10, right: 10, background: 'var(--clr-accent-brand)', color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '4px 10px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <Sparkles size={11} /> {t('home.justAdded')}
                       </span>
                       {product.discount > 0 && (
@@ -418,30 +464,30 @@ export default function LandingPage() {
                   </Link>
                   <div style={{ padding: '16px' }}>
                     <div style={{ display: 'flex', gap: 2, marginBottom: 6 }}>
-                      {[...Array(5)].map((_, s) => <Star key={s} size={12} fill={s < 4 ? "#4F46E5" : "#E2E8F0"} color={s < 4 ? "#4F46E5" : "#E2E8F0"} />)}
+                      {[...Array(5)].map((_, s) => <Star key={s} size={12} fill={s < 4 ? "var(--clr-star-active)" : "var(--clr-star-inactive)"} color={s < 4 ? "var(--clr-star-active)" : "var(--clr-star-inactive)"} />)}
                     </div>
                     <Link to={`/products/${product._id}`} style={{ textDecoration: 'none' }}>
-                      <h3 style={{ fontSize: '0.95rem', color: '#0F172A', margin: '0 0 8px 0', fontWeight: 600 }}>{product.title}</h3>
+                      <h3 style={{ fontSize: '0.95rem', color: 'var(--clr-text-on-light)', margin: '0 0 8px 0', fontWeight: 600 }}>{product.title}</h3>
                     </Link>
                     <div style={{ marginBottom: '6px' }}><CategoryBadge category={product.category} /></div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: 8 }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--clr-text-muted)', marginBottom: 8 }}>
                       <Clock size={12} style={{ display: 'inline', marginRight: 4 }} /> {product.stock} units available
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', paddingTop: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--clr-border)', paddingTop: 12 }}>
                       <div>
                         {product.discount > 0 && (
-                          <span style={{ fontSize: '0.75rem', color: '#94A3B8', textDecoration: 'line-through', marginRight: 6 }}>₹{product.price}</span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--clr-text-muted)', textDecoration: 'line-through', marginRight: 6 }}>₹{product.price}</span>
                         )}
-                        <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#4F46E5' }}>₹{discountedPrice(product)}</span>
+                        <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--clr-accent-brand)' }}>₹{discountedPrice(product)}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={(e) => { e.preventDefault(); handleLike(product); }}
+                        <button type="button" onClick={(e) => { e.preventDefault(); handleLike(product); }}
                           style={{ background: isLiked(product) ? '#FEE2E2' : '#F1F5F9', border: 'none', color: isLiked(product) ? '#EF4444' : '#64748B', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Heart size={13} fill={isLiked(product) ? 'currentColor' : 'none'} />
                         </button>
-                        <button 
+                        <button type="button"
                           onClick={(e) => { e.preventDefault(); dispatch(addToCart(product)); showToast('Item added to cart successfully!'); }}
-                          style={{ background: '#4F46E5', border: 'none', color: '#fff', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          style={{ background: 'var(--clr-accent-brand)', border: 'none', color: '#fff', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         >
                           <ShoppingCart size={14} />
                         </button>
@@ -452,7 +498,7 @@ export default function LandingPage() {
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', color: '#94A3B8', padding: '40px 0' }}>
+            <div style={{ textAlign: 'center', color: 'var(--clr-text-muted)', padding: '40px 0' }}>
               <Package size={40} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
               <p>New arrivals coming soon. Stay tuned!</p>
             </div>
@@ -464,19 +510,19 @@ export default function LandingPage() {
       <section className="lp-section">
         <div className="container" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
           <div className="lp-section-head reveal">
-            <span className="lp-section-tag" style={{ borderColor: 'rgba(234,88,12,0.3)', color: '#EA580C' }}>Repair Services</span>
+            <span className="lp-section-tag" style={{ borderColor: 'rgba(234,88,12,0.3)', color: 'var(--clr-accent-orange)' }}>Repair Services</span>
             <h2>Professional Phone &amp; Laptop Repairs</h2>
             <p>Fast, reliable, and affordable repair services by certified technicians with genuine parts.</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px', marginTop: 48 }}>
             {repairServices.map((svc, i) => (
               <div key={i} className="reveal" style={{ padding: '32px', borderRadius: 20, background: 'var(--clr-cream)', border: '1px solid var(--clr-border)' }}>
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-                  <svc.icon size={28} style={{ color: '#4F46E5' }} />
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--clr-icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                  <svc.icon size={28} style={{ color: 'var(--clr-accent-brand)' }} />
                 </div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>{svc.title}</h3>
-                <p style={{ fontSize: '0.85rem', color: '#64748B', lineHeight: 1.7, marginBottom: 20 }}>{svc.desc}</p>
-                <Link to="/dashboard/repairs/new" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#4F46E5', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--clr-text-on-light)', marginBottom: 8 }}>{svc.title}</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--clr-text-muted)', lineHeight: 1.7, marginBottom: 20 }}>{svc.desc}</p>
+                <Link to="/dashboard/repairs/new" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--clr-accent-brand)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   Book Now <ChevronRight size={14} />
                 </Link>
               </div>
@@ -489,7 +535,7 @@ export default function LandingPage() {
       <section className="lp-section-alt">
         <div className="container" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
           <div className="lp-section-head reveal">
-            <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: '#4F46E5' }}>{t('home.featured')}</span>
+            <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: 'var(--clr-accent-brand)' }}>{t('home.featured')}</span>
             <h2>{t('home.bestSellers')}</h2>
             <p>{t('home.bestSellersDesc')}</p>
           </div>
@@ -504,14 +550,14 @@ export default function LandingPage() {
               {bestSellers.map((product, i) => (
                 <div key={product._id} className="reveal" style={{ borderRadius: 16, overflow: 'hidden', background: 'var(--clr-white)', border: '1px solid var(--clr-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                   <Link to={`/products/${product._id}`} style={{ display: 'block', textDecoration: 'none' }}>
-                    <div style={{ height: 220, background: '#F1F5F9', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ height: 220, background: 'var(--clr-icon-bg)', position: 'relative', overflow: 'hidden' }}>
                       {product.images && product.images[0] ? (
-                        <img src={product.images[0]} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Package size={40} color="#94A3B8" />
-                        </div>
-                      )}
+                        <img src={product.images[0]} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={e => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex'; }} />
+                      ) : null}
+                      <div style={{ width: '100%', height: '100%', display: product.images && product.images[0] ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Package size={40} color="var(--clr-text-muted)" />
+                      </div>
                       {product.discount > 0 && (
                         <span style={{ position: 'absolute', top: 10, left: 10, background: '#EF4444', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
                           -{product.discount}%
@@ -521,30 +567,30 @@ export default function LandingPage() {
                   </Link>
                   <div style={{ padding: '20px' }}>
                     <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
-                      {[...Array(5)].map((_, s) => <Star key={s} size={12} fill={s < 4 ? "#4F46E5" : "#E2E8F0"} color={s < 4 ? "#4F46E5" : "#E2E8F0"} />)}
+                      {[...Array(5)].map((_, s) => <Star key={s} size={12} fill={s < 4 ? "var(--clr-star-active)" : "var(--clr-star-inactive)"} color={s < 4 ? "var(--clr-star-active)" : "var(--clr-star-inactive)"} />)}
                     </div>
                     <Link to={`/products/${product._id}`} style={{ textDecoration: 'none' }}>
-                      <h3 style={{ fontSize: '1rem', color: '#0F172A', margin: '0 0 4px 0', fontWeight: 600 }}>{product.title}</h3>
+                      <h3 style={{ fontSize: '1rem', color: 'var(--clr-text-on-light)', margin: '0 0 4px 0', fontWeight: 600 }}>{product.title}</h3>
                     </Link>
                     <div style={{ marginBottom: '6px' }}><CategoryBadge category={product.category} /></div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--clr-text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Shield size={12} /> Certified quality
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F1F5F9', paddingTop: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--clr-border)', paddingTop: 12 }}>
                       <div>
                         {product.discount > 0 && (
-                          <span style={{ fontSize: '0.75rem', color: '#94A3B8', textDecoration: 'line-through', marginRight: 6 }}>₹{product.price}</span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--clr-text-muted)', textDecoration: 'line-through', marginRight: 6 }}>₹{product.price}</span>
                         )}
-                        <span style={{ fontSize: '1.2rem', fontWeight: 700, color: '#4F46E5' }}>₹{discountedPrice(product)}</span>
+                        <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--clr-accent-brand)' }}>₹{discountedPrice(product)}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={(e) => { e.preventDefault(); handleLike(product); }}
+                        <button type="button" onClick={(e) => { e.preventDefault(); handleLike(product); }}
                           style={{ background: isLiked(product) ? '#FEE2E2' : '#F1F5F9', border: 'none', color: isLiked(product) ? '#EF4444' : '#64748B', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Heart size={13} fill={isLiked(product) ? 'currentColor' : 'none'} />
                         </button>
-                        <button 
+                        <button type="button"
                           onClick={(e) => { e.preventDefault(); dispatch(addToCart(product)); showToast('Item added to cart successfully!'); }}
-                          style={{ background: '#4F46E5', border: 'none', color: '#fff', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          style={{ background: 'var(--clr-accent-brand)', border: 'none', color: '#fff', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         >
                           <ShoppingCart size={15} />
                         </button>
@@ -555,13 +601,13 @@ export default function LandingPage() {
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', color: '#94A3B8', padding: '40px 0' }}>
+            <div style={{ textAlign: 'center', color: 'var(--clr-text-muted)', padding: '40px 0' }}>
               <Package size={40} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
               <p>No products available at the moment.</p>
             </div>
           )}
           <div style={{ textAlign: 'center', marginTop: 40 }}>
-            <Link to="/shop" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#4F46E5', color: '#fff', padding: '12px 32px', borderRadius: 12, fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' }}>
+            <Link to="/shop" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--clr-accent-brand)', color: '#fff', padding: '12px 32px', borderRadius: 12, fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' }}>
               {t('home.viewAll')} <ChevronRight size={16} />
             </Link>
           </div>
@@ -576,24 +622,129 @@ export default function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
             <div className="reveal" style={{ position: 'relative' }}>
               <div style={{ overflow: 'hidden', borderRadius: 20 }}>
-                <img src="https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&q=80&w=800" alt="Repair" style={{ width: '100%', height: 480, objectFit: 'cover', display: 'block' }} />
+                <img src="https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&q=80&w=800" alt="Repair" style={{ width: '100%', height: 480, objectFit: 'cover', display: 'block' }} onError={e => { e.target.style.display = 'none'; }} />
               </div>
-              <div style={{ position: 'absolute', bottom: -16, right: -16, background: '#4F46E5', color: '#fff', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', fontWeight: 600, borderRadius: 12 }}>
+              <div style={{ position: 'absolute', bottom: -16, right: -16, background: 'var(--clr-accent-brand)', color: '#fff', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', fontWeight: 600, borderRadius: 12 }}>
                 <Shield size={20} /> {t('home.val1')}
               </div>
             </div>
             <div className="reveal">
-              <span style={{ display: 'inline-block', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#4F46E5', border: '1px solid rgba(79,70,229,0.2)', padding: '4px 14px', marginBottom: 12 }}>{t('home.whyChoose')}</span>
-              <h2 style={{ fontSize: '2rem', fontWeight: 700, lineHeight: 1.2, marginBottom: 20, color: '#0F172A' }}>{t('home.whyTitle')} <span style={{ color: '#4F46E5' }}>{t('home.whyTitleAccent')}</span></h2>
-              <p style={{ fontSize: '0.9rem', lineHeight: 1.8, color: '#64748B', marginBottom: 16 }}>{t('home.whyDesc1')}</p>
-              <p style={{ fontSize: '0.9rem', lineHeight: 1.8, color: '#64748B', marginBottom: 28 }}>{t('home.whyDesc2')}</p>
+              <span style={{ display: 'inline-block', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--clr-accent-brand)', border: '1px solid rgba(79,70,229,0.2)', padding: '4px 14px', marginBottom: 12 }}>{t('home.whyChoose')}</span>
+              <h2 style={{ fontSize: '2rem', fontWeight: 700, lineHeight: 1.2, marginBottom: 20, color: 'var(--clr-text-on-light)' }}>{t('home.whyTitle')} <span style={{ color: 'var(--clr-accent-brand)' }}>{t('home.whyTitleAccent')}</span></h2>
+              <p style={{ fontSize: '0.9rem', lineHeight: 1.8, color: 'var(--clr-text-muted)', marginBottom: 16 }}>{t('home.whyDesc1')}</p>
+              <p style={{ fontSize: '0.9rem', lineHeight: 1.8, color: 'var(--clr-text-muted)', marginBottom: 28 }}>{t('home.whyDesc2')}</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', fontWeight: 500, color: '#0F172A' }}><Shield size={18} style={{ color: '#4F46E5' }} /><span>{t('home.val1')}</span></div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', fontWeight: 500, color: '#0F172A' }}><RotateCcw size={18} style={{ color: '#4F46E5' }} /><span>{t('home.val2')}</span></div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', fontWeight: 500, color: '#0F172A' }}><Truck size={18} style={{ color: '#4F46E5' }} /><span>{t('home.val3')}</span></div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', fontWeight: 500, color: '#0F172A' }}><Star size={18} style={{ color: '#4F46E5' }} /><span>{t('home.val4')}</span></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', fontWeight: 500, color: 'var(--clr-text-on-light)' }}><Shield size={18} style={{ color: 'var(--clr-accent-brand)' }} /><span>{t('home.val1')}</span></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', fontWeight: 500, color: 'var(--clr-text-on-light)' }}><RotateCcw size={18} style={{ color: 'var(--clr-accent-brand)' }} /><span>{t('home.val2')}</span></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', fontWeight: 500, color: 'var(--clr-text-on-light)' }}><Truck size={18} style={{ color: 'var(--clr-accent-brand)' }} /><span>{t('home.val3')}</span></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', fontWeight: 500, color: 'var(--clr-text-on-light)' }}><Star size={18} style={{ color: 'var(--clr-accent-brand)' }} /><span>{t('home.val4')}</span></div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── ORDER TRACKING ── */}
+      <section className="lp-section" style={{ background: '#F8FAFC' }}>
+        <div className="container" style={{ maxWidth: 900, margin: '0 auto', padding: '0 32px' }}>
+          <div className="lp-section-head reveal">
+            <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: 'var(--clr-accent-brand)' }}>Track Order</span>
+            <h2>Track Your Order</h2>
+            <p>Enter your Order ID to check the current status of your purchase.</p>
+          </div>
+          <div className="reveal" style={{ maxWidth: 600, margin: '0 auto' }}>
+            <form onSubmit={handleTrackOrder} style={{ display: 'flex', gap: 0, borderRadius: 16, overflow: 'hidden', border: '2px solid var(--clr-border)', background: 'var(--clr-card-bg)' }}>
+              <input
+                type="text"
+                value={trackId}
+                onChange={e => { setTrackId(e.target.value); setTrackSearched(false); }}
+                placeholder="Enter Order ID (e.g. ORD-749123)"
+                style={{ flex: 1, padding: '16px 20px', border: 'none', outline: 'none', fontSize: '0.85rem', background: 'transparent' }}
+              />
+              <button type="submit" disabled={trackLoading}
+                style={{ padding: '16px 28px', background: 'var(--clr-accent-brand)', color: '#fff', fontWeight: 600, fontSize: '0.8rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+              >
+                {trackLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                Track
+              </button>
+            </form>
+
+            {/* Track Result */}
+            {trackError && (
+              <div style={{ marginTop: 24, padding: 20, background: '#FEF2F2', borderRadius: 12, border: '1px solid #FECACA', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <AlertCircle size={18} color="#EF4444" />
+                <span style={{ fontSize: '0.85rem', color: '#B91C1C' }}>{trackError}</span>
+              </div>
+            )}
+
+            {trackResult && (
+              <div style={{ marginTop: 24, background: 'var(--clr-card-bg)', borderRadius: 16, border: '1px solid var(--clr-border)', overflow: 'hidden' }}>
+                <div style={{ padding: 20, borderBottom: '1px solid var(--clr-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Order ID</span>
+                    <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--clr-text-on-light)', fontFamily: 'monospace', margin: '4px 0 0' }}>{trackResult.orderId}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Status</span>
+                    <p style={{
+                      fontSize: '0.75rem', fontWeight: 700, padding: '4px 12px', borderRadius: 20, display: 'inline-block', margin: '4px 0 0',
+                      background: trackResult.orderStatus === 'Delivered' ? '#DCFCE7' : trackResult.orderStatus === 'Shipped' ? '#DBEAFE' : trackResult.orderStatus === 'Processing' ? '#FEF3C7' : '#F1F5F9',
+                      color: trackResult.orderStatus === 'Delivered' ? '#16A34A' : trackResult.orderStatus === 'Shipped' ? '#2563EB' : trackResult.orderStatus === 'Processing' ? '#D97706' : '#64748B'
+                    }}>
+                      {trackResult.orderStatus || 'Processing'}
+                    </p>
+                  </div>
+                </div>
+                <div style={{ padding: 20 }}>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                    <Clock size={14} color="var(--clr-text-muted)" />
+                    <span style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>Ordered on {new Date(trackResult.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                    <Package size={14} color="var(--clr-text-muted)" />
+                    <span style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>{trackResult.products?.length || 0} item(s)</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--clr-accent-brand)' }}>Total: ₹{trackResult.totalAmount}</span>
+                  </div>
+
+                  {/* Products List */}
+                  {trackResult.products && trackResult.products.length > 0 && (
+                    <div style={{ borderTop: '1px solid var(--clr-border)', paddingTop: 16, marginTop: 8 }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12, display: 'block' }}>Items</span>
+                      {trackResult.products.map((p, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < trackResult.products.length - 1 ? '1px solid var(--clr-border)' : 'none' }}>
+                          <span style={{ fontSize: '0.82rem', color: 'var(--clr-text-on-light)' }}>{p.title || p.name || `Product ${i + 1}`} {p.quantity ? `x${p.quantity}` : ''}</span>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--clr-text-on-light)' }}>₹{p.price || p.totalPrice || 0}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Payment Status */}
+                  <div style={{ borderTop: '1px solid var(--clr-border)', paddingTop: 16, marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>Payment</span>
+                    <span style={{
+                      fontSize: '0.7rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                      background: trackResult.paymentStatus === 'Paid' ? '#DCFCE7' : '#FEF3C7',
+                      color: trackResult.paymentStatus === 'Paid' ? '#16A34A' : '#D97706'
+                    }}>
+                      {trackResult.paymentStatus || 'Pending'}
+                    </span>
+                  </div>
+
+                  {/* Shipping Address */}
+                  {trackResult.shippingAddress && (
+                    <div style={{ borderTop: '1px solid var(--clr-border)', paddingTop: 16, marginTop: 8 }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'block' }}>Shipping To</span>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--clr-text-on-light)', margin: 0 }}>
+                        {trackResult.shippingAddress.address}, {trackResult.shippingAddress.city}, {trackResult.shippingAddress.state} - {trackResult.shippingAddress.zip}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -602,7 +753,7 @@ export default function LandingPage() {
       <section className="lp-section-alt">
         <div className="container" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
           <div className="lp-section-head reveal">
-            <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: '#4F46E5' }}>{t('home.categories')}</span>
+            <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: 'var(--clr-accent-brand)' }}>{t('home.categories')}</span>
             <h2>{t('home.shopByCategory')}</h2>
             <p>{t('home.shopByCategoryDesc')}</p>
           </div>
@@ -611,16 +762,16 @@ export default function LandingPage() {
               <div key={i} className="reveal" style={{ background: 'var(--clr-white)', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--clr-border)', cursor: 'pointer' }}>
                 <Link to={col.link} style={{ textDecoration: 'none', color: 'inherit' }}>
                   <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '4/5' }}>
-                    <img src={col.image} alt={col.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    <img src={col.image} alt={col.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => { e.target.style.display = 'none'; }} />
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)', display: 'flex', alignItems: 'flex-end', padding: 24 }}>
-                      <span style={{ color: '#fff', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'inline-flex', alignItems: 'center', gap: 6, borderBottom: '1.5px solid #4F46E5', paddingBottom: 4 }}>
+                      <span style={{ color: '#fff', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'inline-flex', alignItems: 'center', gap: 6, borderBottom: '1.5px solid var(--clr-accent-brand)', paddingBottom: 4 }}>
                         Explore <ChevronRight size={14} />
                       </span>
                     </div>
                   </div>
                   <div style={{ padding: '20px' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#0F172A', marginBottom: 4 }}>{col.title}</h3>
-                    <p style={{ fontSize: '0.82rem', color: '#64748B', lineHeight: 1.5 }}>{col.desc}</p>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--clr-text-on-light)', marginBottom: 4 }}>{col.title}</h3>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--clr-text-muted)', lineHeight: 1.5 }}>{col.desc}</p>
                   </div>
                 </Link>
               </div>
@@ -630,7 +781,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <section style={{ padding: '80px 0', background: '#4F46E5' }}>
+      <section style={{ padding: '80px 0', background: 'var(--clr-accent-brand)' }}>
         <div className="container" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
           <div className="lp-section-head reveal">
             <span className="lp-section-tag" style={{ borderColor: 'rgba(255,255,255,0.3)', color: '#fff' }}>{t('home.reviews')}</span>
@@ -644,7 +795,7 @@ export default function LandingPage() {
                 </div>
                 <p style={{ fontSize: '0.9rem', lineHeight: 1.7, color: 'rgba(255,255,255,0.85)', marginBottom: 24, fontStyle: 'italic' }}>"{item.text}"</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FBBF24', color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FBBF24', color: 'var(--clr-accent-brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem' }}>
                     {item.name.charAt(0)}
                   </div>
                   <div>
@@ -662,11 +813,11 @@ export default function LandingPage() {
       <section style={{ padding: '100px 0', background: '#FFF', textAlign: 'center' }}>
         <div className="container">
           <div className="reveal" style={{ maxWidth: 520, margin: '0 auto' }}>
-            <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>{t('home.stayUpdated')}</h2>
-            <p style={{ fontSize: '0.9rem', color: '#64748B', marginBottom: 36, lineHeight: 1.6 }}>{t('home.stayUpdatedDesc')}</p>
+            <h2 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--clr-text-on-light)', marginBottom: 12 }}>{t('home.stayUpdated')}</h2>
+            <p style={{ fontSize: '0.9rem', color: 'var(--clr-text-muted)', marginBottom: 36, lineHeight: 1.6 }}>{t('home.stayUpdatedDesc')}</p>
             <form onSubmit={(e) => e.preventDefault()} style={{ display: 'flex', gap: 0, maxWidth: 440, margin: '0 auto' }}>
               <input type="email" placeholder={t('home.emailPlaceholder')} required style={{ flex: 1, padding: '16px 20px', border: '1px solid var(--clr-border)', borderRight: 'none', borderRadius: '12px 0 0 12px', outline: 'none', fontSize: '0.85rem', background: 'var(--clr-cream)' }} />
-              <button type="submit" style={{ padding: '16px 28px', background: '#4F46E5', color: '#fff', fontWeight: 600, fontSize: '0.8rem', border: 'none', borderRadius: '0 12px 12px 0', cursor: 'pointer' }}>{t('home.subscribe')}</button>
+              <button type="submit" style={{ padding: '16px 28px', background: 'var(--clr-accent-brand)', color: '#fff', fontWeight: 600, fontSize: '0.8rem', border: 'none', borderRadius: '0 12px 12px 0', cursor: 'pointer' }}>{t('home.subscribe')}</button>
             </form>
           </div>
         </div>

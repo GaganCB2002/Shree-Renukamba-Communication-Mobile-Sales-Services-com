@@ -9,7 +9,7 @@ const catConfig = {
 
 const CategoryBadge = ({ category, size = 'sm' }) => {
   const name = category?.categoryName || category?.name || '';
-  const config = catConfig[name] || { icon: Package, color: '#64748b', bg: 'rgba(100,116,139,0.12)' };
+  const config = catConfig[name] || { icon: Package, color: 'var(--clr-text-muted)', bg: 'rgba(100,116,139,0.12)' };
   const Icon = config.icon;
   const px = size === 'sm' ? '6px' : '10px';
   const py = size === 'sm' ? '3px' : '6px';

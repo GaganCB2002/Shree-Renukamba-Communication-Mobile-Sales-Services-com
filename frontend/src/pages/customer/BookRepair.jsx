@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Smartphone, Tablet, Laptop, Watch, Monitor, HelpCircle, ArrowRight, ArrowLeft, Check, Loader2, Upload, Camera, Search } from 'lucide-react';
-import { bookRepair, imeiLookup } from '../../api/repairsApi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Smartphone, Tablet, Laptop, Watch, Monitor, HelpCircle, ArrowRight, ArrowLeft, Check, Loader2, Upload, Camera, Search, PartyPopper } from 'lucide-react';
+import { bookRepair } from '../../api/repairsApi';
 import { useSelector } from 'react-redux';
 
 const devices = [
@@ -30,18 +31,31 @@ const BookRepair = () => {
   const [formData, setFormData] = useState({
     brand: '',
     model: '',
-    imei: '',
     condition: 'Good',
     issueDescription: '',
     issueCategory: '',
-    estimatedCost: '',
   });
+  const [selectedIssues, setSelectedIssues] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
-  const [imeiLoading, setImeiLoading] = useState(false);
-  const [imeiResult, setImeiResult] = useState(null);
+  const [submitStatus, setSubmitStatus] = useState('idle');
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (submitStatus === 'success') {
+      const timer = setTimeout(() => setShowSuccessPopup(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [submitStatus]);
+
+  useEffect(() => {
+    if (success) {
+      setSubmitStatus('success');
+      setShowSuccessPopup(true);
+    }
+  }, [success]);
 
   if (!userInfo) {
     navigate('/login');
@@ -52,76 +66,25 @@ const BookRepair = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleImeiLookup = async (imeiValue) => {
-    if (!imeiValue || imeiValue.length < 10) return;
-    try {
-      setImeiLoading(true);
-      setError('');
-      setImeiResult(null);
-      const result = await imeiLookup({ imei: imeiValue });
-      if (result.found) {
-        setImeiResult(result);
-        if (result.brand) setFormData(prev => ({ ...prev, brand: result.brand }));
-        if (result.model) setFormData(prev => ({ ...prev, model: result.model }));
-      } else {
-        setImeiResult(result);
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Could not look up IMEI');
-    } finally {
-      setImeiLoading(false);
-    }
-  };
-
-  const handleScreenshotUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setImeiLoading(true);
-      setError('');
-
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const base64 = event.target.result;
-        const result = await imeiLookup({ screenshot: base64 });
-
-        if (result.imei) {
-          setFormData(prev => ({ ...prev, imei: result.imei }));
-        }
-        if (result.found) {
-          setImeiResult(result);
-          if (result.brand) setFormData(prev => ({ ...prev, brand: result.brand }));
-          if (result.model) setFormData(prev => ({ ...prev, model: result.model }));
-        } else {
-          setImeiResult(result);
-        }
-        setImeiLoading(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      setError('Failed to read screenshot. Please enter IMEI manually.');
-      setImeiLoading(false);
-    }
-  };
-
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
+      setSubmitStatus('submitting');
       setError('');
       const data = {
         deviceDetails: {
           brand: formData.brand || selectedDevice,
           model: formData.model,
-          imei: formData.imei,
           condition: formData.condition,
         },
-        issueDescription: formData.issueDescription || formData.issueCategory,
-        estimatedCost: formData.estimatedCost ? Number(formData.estimatedCost) : undefined,
+        issueDescription: formData.issueDescription || selectedIssues.join(', '),
+        selectedIssues,
       };
       const result = await bookRepair(data);
       setSuccess(result);
+      setSubmitStatus('success');
     } catch (err) {
+      setSubmitStatus('error');
       setError(err.response?.data?.message || 'Failed to book repair');
     } finally {
       setSubmitting(false);
@@ -130,25 +93,71 @@ const BookRepair = () => {
 
   const canContinue = () => {
     if (step === 1) return !!selectedDevice;
-    if (step === 2) return !!formData.issueCategory;
+    if (step === 2) return selectedIssues.length > 0;
     if (step === 3) return formData.brand && formData.model;
     return true;
   };
 
   if (success) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center py-16">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
-          <Check size={40} className="text-green-600" />
-        </div>
-        <h2 className="text-3xl font-bold text-primary-950 mb-2">Repair Booked!</h2>
-        <p className="text-secondary-600 mb-2">Your repair ticket <span className="font-bold text-primary-600">{success.repairId}</span> has been created.</p>
-        <p className="text-sm text-secondary-500 mb-8">We'll notify you of the status updates via email.</p>
-        <button onClick={() => navigate('/dashboard')} className="btn-primary">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className="min-h-[60vh] flex flex-col items-center justify-center py-16"
+      >
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }}
+          className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6"
+        >
+          <PartyPopper size={36} className="text-green-600" />
+        </motion.div>
+        <motion.h2
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.4 }}
+          className="text-3xl font-bold text-primary-950 mb-2"
+        >
+          Repair Booked! 🎉
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.4 }}
+          className="text-secondary-600 mb-2"
+        >
+          Your repair ticket <span className="font-bold text-primary-600">{success.repairId}</span> has been created.
+        </motion.p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7, duration: 0.4 }}
+          className="text-sm text-secondary-500 mb-8"
+        >
+          We'll notify you of the status updates via email.
+        </motion.p>
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.4 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate('/dashboard')}
+          className="bg-primary-600 hover:bg-primary-700 text-white font-bold px-8 py-3.5 rounded-xl transition-colors shadow-sm"
+        >
           View My Dashboard
-        </button>
-        <p className="text-xs text-secondary-400 mt-4">You can track your repair status in real-time from your dashboard.</p>
-      </div>
+        </motion.button>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1, duration: 0.4 }}
+          className="text-xs text-secondary-400 mt-4"
+        >
+          You can track your repair status in real-time from your dashboard.
+        </motion.p>
+      </motion.div>
     );
   }
 
@@ -187,11 +196,89 @@ const BookRepair = () => {
 
         <div className="bg-secondary-50/50 rounded-[2rem] p-8 md:p-12 border border-secondary-100 shadow-sm">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium mb-6">{error}</div>
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium mb-6"
+            >
+              {error}
+            </motion.div>
           )}
 
-          {step === 1 && (
-            <>
+          <AnimatePresence>
+            {showSuccessPopup && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                onClick={() => setShowSuccessPopup(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0, y: 30 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.8, opacity: 0, y: 30 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl text-center"
+                >
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.15, type: 'spring', stiffness: 200, damping: 12 }}
+                    className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                  >
+                    <PartyPopper size={30} className="text-green-600" />
+                  </motion.div>
+                  <motion.h3
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-xl font-bold text-primary-950 mb-2"
+                  >
+                    Repair Request Submitted!
+                  </motion.h3>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.45 }}
+                    className="text-sm text-secondary-600 mb-4"
+                  >
+                    Your ticket <span className="font-bold text-primary-600">{success?.repairId}</span> has been created.
+                  </motion.p>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="flex gap-3 justify-center"
+                  >
+                    <button
+                      onClick={() => { setShowSuccessPopup(false); navigate('/dashboard'); }}
+                      className="bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-colors"
+                    >
+                      Go to Dashboard
+                    </button>
+                    <button
+                      onClick={() => setShowSuccessPopup(false)}
+                      className="text-sm font-medium text-secondary-600 hover:text-primary-600 border border-border px-6 py-2.5 rounded-xl transition-colors"
+                    >
+                      OK
+                    </button>
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
               <div className="mb-10">
                 <h2 className="text-2xl font-bold text-primary-950">Select Your Device</h2>
                 <p className="text-secondary-500 mt-1">Choose the device you need repaired.</p>
@@ -201,8 +288,10 @@ const BookRepair = () => {
                   const Icon = device.icon;
                   const isSelected = selectedDevice === device.id;
                   return (
-                    <button
+                    <motion.button
                       key={device.id}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
                       onClick={() => setSelectedDevice(device.id)}
                       className={`flex flex-col items-center justify-center gap-4 p-6 rounded-2xl border-2 transition-all
                         ${isSelected
@@ -211,32 +300,50 @@ const BookRepair = () => {
                     >
                       <Icon size={32} strokeWidth={1.5} />
                       <span className="text-sm font-bold text-primary-950">{device.name}</span>
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
-            </>
+            </motion.div>
           )}
 
           {step === 2 && (
-            <>
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
               <div className="mb-10">
                 <h2 className="text-2xl font-bold text-primary-950">Describe the Issue</h2>
                 <p className="text-secondary-500 mt-1">Select the issue category and provide details.</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
-                {commonIssues.map((issue) => (
-                  <button
-                    key={issue}
-                    onClick={() => setFormData({ ...formData, issueCategory: issue, issueDescription: issue === formData.issueCategory ? '' : issue })}
-                    className={`px-4 py-3 rounded-xl text-sm font-medium border-2 transition-all
-                      ${formData.issueCategory === issue
-                        ? 'border-primary-600 bg-primary-50 text-primary-700'
-                        : 'border-transparent bg-white text-secondary-700 hover:border-primary-200 hover:bg-primary-50/50'}`}
-                  >
-                    {issue}
-                  </button>
-                ))}
+                {commonIssues.map((issue) => {
+                  const isSelected = selectedIssues.includes(issue);
+                  return (
+                    <motion.button
+                      key={issue}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => {
+                        setSelectedIssues(prev =>
+                          prev.includes(issue)
+                            ? prev.filter(i => i !== issue)
+                            : [...prev, issue]
+                        );
+                      }}
+                      className={`px-4 py-3 rounded-xl text-sm font-medium border-2 transition-all flex items-center gap-2
+                        ${isSelected
+                          ? 'border-primary-600 bg-primary-50 text-primary-700'
+                          : 'border-transparent bg-white text-secondary-700 hover:border-primary-200 hover:bg-primary-50/50'}`}
+                    >
+                      {isSelected && <Check size={14} />}
+                      {issue}
+                    </motion.button>
+                  );
+                })}
               </div>
               <div>
                 <label className="block text-sm font-bold text-secondary-700 mb-2">Detailed Description (Optional)</label>
@@ -249,95 +356,23 @@ const BookRepair = () => {
                   placeholder="Describe the issue in detail..."
                 />
               </div>
-            </>
+            </motion.div>
           )}
 
           {step === 3 && (
-            <>
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
               <div className="mb-10">
                 <h2 className="text-2xl font-bold text-primary-950">Device Details</h2>
                 <p className="text-secondary-500 mt-1">Help us identify your device precisely.</p>
               </div>
 
-              <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-5 mb-8">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-                    <Camera size={20} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-indigo-900 text-sm mb-1">Auto-Detect Device</h3>
-                    <p className="text-xs text-indigo-600/80 mb-3">Upload an IMEI screenshot or enter the IMEI number to auto-fill device details.</p>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        accept="image/*"
-                        onChange={handleScreenshotUpload}
-                        className="hidden"
-                      />
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={imeiLoading}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-indigo-200 rounded-xl text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors"
-                      >
-                        {imeiLoading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                        Upload Screenshot
-                      </button>
-                      <span className="text-xs text-indigo-400">or</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-bold text-secondary-700 mb-2">IMEI Number</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      name="imei"
-                      value={formData.imei}
-                      onChange={(e) => {
-                        setFormData({ ...formData, imei: e.target.value });
-                        if (e.target.value.length >= 14) {
-                          handleImeiLookup(e.target.value);
-                        }
-                      }}
-                      className="flex-1 rounded-xl border-border bg-white px-4 py-3 text-sm focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all outline-none font-mono"
-                      placeholder="Enter 15-digit IMEI number"
-                    />
-                    <button
-                      onClick={() => handleImeiLookup(formData.imei)}
-                      disabled={imeiLoading || formData.imei.length < 10}
-                      className="px-4 py-3 bg-primary-600 text-white rounded-xl text-sm font-bold hover:bg-primary-700 disabled:bg-primary-400 transition-colors flex items-center gap-2"
-                    >
-                      {imeiLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
-                      Lookup
-                    </button>
-                  </div>
-                </div>
-
-                {imeiResult && (
-                  <div className="md:col-span-2 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-                    <div className="flex items-center gap-2 text-emerald-700 font-bold text-sm mb-2">
-                      <Check size={16} />
-                      {imeiResult.found ? 'Device detected automatically' : 'IMEI recognized'}
-                    </div>
-                    {imeiResult.brand && (
-                      <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-emerald-800">
-                        <div><span className="text-emerald-600">Brand:</span> {imeiResult.brand}</div>
-                        <div><span className="text-emerald-600">Model:</span> {imeiResult.model || 'Auto-filled above'}</div>
-                        {Object.entries(imeiResult.specs || {}).filter(([k, v]) => v).slice(0, 4).map(([key, val]) => (
-                          <div key={key}><span className="text-emerald-600">{key}:</span> {val}</div>
-                        ))}
-                      </div>
-                    )}
-                    {imeiResult.message && (
-                      <p className="text-xs text-amber-600 mt-2">{imeiResult.message}</p>
-                    )}
-                  </div>
-                )}
-
                 <div>
                   <label className="block text-sm font-bold text-secondary-700 mb-2">Brand *</label>
                   <input type="text" name="brand" value={formData.brand} onChange={handleChange}
@@ -361,18 +396,18 @@ const BookRepair = () => {
                     <option value="Dead">Dead</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-secondary-700 mb-2">Estimated Cost (₹)</label>
-                  <input type="number" name="estimatedCost" value={formData.estimatedCost} onChange={handleChange}
-                    className="w-full rounded-xl border-border bg-white px-4 py-3 text-sm focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all outline-none"
-                    placeholder="Leave blank for estimate" />
-                </div>
               </div>
-            </>
+            </motion.div>
           )}
 
           {step === 4 && (
-            <>
+            <motion.div
+              key="step4"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
               <div className="mb-10">
                 <h2 className="text-2xl font-bold text-primary-950">Confirm Your Request</h2>
                 <p className="text-secondary-500 mt-1">Please review the details before submitting.</p>
@@ -388,21 +423,19 @@ const BookRepair = () => {
                     <p className="font-bold text-primary-950">{formData.brand} {formData.model}</p>
                   </div>
                   <div>
-                    <span className="text-secondary-500 font-medium">IMEI</span>
-                    <p className="font-bold text-primary-950">{formData.imei || 'Not provided'}</p>
-                  </div>
-                  <div>
                     <span className="text-secondary-500 font-medium">Condition</span>
                     <p className="font-bold text-primary-950">{formData.condition}</p>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-secondary-500 font-medium">Issue</span>
-                    <p className="font-bold text-primary-950">{formData.issueCategory}{formData.issueDescription && formData.issueDescription !== formData.issueCategory ? ` - ${formData.issueDescription}` : ''}</p>
+                    <span className="text-secondary-500 font-medium">Selected Issues</span>
+                    <p className="font-bold text-primary-950 mt-1">
+                      {selectedIssues.length > 0 ? selectedIssues.join(', ') : formData.issueDescription || 'Not specified'}
+                    </p>
                   </div>
-                  {formData.estimatedCost && (
+                  {formData.issueDescription && (
                     <div className="col-span-2">
-                      <span className="text-secondary-500 font-medium">Estimated Cost</span>
-                      <p className="font-bold text-primary-950">₹{formData.estimatedCost}</p>
+                      <span className="text-secondary-500 font-medium">Additional Details</span>
+                      <p className="font-bold text-primary-950 mt-1">{formData.issueDescription}</p>
                     </div>
                   )}
                 </div>
@@ -412,8 +445,9 @@ const BookRepair = () => {
                   <Check size={14} /> By submitting, you agree to our service terms. You will receive email notifications about your repair status.
                 </p>
               </div>
-            </>
+            </motion.div>
           )}
+        </AnimatePresence>
 
           <div className="flex justify-between pt-8 mt-8 border-t border-secondary-200/50">
             {step > 1 ? (
@@ -435,14 +469,32 @@ const BookRepair = () => {
                 Continue <ArrowRight size={18} />
               </button>
             ) : (
-              <button
+              <motion.button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-bold bg-primary-600 text-white hover:bg-primary-700 transition-all shadow-sm disabled:bg-primary-400"
+                whileTap={{ scale: 0.97 }}
+                animate={{
+                  backgroundColor: submitStatus === 'success' ? '#16a34a' : submitStatus === 'submitting' ? '#7c3aed' : '#6366f1',
+                }}
+                transition={{ duration: 0.4 }}
+                className="flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-bold text-white shadow-sm disabled:cursor-not-allowed"
               >
-                {submitting ? <Loader2 size={18} className="animate-spin" /> : null}
-                {submitting ? 'Submitting...' : 'Submit Repair Request'}
-              </button>
+                <AnimatePresence mode="wait">
+                  {submitStatus === 'submitting' ? (
+                    <motion.div key="spinner" initial={{ opacity: 0, rotate: -180 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-2">
+                      <Loader2 size={18} className="animate-spin" /> Submitting...
+                    </motion.div>
+                  ) : submitStatus === 'success' ? (
+                    <motion.div key="check" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-2">
+                      <Check size={18} /> Done!
+                    </motion.div>
+                  ) : (
+                    <motion.div key="submit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
+                      Submit Repair Request <ArrowRight size={18} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.button>
             )}
           </div>
         </div>

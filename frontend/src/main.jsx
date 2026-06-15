@@ -7,19 +7,32 @@ import { ToastProvider } from './contexts/ToastContext'
 import { store } from './redux/store'
 import './index.css'
 import App from './App.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 
 const queryClient = new QueryClient()
 
+window.addEventListener('error', (e) => {
+  console.error('Global error caught:', e.error || e.message);
+  e.preventDefault?.();
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('Unhandled promise rejection:', e.reason);
+  e.preventDefault?.();
+});
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <LanguageProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
-        </LanguageProvider>
-      </QueryClientProvider>
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <QueryClientProvider client={queryClient}>
+          <LanguageProvider>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </LanguageProvider>
+        </QueryClientProvider>
+      </Provider>
+    </ErrorBoundary>
   </StrictMode>,
 )

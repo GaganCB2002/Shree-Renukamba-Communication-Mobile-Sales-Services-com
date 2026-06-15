@@ -15,7 +15,6 @@ const translations = {
       logout: 'Logout',
     },
     home: {
-      heroBadge: 'Est. 2015',
       heroTitle1: 'Quality',
       heroTitle2: 'Refurbished',
       heroTitle3: 'Electronics',
@@ -196,7 +195,6 @@ const translations = {
       logout: 'ನಿರ್ಗಮಿಸು',
     },
     home: {
-      heroBadge: 'ಸ್ಥಾ. 2015',
       heroTitle1: 'ಗುಣಮಟ್ಟದ',
       heroTitle2: 'ನವೀಕರಿಸಿದ',
       heroTitle3: 'ಎಲೆಕ್ಟ್ರಾನಿಕ್ಸ್',

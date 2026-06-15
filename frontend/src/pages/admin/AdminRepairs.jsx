@@ -2,27 +2,29 @@ import { useState, useEffect } from 'react';
 import {
   Search, Filter, Wrench, CheckCircle, Clock, AlertTriangle,
   Loader2, Trash2, Edit, Check, X, Eye, Calendar, PauseCircle,
-  Play, CalendarClock, MessageSquare,
+  Play, CalendarClock, MessageSquare, DollarSign, ThumbsUp,
 } from 'lucide-react';
-import { getAllRepairs, updateRepairStatus, updateRepairDetails, getRepairById } from '../../api/repairsApi';
+import { getAllRepairs, updateRepairStatus, updateRepairDetails, setRepairCost as setRepairCostApi, getRepairById } from '../../api/repairsApi';
 import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import EmptyState from '../../components/EmptyState';
 
 const statusColors = {
-  'Received': 'bg-blue-50 text-blue-700 border-blue-200',
-  'Diagnosis Complete': 'bg-purple-50 text-purple-700 border-purple-200',
-  'Waiting For Approval': 'bg-amber-50 text-amber-700 border-amber-200',
-  'Repair Started': 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  'Parts Ordered': 'bg-orange-50 text-orange-700 border-orange-200',
-  'Repair Completed': 'bg-green-50 text-green-700 border-green-200',
-  'Ready For Pickup': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  'Delivered': 'bg-gray-50 text-gray-700 border-gray-200',
-  'Cancelled': 'bg-red-50 text-red-700 border-red-200',
+  'Received': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20',
+  'Under Review': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20',
+  'Diagnosis Complete': 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20',
+  'Awaiting Approval': 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
+  'Approved': 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20',
+  'Repair Started': 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20',
+  'Parts Ordered': 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20',
+  'Repair Completed': 'bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20',
+  'Ready For Pickup': 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
+  'Delivered': 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-500/10 dark:text-gray-400 dark:border-gray-500/20',
+  'Cancelled': 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20',
 };
 
 const statusSteps = [
-  'Received', 'Diagnosis Complete', 'Waiting For Approval',
+  'Under Review', 'Awaiting Approval', 'Approved',
   'Repair Started', 'Parts Ordered', 'Repair Completed',
   'Ready For Pickup', 'Delivered',
 ];
@@ -38,8 +40,23 @@ const AdminRepairs = () => {
   const [detailModal, setDetailModal] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState('');
+  const [deliveryTime, setDeliveryTime] = useState('');
   const [holdReason, setHoldReason] = useState('');
   const [showHoldInput, setShowHoldInput] = useState(false);
+  const [editIssues, setEditIssues] = useState([]);
+  const [showIssueEditor, setShowIssueEditor] = useState(false);
+
+  const commonIssues = [
+    'Screen Replacement', 'Battery Replacement', 'Charging Port Issue',
+    'Camera Not Working', 'Speaker / Audio Issue', 'Water Damage',
+    'Software Problem', 'Button Not Working', 'Overheating',
+    'Device Not Turning On', 'Other',
+  ];
+
+  // Cost Setting
+  const [costModal, setCostModal] = useState(false);
+  const [costRepair, setCostRepair] = useState(null);
+  const [costForm, setCostForm] = useState({ estimatedCost: '', finalCost: '', diagnosisDetails: '', expectedDeliveryDate: '' });
 
   useEffect(() => {
     fetchRepairs();
@@ -74,6 +91,32 @@ const AdminRepairs = () => {
     await handleStatusUpdate(id, 'Repair Started');
   };
 
+  const openCostModal = (repair) => {
+    setCostRepair(repair);
+    setCostForm({
+      estimatedCost: repair.estimatedCost || '',
+      finalCost: repair.finalCost || '',
+      diagnosisDetails: repair.diagnosisDetails || '',
+      expectedDeliveryDate: repair.expectedDeliveryDate ? repair.expectedDeliveryDate.split('T')[0] : '',
+    });
+    setCostModal(true);
+  };
+
+  const handleSetCost = async () => {
+    if (!costRepair || (!costForm.estimatedCost && !costForm.finalCost)) return;
+    try {
+      setUpdating(costRepair._id);
+      const updated = await setRepairCostApi(costRepair._id, costForm);
+      setRepairs(repairs.map(r => r._id === costRepair._id ? { ...r, ...updated } : r));
+      setCostModal(false);
+      setCostRepair(null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to set cost');
+    } finally {
+      setUpdating(null);
+    }
+  };
+
   const handleHold = async (id) => {
     if (!holdReason.trim()) return;
     try {
@@ -105,9 +148,11 @@ const AdminRepairs = () => {
     if (!deliveryDate) return;
     try {
       setUpdating(id);
-      const updated = await updateRepairDetails(id, { expectedDeliveryDate: deliveryDate });
+      const dateTime = deliveryTime ? `${deliveryDate}T${deliveryTime}:00` : deliveryDate;
+      const updated = await updateRepairDetails(id, { expectedDeliveryDate: dateTime });
       setRepairs(repairs.map(r => r._id === id ? { ...r, expectedDeliveryDate: updated.expectedDeliveryDate } : r));
       setDeliveryDate('');
+      setDeliveryTime('');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to set delivery date');
     } finally {
@@ -129,9 +174,9 @@ const AdminRepairs = () => {
   };
 
   const counters = {
-    pending: repairs.filter(r => r.repairStatus === 'Received').length,
-    inRepair: repairs.filter(r => ['Repair Started', 'Parts Ordered', 'Diagnosis Complete'].includes(r.repairStatus)).length,
-    awaiting: repairs.filter(r => r.repairStatus === 'Waiting For Approval').length,
+    pending: repairs.filter(r => r.repairStatus === 'Under Review' || r.repairStatus === 'Received').length,
+    inRepair: repairs.filter(r => ['Repair Started', 'Parts Ordered', 'Diagnosis Complete', 'Approved'].includes(r.repairStatus)).length,
+    awaiting: repairs.filter(r => r.repairStatus === 'Awaiting Approval').length,
     ready: repairs.filter(r => r.repairStatus === 'Ready For Pickup').length,
     onHold: repairs.filter(r => r.onHold).length,
   };
@@ -292,6 +337,15 @@ const AdminRepairs = () => {
                     </td>
                     <td className="px-6 py-5">
                       <p className="text-sm text-slate-600 max-w-xs truncate">{repair.issueDescription}</p>
+                      {repair.selectedIssues && repair.selectedIssues.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {repair.selectedIssues.map((issue, i) => (
+                            <span key={i} className="text-[10px] bg-indigo-50 text-indigo-600 font-semibold px-1.5 py-0.5 rounded">
+                              {issue}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap">
                       <div className="flex items-center gap-2">
@@ -337,15 +391,15 @@ const AdminRepairs = () => {
                             <PauseCircle size={14} />
                           </button>
                         )}
-                        {repair.repairStatus === 'Waiting For Approval' && (
+                        {repair.repairStatus === 'Under Review' || repair.repairStatus === 'Received' ? (
                           <button
-                            onClick={() => handleApprove(repair._id)}
+                            onClick={() => openCostModal(repair)}
                             className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1"
                           >
-                            <Check size={14} />
-                            <span>Approve</span>
+                            <DollarSign size={14} />
+                            <span>Set Cost</span>
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -371,6 +425,54 @@ const AdminRepairs = () => {
             <div className="flex justify-end gap-3 mt-4">
               <button onClick={() => { setShowHoldInput(false); setHoldReason(''); }} className="px-4 py-2 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">Cancel</button>
               <button onClick={() => handleHold(selectedRepair._id)} disabled={!holdReason.trim()} className="px-4 py-2 rounded-xl text-sm font-bold bg-amber-600 text-white hover:bg-amber-700 disabled:bg-amber-400">Confirm Hold</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cost Setting Modal */}
+      {costModal && costRepair && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setCostModal(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Set Repair Cost</h3>
+                <p className="text-sm text-slate-500">{costRepair.repairId} - {costRepair.device?.brand || 'Device'}</p>
+              </div>
+              <button onClick={() => setCostModal(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1.5">Estimated Cost (₹) *</label>
+                <input type="number" value={costForm.estimatedCost} onChange={e => setCostForm({ ...costForm, estimatedCost: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none" placeholder="e.g. 1500" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1.5">Final Cost (₹)</label>
+                <input type="number" value={costForm.finalCost} onChange={e => setCostForm({ ...costForm, finalCost: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none" placeholder="e.g. 1500" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1.5">Diagnosis Details</label>
+                <textarea value={costForm.diagnosisDetails} onChange={e => setCostForm({ ...costForm, diagnosisDetails: e.target.value })}
+                  rows={3} className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none resize-none"
+                  placeholder="Describe the diagnosis findings..." />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1.5">Expected Delivery Date</label>
+                <input type="date" value={costForm.expectedDeliveryDate} onChange={e => setCostForm({ ...costForm, expectedDeliveryDate: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+              <button onClick={() => setCostModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">Cancel</button>
+              <button onClick={handleSetCost} disabled={!costForm.estimatedCost && !costForm.finalCost}
+                className="px-5 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-400 flex items-center gap-2">
+                {updating === costRepair._id ? <Loader2 size={14} className="animate-spin" /> : <DollarSign size={14} />}
+                Submit Cost & Notify Customer
+              </button>
             </div>
           </div>
         </div>
@@ -428,7 +530,27 @@ const AdminRepairs = () => {
 
               <div>
                 <h3 className="text-sm font-bold text-slate-700 mb-3">Issue Description</h3>
-                <p className="text-sm text-slate-600 bg-slate-50 rounded-xl p-4">{selectedRepair.issueDescription}</p>
+                <p className="text-sm text-slate-600 bg-slate-50 rounded-xl p-4 mb-4">{selectedRepair.issueDescription}</p>
+                {selectedRepair.selectedIssues && selectedRepair.selectedIssues.length > 0 && (
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-bold text-slate-700">Selected Issues</h3>
+                      <button
+                        onClick={() => { setEditIssues([...selectedRepair.selectedIssues]); setShowIssueEditor(true); }}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                      >
+                        <Edit size={12} /> Edit
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedRepair.selectedIssues.map((issue, i) => (
+                        <span key={i} className="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-1 rounded-lg border border-indigo-100">
+                          {issue}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {selectedRepair.technicianNotes && (
@@ -469,15 +591,21 @@ const AdminRepairs = () => {
 
               <div className="border-t border-slate-100 pt-6">
                 <h3 className="text-sm font-bold text-slate-700 mb-4">Admin Actions</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Expected Delivery Date</label>
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Expected Delivery Date & Time</label>
                     <div className="flex gap-2">
                       <input
                         type="date"
                         value={deliveryDate}
                         onChange={(e) => setDeliveryDate(e.target.value)}
                         className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none"
+                      />
+                      <input
+                        type="time"
+                        value={deliveryTime}
+                        onChange={(e) => setDeliveryTime(e.target.value)}
+                        className="w-32 rounded-xl border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none"
                       />
                       <button
                         onClick={() => handleSetDeliveryDate(selectedRepair._id)}
@@ -489,40 +617,93 @@ const AdminRepairs = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Set Final Cost</label>
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Quick Actions</label>
                     <div className="flex gap-2">
-                      <input
-                        type="number"
-                        placeholder="₹"
-                        className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none"
-                        onBlur={(e) => {
-                          if (e.target.value) {
-                            handleStatusUpdate(selectedRepair._id, selectedRepair.repairStatus);
-                          }
-                        }}
-                      />
+                      {selectedRepair.repairStatus === 'Repair Completed' && (
+                        <button
+                          onClick={() => handleStatusUpdate(selectedRepair._id, 'Ready For Pickup')}
+                          className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 flex items-center justify-center gap-2"
+                        >
+                          <CheckCircle size={16} /> Mark Ready
+                        </button>
+                      )}
+                      {selectedRepair.repairStatus === 'Ready For Pickup' && (
+                        <button
+                          onClick={() => handleStatusUpdate(selectedRepair._id, 'Delivered')}
+                          className="flex-1 py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 flex items-center justify-center gap-2"
+                        >
+                          <Check size={16} /> Mark Delivered
+                        </button>
+                      )}
+                      {!['Delivered', 'Cancelled', 'Ready For Pickup', 'Repair Completed'].includes(selectedRepair.repairStatus) && (
+                        <button
+                          onClick={() => { setShowHoldInput(true); }}
+                          className="flex-1 py-2.5 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-700 flex items-center justify-center gap-2"
+                        >
+                          <PauseCircle size={16} /> {selectedRepair.onHold ? 'Edit Hold' : 'Hold'}
+                        </button>
+                      )}
                     </div>
-                  </div>
-                  <div className="flex items-end">
-                    {selectedRepair.repairStatus === 'Repair Completed' && (
-                      <button
-                        onClick={() => handleStatusUpdate(selectedRepair._id, 'Ready For Pickup')}
-                        className="w-full py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 flex items-center justify-center gap-2"
-                      >
-                        <CheckCircle size={16} /> Mark Ready
-                      </button>
-                    )}
-                    {selectedRepair.repairStatus === 'Ready For Pickup' && (
-                      <button
-                        onClick={() => handleStatusUpdate(selectedRepair._id, 'Delivered')}
-                        className="w-full py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 flex items-center justify-center gap-2"
-                      >
-                        <Check size={16} /> Mark Delivered
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Issue Editor Modal */}
+      {showIssueEditor && selectedRepair && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowIssueEditor(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Edit Selected Issues</h3>
+            <p className="text-sm text-slate-500 mb-4">Update the issues reported for {selectedRepair.repairId}.</p>
+            <div className="flex flex-wrap gap-2 mb-6">
+              {commonIssues.map((issue) => {
+                const isSelected = editIssues.includes(issue);
+                return (
+                  <button
+                    key={issue}
+                    onClick={() => {
+                      setEditIssues(prev =>
+                        prev.includes(issue)
+                          ? prev.filter(i => i !== issue)
+                          : [...prev, issue]
+                      );
+                    }}
+                    className={`px-3 py-2 rounded-lg text-xs font-bold border-2 transition-all ${
+                      isSelected
+                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300'
+                    }`}
+                  >
+                    {isSelected ? `✓ ${issue}` : issue}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowIssueEditor(false)} className="px-4 py-2 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">Cancel</button>
+              <button
+                onClick={async () => {
+                  try {
+                    setUpdating(selectedRepair._id);
+                    await updateRepairDetails(selectedRepair._id, { selectedIssues: editIssues });
+                    setRepairs(repairs.map(r => r._id === selectedRepair._id ? { ...r, selectedIssues: editIssues } : r));
+                    setSelectedRepair(prev => ({ ...prev, selectedIssues: editIssues }));
+                    setShowIssueEditor(false);
+                  } catch (err) {
+                    setError(err.response?.data?.message || 'Failed to update issues');
+                  } finally {
+                    setUpdating(null);
+                  }
+                }}
+                disabled={updating === selectedRepair._id}
+                className="px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-400"
+              >
+                {updating === selectedRepair._id ? <Loader2 size={14} className="animate-spin" /> : null}
+                Save Changes
+              </button>
             </div>
           </div>
         </div>

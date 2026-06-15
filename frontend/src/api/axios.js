@@ -11,12 +11,15 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const userInfo = localStorage.getItem('userInfo');
-    if (userInfo) {
-      const { token } = JSON.parse(userInfo);
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    try {
+      const userInfo = localStorage.getItem('userInfo');
+      if (userInfo) {
+        const parsed = JSON.parse(userInfo);
+        if (parsed.token) {
+          config.headers.Authorization = `Bearer ${parsed.token}`;
+        }
       }
+    } catch {
     }
     return config;
   },
@@ -27,9 +30,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('userInfo');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      const isPrivatePath = window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/dashboard');
+      if (isPrivatePath) {
+        localStorage.removeItem('userInfo');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

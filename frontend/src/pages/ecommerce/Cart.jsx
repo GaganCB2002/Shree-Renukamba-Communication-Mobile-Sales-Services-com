@@ -1,7 +1,9 @@
+import { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, ShoppingBag, ArrowLeft } from 'lucide-react';
+import { Trash2, ShoppingBag, ArrowLeft, RefreshCw } from 'lucide-react';
 import { removeFromCart, updateQuantity, clearCart } from '../../redux/slices/cartSlice';
+import { getProducts } from '../../api/productsApi';
 import EmptyState from '../../components/EmptyState';
 
 const Cart = () => {
@@ -9,8 +11,36 @@ const Cart = () => {
   const navigate = useNavigate();
   const { cartItems } = useSelector((state) => state.cart);
   const { userInfo } = useSelector((state) => state.auth);
+  const [liveProducts, setLiveProducts] = useState([]);
 
-  const subtotal = cartItems.reduce((acc, item) => {
+  useEffect(() => {
+    fetchLivePrices();
+  }, []);
+
+  const fetchLivePrices = async () => {
+    try {
+      const data = await getProducts();
+      setLiveProducts(Array.isArray(data) ? data : []);
+    } catch {
+      // use stale prices
+    }
+  };
+
+  const liveProductMap = useMemo(() => {
+    const map = {};
+    liveProducts.forEach(p => { map[p._id || p.id] = p; });
+    return map;
+  }, [liveProducts]);
+
+  const cartWithLivePrices = useMemo(() => {
+    return cartItems.map(item => {
+      const id = item._id || item.id;
+      const live = liveProductMap[id];
+      return live || item;
+    });
+  }, [cartItems, liveProductMap]);
+
+  const subtotal = cartWithLivePrices.reduce((acc, item) => {
     const price = item.discount > 0 ? (item.price * (1 - item.discount / 100)) : item.price;
     return acc + price * item.quantity;
   }, 0);
@@ -50,16 +80,21 @@ const Cart = () => {
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
         <h1 className="text-3xl font-bold text-primary-950">Shopping Cart</h1>
-        <button onClick={() => dispatch(clearCart())} className="text-sm text-red-500 hover:text-red-700 font-medium">
-          Clear Cart
-        </button>
+        <div className="flex gap-2">
+          <button onClick={fetchLivePrices} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1" title="Refresh prices">
+            <RefreshCw size={14} /> Refresh Prices
+          </button>
+          <button onClick={() => dispatch(clearCart())} className="text-sm text-red-500 hover:text-red-700 font-medium">
+            Clear Cart
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="flex-grow space-y-4">
-          {cartItems.map((item) => {
+          {cartWithLivePrices.map((item) => {
             const price = item.discount > 0 ? (item.price * (1 - item.discount / 100)) : item.price;
             return (
               <div key={item._id || item.id} className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-border">
@@ -118,7 +153,7 @@ const Cart = () => {
             <button onClick={handleCheckout} className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-colors shadow-sm">
               Proceed to Checkout
             </button>
-            <p className="text-xs text-center text-secondary-500 mt-4">Secure checkout powered by Razorpay</p>
+            <p className="text-xs text-center text-secondary-500 mt-4">Pay via UPI, QR, or Cash on Delivery</p>
             <Link to="/shop" className="flex items-center justify-center gap-2 mt-4 text-sm text-secondary-600 hover:text-primary-600 font-medium transition-colors">
               <ArrowLeft size={16} /> Continue Shopping
             </Link>

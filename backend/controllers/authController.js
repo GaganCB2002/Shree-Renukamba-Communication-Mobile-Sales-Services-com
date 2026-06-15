@@ -84,65 +84,26 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
   try {
-    const { email, password, otp } = req.body;
+    const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).select('+password +otp +otpExpires');
+    const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    if (user.otpExpires && user.otpExpires < new Date()) {
-      const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      user.otp = newOtp;
-      user.otpExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      await user.save();
-
-      const otpHtml = `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #6366f1, #4f46e5); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
-            <h1 style="color: white; margin: 0; font-size: 22px;">Your OTP for Login</h1>
-          </div>
-          <div style="background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb;">
-            <p style="font-size: 16px; color: #374151;">Dear <strong>${user.fullName}</strong>,</p>
-            <p style="font-size: 16px; color: #374151;">Your OTP has been refreshed. Use this code to login:</p>
-            <div style="background: #4f46e5; color: white; font-size: 32px; font-weight: 800; text-align: center; padding: 20px; border-radius: 8px; letter-spacing: 8px; font-family: monospace; margin: 20px 0;">
-              ${newOtp}
-            </div>
-            <p style="font-size: 14px; color: #6b7280;">This OTP expires in 24 hours.</p>
-          </div>
-        </div>
-      `;
-
-      try {
-        await sendEmail({ to: email, subject: 'Your OTP for Login - SR Communication', html: otpHtml });
-      } catch {
-        try { await sendEmailNodemailer({ to: email, subject: 'Your OTP for Login - SR Communication', html: otpHtml }); } catch (e2) {}
-      }
-
-      return res.status(200).json({ otpRequired: true, message: 'OTP has been sent to your email.' });
-    }
-
-    if (otp && user.otp !== otp) {
-      return res.status(401).json({ message: 'Invalid OTP. Please check your email for the correct OTP.' });
-    }
-
-    if (!user.otp || (otp && user.otp === otp)) {
-      if (user && (await user.matchPassword(password))) {
-        res.json({
-          _id: user._id,
-          fullName: user.fullName,
-          email: user.email,
-          phoneNumber: user.phoneNumber,
-          role: user.role,
-          address: user.address,
-          token: generateToken(user._id),
-        });
-      } else {
-        return res.status(401).json({ message: 'Invalid email or password' });
-      }
+    if (await user.matchPassword(password)) {
+      res.json({
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+        address: user.address,
+        token: generateToken(user._id),
+      });
     } else {
-      return res.status(200).json({ otpRequired: true, message: 'OTP is required. Please enter the OTP sent to your email.' });
+      return res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });

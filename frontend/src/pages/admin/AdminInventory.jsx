@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Package, Plus, Edit, Trash2, Search, X, Loader2, 
-  Image, Grid, Check, AlertTriangle, ArrowRight, Download, BarChart2
+  Image, Grid, Check, AlertTriangle, ArrowRight, Download, BarChart2, Upload
 } from 'lucide-react';
 import { 
   getProducts, getCategories, 
   createProduct, updateProduct, deleteProduct, 
   createCategory, updateCategory, deleteCategory 
 } from '../../api/productsApi';
+import { uploadFile } from '../../uploadsApi';
 import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 
@@ -43,6 +44,9 @@ const AdminInventory = () => {
   // Category Form State
   const [catName, setCatName] = useState('');
   const [catImage, setCatImage] = useState('');
+
+  const fileInputRef = useRef(null);
+  const [uploadingIndex, setUploadingIndex] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -119,6 +123,26 @@ const AdminInventory = () => {
     const updated = [...prodImages];
     updated[index] = value;
     setProdImages(updated);
+  };
+
+  const handleImageUpload = async (index) => {
+    fileInputRef.current.click();
+    fileInputRef.current.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setUploadingIndex(index);
+      try {
+        const result = await uploadFile(file);
+        const updated = [...prodImages];
+        updated[index] = result.url || result.path || `/uploads/images/${result.filename}`;
+        setProdImages(updated);
+      } catch (err) {
+        alert('Upload failed: ' + (err.response?.data?.message || err.message));
+      } finally {
+        setUploadingIndex(null);
+        fileInputRef.current.value = '';
+      }
+    };
   };
 
   const handleAddSpecField = () => {
@@ -826,6 +850,15 @@ const AdminInventory = () => {
                     />
                     <button
                       type="button"
+                      onClick={() => handleImageUpload(index)}
+                      disabled={uploadingIndex === index}
+                      className="p-2 text-slate-400 hover:text-indigo-600 disabled:opacity-40 cursor-pointer"
+                      title="Upload image"
+                    >
+                      {uploadingIndex === index ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                    </button>
+                    <button
+                      type="button"
                       disabled={prodImages.length === 1}
                       onClick={() => handleRemoveImageField(index)}
                       className="p-2 text-slate-400 hover:text-red-500 disabled:opacity-30 cursor-pointer"
@@ -926,14 +959,39 @@ const AdminInventory = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Category Image URL</label>
-                <input
-                  type="text"
-                  required
-                  value={catImage}
-                  onChange={(e) => setCatImage(e.target.value)}
-                  placeholder="e.g. https://images.unsplash.com/photo-..."
-                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    value={catImage}
+                    onChange={(e) => setCatImage(e.target.value)}
+                    placeholder="e.g. https://images.unsplash.com/photo-..."
+                    className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const inp = document.createElement('input');
+                      inp.type = 'file';
+                      inp.accept = 'image/*';
+                      inp.onchange = async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const result = await uploadFile(file);
+                          setCatImage(result.url || result.path || `/uploads/images/${result.filename}`);
+                        } catch (err) {
+                          alert('Upload failed: ' + (err.response?.data?.message || err.message));
+                        }
+                      };
+                      inp.click();
+                    }}
+                    className="p-2 text-slate-400 hover:text-indigo-600 cursor-pointer"
+                    title="Upload image"
+                  >
+                    <Upload size={16} />
+                  </button>
+                </div>
               </div>
 
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-2">

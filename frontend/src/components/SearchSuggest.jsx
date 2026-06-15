@@ -58,7 +58,11 @@ const SearchSuggest = ({ isMobile = false, headerScrolled = true }) => {
     setQuery('');
   };
 
-  const discountedPrice = (p) => (p.discount > 0 ? (p.price * (1 - p.discount / 100)).toFixed(2) : p.price);
+  const discountedPrice = (p) => {
+    const price = Number(p.price) || 0;
+    const disc = Number(p.discount) || 0;
+    return disc > 0 ? (price * (1 - disc / 100)).toFixed(2) : price;
+  };
   const getImg = (p) => (p.images && p.images[0]) || 'https://images.unsplash.com/photo-1550009158-9efff6c0e561?auto=format&fit=crop&q=80&w=100';
 
   const CatIcon = (catName) => catIcons[catName] || Package;
@@ -87,7 +91,7 @@ const SearchSuggest = ({ isMobile = false, headerScrolled = true }) => {
             style={{
               width: '100%', border: 'none', outline: 'none', background: 'transparent',
               marginLeft: '8px', fontSize: '0.8rem',
-              color: isMobile || !headerScrolled ? '#fff' : '#1e293b',
+              color: isMobile || !headerScrolled ? '#fff' : 'var(--clr-text-on-light)',
             }}
         />
       </div>
@@ -95,7 +99,7 @@ const SearchSuggest = ({ isMobile = false, headerScrolled = true }) => {
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
-          background: '#fff', borderRadius: '14px',
+          background: 'var(--clr-card-bg)', borderRadius: '14px',
           boxShadow: '0 12px 40px rgba(0,0,0,0.15)', border: '1px solid rgba(0,0,0,0.06)',
           zIndex: 9999, overflow: 'hidden', maxHeight: '420px', overflowY: 'auto',
         }}>
@@ -110,17 +114,21 @@ const SearchSuggest = ({ isMobile = false, headerScrolled = true }) => {
                     onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
-                    <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: 'var(--clr-icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {p.images && p.images[0]
-                        ? <img src={p.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        : <Icon size={16} style={{ color: '#94a3b8' }} />
+                        ? <img src={p.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={e => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex'; }} />
+                        : <Icon size={16} style={{ color: 'var(--clr-text-muted)' }} />
                       }
+                      <div style={{ display: 'none', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                        <Icon size={16} style={{ color: 'var(--clr-text-muted)' }} />
+                      </div>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--clr-text-on-light)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</div>
                       <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{p.category?.categoryName} — {p.productId}</div>
                     </div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4f46e5', whiteSpace: 'nowrap' }}>₹{discountedPrice(p)}</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--clr-accent-brand)', whiteSpace: 'nowrap' }}>₹{discountedPrice(p)}</div>
                   </Link>
                 );
               })}
@@ -140,15 +148,19 @@ const SearchSuggest = ({ isMobile = false, headerScrolled = true }) => {
                 >
                   <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {p.images && p.images[0]
-                      ? <img src={p.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <Headphones size={16} style={{ color: '#94a3b8' }} />
+                      ? <img src={p.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={e => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex'; }} />
+                      : <Headphones size={16} style={{ color: 'var(--clr-text-muted)' }} />
                     }
+                    <div style={{ display: 'none', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                      <Headphones size={16} style={{ color: 'var(--clr-text-muted)' }} />
+                    </div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</div>
                     <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{p.productId}</div>
                   </div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4f46e5', whiteSpace: 'nowrap' }}>₹{discountedPrice(p)}</div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--clr-accent-brand)', whiteSpace: 'nowrap' }}>₹{discountedPrice(p)}</div>
                 </Link>
               ))}
             </div>

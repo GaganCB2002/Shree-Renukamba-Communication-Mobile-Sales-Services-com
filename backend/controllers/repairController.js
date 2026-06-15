@@ -5,29 +5,36 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { sendEmail } = require('../services/emailService');
 const { sendEmailNodemailer } = require('../services/nodemailerService');
-const { lookupIMEI, extractIMEIFromText } = require('../services/imeiService');
+
+async function notifyAllAdmins(title, message, type = 'RepairUpdate') {
+  try {
+    const allUsers = await User.find({});
+    const adminUsers = Array.isArray(allUsers) ? allUsers.filter(u => u.role === 'admin' || u.role === 'technician') : [];
+    for (const admin of adminUsers) {
+      await Notification.create({ user: admin._id, title, message, type });
+    }
+  } catch (e) {
+    console.error('Failed to notify admins:', e.message);
+  }
+}
 
 const bookRepair = async (req, res) => {
   try {
-    const { deviceDetails, issueDescription, estimatedCost } = req.body;
+    const { deviceDetails, issueDescription, selectedIssues } = req.body;
 
     let customer = await Customer.findOne({ userId: req.user._id });
     if (!customer) {
       customer = await Customer.create({ userId: req.user._id });
     }
 
-    let device = await Device.findOne({ imei: deviceDetails.imei });
-    if (!device || !deviceDetails.imei) {
-      device = await Device.create({
-        customer: customer._id,
-        brand: deviceDetails.brand,
-        model: deviceDetails.model,
-        imei: deviceDetails.imei,
-        condition: deviceDetails.condition,
-      });
-      customer.devices.push(device._id);
-      await customer.save();
-    }
+    let device = await Device.create({
+      customer: customer._id,
+      brand: deviceDetails.brand,
+      model: deviceDetails.model,
+      condition: deviceDetails.condition,
+    });
+    customer.devices.push(device._id);
+    await customer.save();
 
     const repairId = `REP-${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -36,8 +43,8 @@ const bookRepair = async (req, res) => {
       customer: customer._id,
       device: device._id,
       issueDescription,
-      estimatedCost,
-      repairStatus: 'Received',
+      selectedIssues: selectedIssues || [],
+      repairStatus: 'Under Review',
     });
 
     customer.repairHistory.push(repairOrder._id);
@@ -45,10 +52,16 @@ const bookRepair = async (req, res) => {
 
     await Notification.create({
       user: req.user._id,
-      title: 'Repair Booked',
-      message: `Your repair ticket ${repairId} has been created successfully. We will notify you of updates.`,
+      title: 'Repair Request Submitted',
+      message: `Your repair request ${repairId} has been received. We will review and provide a cost estimate shortly.`,
       type: 'RepairUpdate',
     });
+
+    await notifyAllAdmins(
+      'New Repair Request',
+      `New repair ticket ${repairId} has been created by ${req.user.fullName || 'a customer'}. Review and set cost estimate.`,
+      'RepairUpdate'
+    );
 
     res.status(201).json(repairOrder);
   } catch (error) {
@@ -260,6 +273,7 @@ const updateRepairDetails = async (req, res) => {
       estimatedCost,
       finalCost,
       technicianNotes,
+      selectedIssues,
     } = req.body;
 
     if (expectedDeliveryDate !== undefined) repair.expectedDeliveryDate = expectedDeliveryDate;
@@ -273,6 +287,7 @@ const updateRepairDetails = async (req, res) => {
     if (estimatedCost !== undefined) repair.estimatedCost = estimatedCost;
     if (finalCost !== undefined) repair.finalCost = finalCost;
     if (technicianNotes !== undefined) repair.technicianNotes = technicianNotes;
+    if (selectedIssues !== undefined) repair.selectedIssues = selectedIssues;
 
     const updatedRepair = await repair.save();
 
@@ -329,61 +344,106 @@ const updateRepairDetails = async (req, res) => {
   }
 };
 
-const imeiLookup = async (req, res) => {
+const setRepairCost = async (req, res) => {
   try {
-    const { imei, screenshot } = req.body;
+    const { estimatedCost, finalCost, diagnosisDetails, expectedDeliveryDate } = req.body;
+    const repair = await RepairOrder.findById(req.params.id)
+      .populate('device')
+      .populate({ path: 'customer', populate: { path: 'userId', select: 'fullName email' } });
 
-    let extractedImei = imei;
+    if (!repair) return res.status(404).json({ message: 'Repair not found' });
 
-    if (screenshot) {
-      const Tesseract = require('tesseract.js');
-      try {
-        const { data } = await Tesseract.recognize(screenshot, 'eng');
-        extractedImei = extractIMEIFromText(data.text);
-      } catch (ocrErr) {
-        return res.status(400).json({ message: 'Could not read IMEI from screenshot. Please try a clearer image or enter IMEI manually.' });
-      }
-    }
+    if (estimatedCost !== undefined) repair.estimatedCost = estimatedCost;
+    if (finalCost !== undefined) repair.finalCost = finalCost;
+    if (diagnosisDetails !== undefined) repair.diagnosisDetails = diagnosisDetails;
+    if (expectedDeliveryDate !== undefined) repair.expectedDeliveryDate = expectedDeliveryDate;
+    repair.repairStatus = 'Awaiting Approval';
 
-    if (!extractedImei) {
-      return res.status(400).json({ message: 'Could not detect IMEI number. Please enter it manually.' });
-    }
+    const updated = await repair.save();
 
-    const existingDevice = await Device.findOne({ imei: extractedImei });
-    if (existingDevice) {
-      return res.json({
-        found: true,
-        fromDatabase: true,
-        brand: existingDevice.brand,
-        model: existingDevice.model,
-        condition: existingDevice.condition,
-        imei: extractedImei,
-        specs: {},
+    const customerUserId = repair.customer?.userId?._id;
+    if (customerUserId) {
+      await Notification.create({
+        user: customerUserId,
+        title: 'Cost Estimate Ready',
+        message: `Your repair ${repair.repairId} has been diagnosed. Estimated cost: ₹${estimatedCost || finalCost || 'N/A'}. Please review and approve.`,
+        type: 'RepairUpdate',
       });
     }
 
-    const deviceInfo = await lookupIMEI(extractedImei);
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-    if (deviceInfo && deviceInfo.brand) {
-      res.json({
-        found: true,
-        fromDatabase: false,
-        brand: deviceInfo.brand,
-        model: deviceInfo.model,
-        imei: extractedImei,
-        specs: deviceInfo.specs || {},
-      });
-    } else {
-      res.json({
-        found: false,
-        fromDatabase: false,
-        brand: '',
-        model: '',
-        imei: extractedImei,
-        specs: {},
-        message: 'IMEI recognized but we could not fetch complete details. Please fill in manually.',
-      });
+const customerAcceptCost = async (req, res) => {
+  try {
+    const repair = await RepairOrder.findById(req.params.id)
+      .populate('device')
+      .populate({ path: 'customer', populate: { path: 'userId', select: 'fullName email' } });
+
+    if (!repair) return res.status(404).json({ message: 'Repair not found' });
+
+    const customer = await Customer.findOne({ userId: req.user._id });
+    if (!customer || repair.customer._id.toString() !== customer._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized' });
     }
+
+    repair.repairStatus = 'Approved';
+    const updated = await repair.save();
+
+    await notifyAllAdmins(
+      'Cost Approved by Customer',
+      `Customer approved the cost estimate for repair ${repair.repairId}. Ready to start repair.`,
+      'RepairUpdate'
+    );
+
+    await Notification.create({
+      user: req.user._id,
+      title: 'Repair Approved',
+      message: `You have approved the cost for repair ${repair.repairId}. We will begin working on your device.`,
+      type: 'RepairUpdate',
+    });
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const cancelRepair = async (req, res) => {
+  try {
+    const repair = await RepairOrder.findById(req.params.id);
+    if (!repair) return res.status(404).json({ message: 'Repair not found' });
+
+    const customer = await Customer.findOne({ userId: req.user._id });
+    const isOwner = customer && repair.customer.toString() === customer._id.toString();
+    const isStaff = req.user.role === 'admin' || req.user.role === 'technician';
+
+    if (!isOwner && !isStaff) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    repair.repairStatus = 'Cancelled';
+    const updated = await repair.save();
+
+    await Notification.create({
+      user: req.user._id,
+      title: 'Repair Cancelled',
+      message: `Repair ${repair.repairId} has been cancelled.`,
+      type: 'RepairUpdate',
+    });
+
+    if (isOwner) {
+      await notifyAllAdmins(
+        'Repair Cancelled by Customer',
+        `Repair ${repair.repairId} has been cancelled by the customer.`,
+        'RepairUpdate'
+      );
+    }
+
+    res.json(updated);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -396,5 +456,7 @@ module.exports = {
   updateRepairStatus,
   updateRepairDetails,
   getAllRepairs,
-  imeiLookup,
+  setRepairCost,
+  customerAcceptCost,
+  cancelRepair,
 };

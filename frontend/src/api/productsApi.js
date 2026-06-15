@@ -54,3 +54,13 @@ export const getSearchSuggestions = async (keyword) => {
   const response = await api.get('/products/search-suggestions', { params: { keyword } });
   return response.data;
 };
+
+export const getFileProducts = async () => {
+  const response = await api.get('/file-data/products');
+  return response.data;
+};
+
+export const getFileNewArrivals = async () => {
+  const response = await api.get('/file-data/products/new-arrivals');
+  return response.data;
+};

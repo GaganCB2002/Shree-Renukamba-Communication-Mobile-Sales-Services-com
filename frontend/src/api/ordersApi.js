@@ -9,3 +9,8 @@ export const getOrderById = async (id) => {
   const response = await api.get(`/orders/${id}`);
   return response.data;
 };
+
+export const trackOrder = async (orderId) => {
+  const response = await api.get(`/orders/track/${orderId}`);
+  return response.data;
+};

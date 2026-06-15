@@ -328,20 +328,20 @@ const ProductDetail = () => {
                   <tbody>
                     {specs.map(([key, val], i) => (
                       <tr key={key} className={i % 2 === 0 ? 'bg-secondary-50/50' : 'bg-white'}>
-                        <td className="py-3.5 px-5 text-secondary-500 font-medium w-2/5 border-b border-border/50" style={{ color: '#64748b' }}>{key}</td>
+                        <td className="py-3.5 px-5 text-secondary-500 font-medium w-2/5 border-b border-border/50" style={{ color: 'var(--clr-text-muted)' }}>{key}</td>
                         <td className="py-3.5 px-5 text-primary-950 font-semibold border-b border-border/50">{val}</td>
                       </tr>
                     ))}
                     <tr className={specs.length % 2 === 0 ? 'bg-secondary-50/50' : 'bg-white'}>
-                      <td className="py-3.5 px-5 text-secondary-500 font-medium w-2/5 border-b border-border/50" style={{ color: '#64748b' }}>Warranty</td>
+                        <td className="py-3.5 px-5 text-secondary-500 font-medium w-2/5 border-b border-border/50" style={{ color: 'var(--clr-text-muted)' }}>Warranty</td>
                       <td className="py-3.5 px-5 text-primary-950 font-semibold border-b border-border/50">1 Year Comprehensive Warranty</td>
                     </tr>
                     <tr className={(specs.length + 1) % 2 === 0 ? 'bg-secondary-50/50' : 'bg-white'}>
-                      <td className="py-3.5 px-5 text-secondary-500 font-medium w-2/5 border-b border-border/50" style={{ color: '#64748b' }}>Condition</td>
+                        <td className="py-3.5 px-5 text-secondary-500 font-medium w-2/5 border-b border-border/50" style={{ color: 'var(--clr-text-muted)' }}>Condition</td>
                       <td className="py-3.5 px-5 text-primary-950 font-semibold border-b border-border/50">{product.discount > 0 ? 'Certified Pre-Owned' : 'New'}</td>
                     </tr>
                     <tr className={(specs.length + 2) % 2 === 0 ? 'bg-secondary-50/50' : 'bg-white'}>
-                      <td className="py-3.5 px-5 text-secondary-500 font-medium w-2/5" style={{ color: '#64748b' }}>In The Box</td>
+                        <td className="py-3.5 px-5 text-secondary-500 font-medium w-2/5" style={{ color: 'var(--clr-text-muted)' }}>In The Box</td>
                       <td className="py-3.5 px-5 text-primary-950 font-semibold">
                         {product.title}, Charging Cable, SIM ejector tool, User Manual, Warranty Card
                       </td>

@@ -30,7 +30,18 @@ export const getAllRepairs = async () => {
   return response.data;
 };
 
-export const imeiLookup = async (data) => {
-  const response = await api.post('/repairs/imei-lookup', data);
+export const setRepairCost = async (id, data) => {
+  const response = await api.put(`/repairs/${id}/cost`, data);
   return response.data;
 };
+
+export const acceptRepairCost = async (id) => {
+  const response = await api.put(`/repairs/${id}/accept-cost`);
+  return response.data;
+};
+
+export const cancelRepair = async (id) => {
+  const response = await api.put(`/repairs/${id}/cancel`);
+  return response.data;
+};
+

@@ -35,7 +35,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 mb-1">{t('contact.visitUs')}</h3>
-                  <p className="text-gray-500 text-sm">123 MG Road, Bengaluru, Karnataka 560001</p>
+                  <p className="text-gray-500 text-sm">Guttur Colony, Harihar, Karnataka</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">

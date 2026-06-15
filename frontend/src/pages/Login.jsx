@@ -90,7 +90,13 @@ const Login = () => {
   }, [dispatch]);
 
   const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    if (name === 'phoneNumber') {
+      const digits = value.replace(/\D/g, '').slice(0, 10);
+      setFormData((prev) => ({ ...prev, [name]: digits }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
     setLocalError('');
   };
   const handleFocus = (e) => setFocused((prev) => ({ ...prev, [e.target.name]: true }));
@@ -135,6 +141,10 @@ const Login = () => {
       }
       if (formData.password.length < 6) {
         setLocalError('Password must be at least 6 characters');
+        return;
+      }
+      if (formData.phoneNumber && formData.phoneNumber.length !== 10) {
+        setLocalError('Phone number must be exactly 10 digits');
         return;
       }
       if (sq.some((s) => !s.question || !s.answer)) {
@@ -232,14 +242,14 @@ const Login = () => {
         onChange={(e) => handleSQChange(idx, 'question', e.target.value)}
         required
         style={{
-          width: '100%', height: '38px', background: 'rgba(0,0,0,0.3)', color: '#fff',
+          width: '100%', height: '38px', background: '#1e293b', color: '#fff',
           border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px',
           padding: '0 10px', fontSize: '0.8em', outline: 'none', marginBottom: '8px',
         }}
       >
-        <option value="" style={{ color: '#000' }}>Select a question</option>
+        <option value="">Select a question</option>
         {securityQuestionOptions.map((q) => (
-          <option key={q} value={q} style={{ color: '#000' }}>{q}</option>
+          <option key={q} value={q}>{q}</option>
         ))}
       </select>
       <input
@@ -264,7 +274,10 @@ const Login = () => {
           100% { filter: hue-rotate(360deg); }
         }
         .animate-hue { animation: hueRotate 5s linear infinite; }
-        select option { background: #1e293b; color: #fff; }
+        select option { background: #fff; color: #1e293b; }
+        @media (prefers-color-scheme: dark) {
+          select option { background: #1e293b; color: #f1f5f9; }
+        }
       `}</style>
       <div className="absolute inset-0 animate-hue">
         <img src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&q=80&w=1920" alt="" className="w-full h-full object-cover" />
@@ -376,7 +389,7 @@ const Login = () => {
           <form onSubmit={submitHandler}>
             {renderField('fullName', 'Full Name', <User size={18} />)}
             {renderField('email', 'Email', <Mail size={18} />)}
-            {renderField('phoneNumber', 'Phone Number', <Phone size={18} />)}
+            {renderField('phoneNumber', 'Phone Number', <Phone size={18} />, {}, 'tel')}
             {renderField('password', 'Password', null, {}, showPassword ? 'text' : 'password')}
             {renderField('confirmPassword', 'Confirm Password', <CheckCircle size={18} />, {}, 'password')}
 

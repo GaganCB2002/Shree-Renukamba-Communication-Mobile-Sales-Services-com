@@ -1,11 +1,11 @@
 # Shree Renukamba Communication - Mobile Repair & Electronics Commerce Platform
 
 ![Shree Renukamba Logo](https://img.shields.io/badge/Shree_Renukamba-Premium_Repair_Hub-4F46E5?style=for-the-badge)
-![MERN Stack](https://img.shields.io/badge/Stack-MERN-green?style=for-the-badge)
+![PERN Stack](https://img.shields.io/badge/Stack-PERN-green?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind-v4-38B2AC?style=for-the-badge)
 
-Shree Renukamba Communication is a complete production-ready MERN Stack application designed as a professional business management platform for mobile repair shops, refurbished phone sales, accessories sales, inventory management, and e-commerce.
+Shree Renukamba Communication is a complete production-ready PERN Stack (PostgreSQL, Express, React, Node.js) application designed as a professional business management platform for mobile repair shops, refurbished phone sales, accessories sales, inventory management, and e-commerce.
 
 ---
 
@@ -50,7 +50,7 @@ The Shree Renukamba Communication platform bridges the gap between traditional b
 ### 🔐 Security & Auth
 - JWT Authentication with HTTP-only cookies (prepared).
 - Password hashing via `bcryptjs`.
-- Express security middlewares (`helmet`, `xss-clean`, `express-mongo-sanitize`, `express-rate-limit`).
+- Express security middlewares (`helmet`, `xss-clean`, `express-rate-limit`).
 
 ---
 
@@ -66,7 +66,7 @@ The Shree Renukamba Communication platform bridges the gap between traditional b
 ### Backend
 - **Runtime**: Node.js
 - **Framework**: Express.js
-- **Database**: MongoDB Atlas via Mongoose
+- **Database**: PostgreSQL
 - **Image Uploads**: Cloudinary + Multer
 - **Emails**: Resend / Nodemailer
 - **Payments**: Razorpay
@@ -91,9 +91,9 @@ The Shree Renukamba Communication platform bridges the gap between traditional b
 
 ---
 
-## 🗄️ Database Architecture (MongoDB Schemas)
+## 🗄️ Database Architecture
 
-The backend utilizes heavily interconnected Mongoose models:
+The backend utilizes PostgreSQL with the following models:
 - **`User`**: Base authentication model (Admin, Customer, Technician roles).
 - **`Customer`**: Extended profile details, address book, loyalty points.
 - **`Device`**: Registered devices belonging to a customer.
@@ -114,7 +114,7 @@ electrofix/
 │   ├── config/             # DB & Service configurations
 │   ├── controllers/        # Route logic handlers
 │   ├── middleware/         # Auth & Error handling
-│   ├── models/             # Mongoose schemas
+│   ├── models/             # Database schemas
 │   ├── routes/             # Express API endpoints
 │   ├── services/           # Cloudinary, Resend, Razorpay logic
 │   └── index.js            # Server entry point
@@ -156,14 +156,14 @@ The RESTful API is structured under the `/api/v1/` prefix:
 
 ### Prerequisites
 - Node.js (v18+)
-- MongoDB Atlas URI
+- PostgreSQL database URL
 - API Keys for Cloudinary, Razorpay, and Resend.
 
 ### 1. Environment Variables
 You will need to create a `.env` file inside the `backend` directory:
 ```env
 PORT=5000
-MONGO_URI=your_mongodb_connection_string
+DATABASE_URL=your_postgresql_connection_string
 JWT_SECRET=your_jwt_secret_key
 NODE_ENV=development
 
@@ -198,4 +198,4 @@ The frontend has been completely refactored to match a premium SaaS design reque
 - **Icons**: Consistent stroke weights provided by `lucide-react`.
 
 ---
-*Developed as a complete MERN stack architecture for modern mobile repair and electronic commerce.*
+*Developed as a complete PERN stack architecture for modern mobile repair and electronic commerce.*

@@ -1,0 +1,80 @@
+[
+  {
+    "productId": "PROD-001",
+    "title": "iPhone 15 Pro Max",
+    "description": "Latest Apple flagship with A17 Pro chip, titanium design, and 48MP camera system.",
+    "category": "Smartphones",
+    "price": 159999,
+    "discount": 10,
+    "stock": 15,
+    "images": ["https://picsum.photos/seed/iphone15/400/400"],
+    "specifications": { "RAM": "8GB", "Storage": "256GB", "Color": "Natural Titanium" },
+    "condition": "Excellent",
+    "createdAt": "2026-06-01T00:00:00Z"
+  },
+  {
+    "productId": "PROD-002",
+    "title": "Samsung Galaxy S25 Ultra",
+    "description": "Premium Android flagship with S Pen, 200MP camera, and Galaxy AI features.",
+    "category": "Smartphones",
+    "price": 134999,
+    "discount": 8,
+    "stock": 20,
+    "images": ["https://picsum.photos/seed/s25ultra/400/400"],
+    "specifications": { "RAM": "12GB", "Storage": "256GB", "Color": "Titanium Gray" },
+    "condition": "Excellent",
+    "createdAt": "2026-05-28T00:00:00Z"
+  },
+  {
+    "productId": "PROD-003",
+    "title": "MacBook Air M4",
+    "description": "Ultra-thin laptop with Apple M4 chip, 18-hour battery life, and stunning Liquid Retina display.",
+    "category": "Laptops",
+    "price": 114999,
+    "discount": 5,
+    "stock": 10,
+    "images": ["https://picsum.photos/seed/macbookair/400/400"],
+    "specifications": { "RAM": "16GB", "Storage": "512GB", "Color": "Midnight" },
+    "condition": "Excellent",
+    "createdAt": "2026-06-05T00:00:00Z"
+  },
+  {
+    "productId": "PROD-005",
+    "title": "Apple Watch Ultra 3",
+    "description": "Rugged smartwatch with precision dual-frequency GPS, action button, and 36-hour battery.",
+    "category": "Wearables",
+    "price": 59900,
+    "discount": 0,
+    "stock": 30,
+    "images": ["https://picsum.photos/seed/watchultra/400/400"],
+    "specifications": { "RAM": "2GB", "Storage": "64GB", "Color": "Titanium" },
+    "condition": "Excellent",
+    "createdAt": "2026-06-10T00:00:00Z"
+  },
+  {
+    "productId": "PROD-007",
+    "title": "Sony WH-1000XM6",
+    "description": "Industry-leading noise cancellation with 30-hour battery and Hi-Res Audio support.",
+    "category": "Accessories",
+    "price": 29999,
+    "discount": 20,
+    "stock": 50,
+    "images": ["https://picsum.photos/seed/sonyxm6/400/400"],
+    "specifications": { "Type": "Over-Ear", "Battery": "30hrs", "Color": "Black" },
+    "condition": "Excellent",
+    "createdAt": "2026-06-08T00:00:00Z"
+  },
+  {
+    "productId": "PROD-010",
+    "title": "Google Pixel 9 Pro",
+    "description": "Google's AI-first phone with Tensor G4, 48MP camera, and 7 years of updates.",
+    "category": "Smartphones",
+    "price": 79999,
+    "discount": 5,
+    "stock": 35,
+    "images": ["https://picsum.photos/seed/pixel9pro/400/400"],
+    "specifications": { "RAM": "12GB", "Storage": "128GB", "Color": "Obsidian" },
+    "condition": "Like New",
+    "createdAt": "2026-06-12T00:00:00Z"
+  }
+]

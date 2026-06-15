@@ -1,9 +1,16 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+function loadWishlistItems() {
+  try {
+    const data = localStorage.getItem('wishlistItems');
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
 const initialState = {
-  items: localStorage.getItem('wishlistItems')
-    ? JSON.parse(localStorage.getItem('wishlistItems'))
-    : [],
+  items: loadWishlistItems(),
 };
 
 const wishlistSlice = createSlice({

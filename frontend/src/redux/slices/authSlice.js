@@ -19,10 +19,17 @@ export const register = createAsyncThunk('auth/register', async (data, { rejectW
   }
 });
 
+function loadUserInfo() {
+  try {
+    const data = localStorage.getItem('userInfo');
+    return data ? JSON.parse(data) : null;
+  } catch {
+    return null;
+  }
+}
+
 const initialState = {
-  userInfo: localStorage.getItem('userInfo')
-    ? JSON.parse(localStorage.getItem('userInfo'))
-    : null,
+  userInfo: loadUserInfo(),
   loading: false,
   error: null,
 };

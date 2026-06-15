@@ -7,7 +7,9 @@ const {
   updateRepairStatus,
   updateRepairDetails,
   getAllRepairs,
-  imeiLookup,
+  setRepairCost,
+  customerAcceptCost,
+  cancelRepair,
 } = require('../controllers/repairController');
 const { protect, technician } = require('../middleware/authMiddleware');
 
@@ -15,9 +17,11 @@ router.route('/')
   .get(protect, technician, getAllRepairs)
   .post(protect, bookRepair);
 router.route('/myrepairs').get(protect, getMyRepairs);
-router.route('/imei-lookup').post(protect, imeiLookup);
 router.route('/:id').get(protect, getRepairById);
 router.route('/:id/status').put(protect, technician, updateRepairStatus);
 router.route('/:id/details').put(protect, technician, updateRepairDetails);
+router.route('/:id/cost').put(protect, technician, setRepairCost);
+router.route('/:id/accept-cost').put(protect, customerAcceptCost);
+router.route('/:id/cancel').put(protect, cancelRepair);
 
 module.exports = router;

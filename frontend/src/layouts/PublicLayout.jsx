@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { Search, ShoppingBag, Heart, Menu, X, Globe, MapPin, Phone, Mail, ChevronDown, Smartphone, Wrench, Shield, Headphones, Gift, Bluetooth, RotateCcw, Sun, Moon } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+import { Search, ShoppingBag, Heart, Menu, X, Globe, MapPin, Phone, Mail, ChevronDown, Smartphone, Wrench, Shield, Headphones, Gift, Bluetooth, RotateCcw, Sun, Moon, LogOut, User } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getCategories } from '../api/productsApi';
 import SearchSuggest from '../components/SearchSuggest';
 import CookieConsent from '../components/CookieConsent';
+import AiChatWidget from '../components/AiChatWidget';
+import DeliveryReminder from '../components/DeliveryReminder';
+import { logout } from '../redux/slices/authSlice';
+import { resetPageData } from '../redux/slices/pageSlice';
 import '../pages/LandingPage.css';
 
 const staticCategories = [
@@ -78,6 +82,8 @@ const staticCategories = [
 
 const PublicLayout = () => {
   const { t, lang, switchLang } = useLanguage();
+  const dispatch = useDispatch();
+  const { userInfo } = useSelector((state) => state.auth);
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
@@ -131,6 +137,7 @@ const PublicLayout = () => {
               src="/logo.png" 
               alt="Shree Renukamba Logo" 
               onClick={() => setLogoModalOpen(true)}
+              onError={e => { e.target.style.display = 'none'; }}
               style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginRight: 10, background: '#fff', cursor: 'pointer' }} 
             />
             <Link to="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column' }}>
@@ -186,8 +193,8 @@ const PublicLayout = () => {
                           <cat.icon size={22} strokeWidth={2} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a' }}>{cat.label}</span>
-                          <span style={{ fontSize: '0.68rem', color: '#64748b', marginTop: 2 }}>{cat.desc}</span>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--clr-text-on-light)' }}>{cat.label}</span>
+                          <span style={{ fontSize: '0.68rem', color: 'var(--clr-text-muted)', marginTop: 2 }}>{cat.desc}</span>
                         </div>
                       </Link>
                     ))}
@@ -221,6 +228,7 @@ const PublicLayout = () => {
           </nav>
           <div className="lp-header-actions">
             <button
+              type="button"
               onClick={toggleTheme}
               className="lp-icon-btn"
               aria-label={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
@@ -230,6 +238,7 @@ const PublicLayout = () => {
             </button>
             <SearchSuggest headerScrolled={scrolled} />
             <button
+              type="button"
               onClick={() => switchLang(lang === 'en' ? 'kn' : 'en')}
               className="lp-icon-btn"
               style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.05em', minWidth: 32 }}
@@ -257,7 +266,39 @@ const PublicLayout = () => {
                 }}>{totalItems}</span>
               )}
             </Link>
-            {!isLoginPage && <Link to="/login" className="lp-btn-signin">{t('nav.signIn')}</Link>}
+            {userInfo ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Link
+                  to={userInfo.role === 'admin' ? '/admin' : '/dashboard'}
+                  className="lp-icon-btn"
+                  title="My Dashboard"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', position: 'relative' }}
+                >
+                  {userInfo.profileImage ? (
+                    <img
+                      src={userInfo.profileImage}
+                      alt={userInfo.fullName || 'User'}
+                      onError={e => { e.target.style.display = 'none'; }}
+                      style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', border: '2px solid currentColor' }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%',
+                      background: 'var(--clr-primary, #4f46e5)', color: '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.65rem', fontWeight: 700, lineHeight: 1
+                    }}>
+                      {(userInfo.fullName || 'U')[0].toUpperCase()}
+                    </div>
+                  )}
+                </Link>
+                <button type="button" onClick={() => { dispatch(logout()); dispatch(resetPageData()); }} className="lp-icon-btn" title="Sign Out" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <LogOut size={16} />
+                </button>
+              </div>
+            ) : (
+              !isLoginPage && <Link to="/login" className="lp-btn-signin">{t('nav.signIn')}</Link>
+            )}
             <button className="lp-menu-toggle" onClick={() => setMenuOpen(true)} aria-label="Menu"><Menu size={24} /></button>
           </div>
         </div>
@@ -266,8 +307,8 @@ const PublicLayout = () => {
       {menuOpen && (
         <div className="lp-mobile-menu">
           <div className="lp-mobile-header">
-            <img src="/logo.png" alt="Logo" onClick={() => setLogoModalOpen(true)} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', background: '#fff', cursor: 'pointer' }} />
-            <button onClick={() => setMenuOpen(false)} aria-label="Close"><X size={24} /></button>
+            <img src="/logo.png" alt="Logo" onClick={() => setLogoModalOpen(true)} onError={e => { e.target.style.display = 'none'; }} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', background: '#fff', cursor: 'pointer' }} />
+            <button type="button" onClick={() => setMenuOpen(false)} aria-label="Close"><X size={24} /></button>
           </div>
           <nav className="lp-mobile-nav">
             <Link to="/shop" onClick={() => setMenuOpen(false)} style={{ fontWeight: 700 }}>All Products</Link>
@@ -299,12 +340,14 @@ const PublicLayout = () => {
             <Link to="/wishlist" onClick={() => setMenuOpen(false)}>Wishlist</Link>
             <Link to="/contact" onClick={() => setMenuOpen(false)}>{t('nav.contact')}</Link>
             <button
+              type="button"
               onClick={() => { toggleTheme(); setMenuOpen(false); }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '1.5rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', padding: 0, fontFamily: 'inherit' }}
             >
               {theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
             </button>
             <button
+              type="button"
               onClick={() => { switchLang(lang === 'en' ? 'kn' : 'en'); setMenuOpen(false); }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '1.5rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', padding: 0, fontFamily: 'inherit' }}
             >
@@ -312,12 +355,30 @@ const PublicLayout = () => {
             </button>
           </nav>
           <div className="lp-mobile-actions">
-            {!isLoginPage && <Link to="/login" className="lp-btn-primary" onClick={() => setMenuOpen(false)}>{t('nav.signIn')}</Link>}
+            {userInfo ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                <Link to={userInfo.role === 'admin' ? '/admin' : '/dashboard'} className="lp-btn-primary" style={{ textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }} onClick={() => setMenuOpen(false)}>
+                  {userInfo.profileImage ? (
+                    <img src={userInfo.profileImage} alt="" onError={e => { e.target.style.display = 'none'; }} style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 700 }}>
+                      {(userInfo.fullName || 'U')[0].toUpperCase()}
+                    </span>
+                  )}
+                  {userInfo.fullName || 'Dashboard'}
+                </Link>
+                <button type="button" onClick={() => { dispatch(logout()); dispatch(resetPageData()); setMenuOpen(false); }} className="lp-btn-outline lp-btn-light" style={{ width: '100%' }}>
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              !isLoginPage && <Link to="/login" className="lp-btn-primary" onClick={() => setMenuOpen(false)}>{t('nav.signIn')}</Link>
+            )}
           </div>
         </div>
       )}
 
-      <main style={{ minHeight: '100vh' }}>
+      <main className="lp-main">
         <Outlet />
       </main>
 
@@ -326,10 +387,10 @@ const PublicLayout = () => {
           <div className="lp-footer-grid">
             <div className="lp-footer-brand">
               <div className="lp-logo" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                <img src="/logo.png" alt="Logo" onClick={() => setLogoModalOpen(true)} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', background: '#fff', cursor: 'pointer' }} />
+                <img src="/logo.png" alt="Logo" onClick={() => setLogoModalOpen(true)} onError={e => { e.target.style.display = 'none'; }} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', background: '#fff', cursor: 'pointer' }} />
                 <Link to="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column' }}>
-                  <span className="lp-logo-text" style={{ fontSize: '0.8rem', opacity: 1, color: '#fff', margin: 0, lineHeight: 1.2 }}>SR Communication</span>
-                  <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Mobile &amp; Electronics</div>
+                  <span className="lp-logo-text" style={{ fontSize: '0.8rem', opacity: 1, color: 'var(--clr-footer-heading)', margin: 0, lineHeight: 1.2 }}>SR Communication</span>
+                  <div style={{ fontSize: '0.55rem', color: 'var(--clr-footer-text)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Mobile &amp; Electronics</div>
                 </Link>
               </div>
               <p>{t('footer.brandDesc')}</p>
@@ -364,12 +425,12 @@ const PublicLayout = () => {
               <h4>{t('footer.contactUs')}</h4>
               <ul className="lp-contact-list">
                 <li>
-                  <button
-                    onClick={() => window.open('https://www.google.com/maps?q=Shree+Renukamba+Communication+MG+Road+Bengaluru', '_blank')}
+                  <button type="button"
+                    onClick={() => window.open('https://www.google.com/maps?q=Shree+Renukamba+Communication+Guttur+Colony+Harihar', '_blank')}
                     style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '10px', color: 'inherit', fontFamily: 'inherit', fontSize: '0.82rem', textAlign: 'left', cursor: 'pointer' }}
                     title="Open in Google Maps"
                   >
-                    <MapPin size={14} /> 123 MG Road, Bengaluru
+                    <MapPin size={14} /> Guttur Colony, Harihar
                   </button>
                 </li>
                 <li><Phone size={14} /><span>+91 98765 43210</span></li>
@@ -394,26 +455,28 @@ const PublicLayout = () => {
           onClick={() => setLogoModalOpen(false)}
         >
           <div 
-            style={{ background: 'linear-gradient(145deg, #ffffff, #f0f4f8)', borderRadius: '3rem', padding: '40px 30px', display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '400px', width: '100%', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', position: 'relative' }}
+            style={{ background: 'var(--clr-card-bg)', borderRadius: '3rem', padding: '40px 30px', display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '400px', width: '100%', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', position: 'relative' }}
             onClick={e => e.stopPropagation()}
           >
             <button 
-              style={{ position: 'absolute', top: 20, right: 20, background: '#f1f5f9', border: 'none', color: '#64748b', cursor: 'pointer', width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} 
+               style={{ position: 'absolute', top: 20, right: 20, background: 'var(--clr-icon-bg)', border: 'none', color: 'var(--clr-text-muted)', cursor: 'pointer', width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} 
               onClick={() => setLogoModalOpen(false)}
-              onMouseEnter={e => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.color = '#0f172a'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#64748b'; }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--clr-border)'; e.currentTarget.style.color = 'var(--clr-text-on-light)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--clr-icon-bg)'; e.currentTarget.style.color = 'var(--clr-text-muted)'; }}
             >
               <X size={20} />
             </button>
-            <img src="/logo.png" alt="Shree Renukamba" style={{ width: 220, height: 220, borderRadius: '50%', objectFit: 'cover', boxShadow: '0 20px 25px -5px rgba(79, 70, 229, 0.2), 0 8px 10px -6px rgba(79, 70, 229, 0.1)', border: '4px solid #fff', marginBottom: '24px' }} />
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', margin: '0 0 8px 0', textAlign: 'center' }}>Shree Renukamba</h3>
+            <img src="/logo.png" alt="Shree Renukamba" onError={e => { e.target.style.display = 'none'; }} style={{ width: 220, height: 220, borderRadius: '50%', objectFit: 'cover', boxShadow: '0 20px 25px -5px rgba(79, 70, 229, 0.2), 0 8px 10px -6px rgba(79, 70, 229, 0.1)', border: '4px solid #fff', marginBottom: '24px' }} />
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--clr-text-on-light)', margin: '0 0 8px 0', textAlign: 'center' }}>Shree Renukamba</h3>
             <p style={{ fontSize: '0.9rem', color: '#4f46e5', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 16px 0', textAlign: 'center' }}>Communication</p>
-            <div style={{ background: '#e0e7ff', color: '#4338ca', padding: '12px 20px', borderRadius: '1rem', fontSize: '0.95rem', fontWeight: 600, textAlign: 'center', width: '100%' }}>
+            <div style={{ background: 'var(--clr-accent-brand)', color: '#fff', padding: '12px 20px', borderRadius: '1rem', fontSize: '0.95rem', fontWeight: 600, textAlign: 'center', width: '100%', opacity: 0.9 }}>
               All types of mobile accessories available
             </div>
           </div>
         </div>
       )}
+      <AiChatWidget />
+      <DeliveryReminder />
       <CookieConsent />
     </div>
   );

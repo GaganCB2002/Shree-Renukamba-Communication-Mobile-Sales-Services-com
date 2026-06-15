@@ -11,22 +11,28 @@ import TermsAndConditions from './pages/TermsAndConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import CustomerDashboard from './pages/customer/Dashboard';
 import BookRepair from './pages/customer/BookRepair';
+import CustomerSettings from './pages/customer/CustomerSettings';
+import LiveTracking from './pages/customer/LiveTracking';
+import CustomerSupport from './pages/customer/CustomerSupport';
 import Products from './pages/ecommerce/Products';
 import ProductDetail from './pages/ecommerce/ProductDetail';
 import Smartphones from './pages/ecommerce/Smartphones';
 import Laptops from './pages/ecommerce/Laptops';
 import Accessories from './pages/ecommerce/Accessories';
 import Cart from './pages/ecommerce/Cart';
+import Checkout from './pages/ecommerce/Checkout';
 import Wishlist from './pages/ecommerce/Wishlist';
 import Coupons from './pages/ecommerce/Coupons';
 import InvoiceDetail from './pages/ecommerce/InvoiceDetail';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRepairs from './pages/admin/AdminRepairs';
 import AdminCoupons from './pages/admin/AdminCoupons';
+import AdminPriceList from './pages/admin/AdminPriceList';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminInventory from './pages/admin/AdminInventory';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminBilling from './pages/admin/AdminBilling';
+import AdminCustomers from './pages/admin/AdminCustomers';
 
 function App() {
   return (
@@ -44,6 +50,7 @@ function App() {
           <Route path="laptops" element={<Laptops />} />
           <Route path="accessories" element={<Accessories />} />
           <Route path="cart" element={<Cart />} />
+          <Route path="checkout" element={<Checkout />} />
           <Route path="wishlist" element={<Wishlist />} />
           <Route path="products/:id" element={<ProductDetail />} />
           <Route path="terms" element={<TermsAndConditions />} />
@@ -54,6 +61,9 @@ function App() {
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<CustomerDashboard />} />
           <Route path="repairs/new" element={<BookRepair />} />
+          <Route path="settings" element={<CustomerSettings />} />
+          <Route path="live-tracking" element={<LiveTracking />} />
+          <Route path="support" element={<CustomerSupport />} />
         </Route>
 
         <Route path="/invoices/:id" element={<InvoiceDetail />} />
@@ -61,10 +71,12 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="repairs" element={<AdminRepairs />} />
           <Route path="coupons" element={<AdminCoupons />} />
+          <Route path="customers" element={<AdminCustomers />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="inventory" element={<AdminInventory />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="billing" element={<AdminBilling />} />
+          <Route path="price-list" element={<AdminPriceList />} />
         </Route>
 
         <Route path="*" element={

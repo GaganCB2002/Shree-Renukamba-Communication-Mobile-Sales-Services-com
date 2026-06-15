@@ -6,7 +6,7 @@ const User = require('../models/User');
 // @access  Private (Admin)
 const createInvoice = async (req, res) => {
   try {
-    const { customer, repairOrder, date, dueDate, status, items, paymentInstructions } = req.body;
+    const { customer, repairOrder, date, dueDate, status, items, serviceCharge, paymentInstructions } = req.body;
 
     if (!customer || !dueDate || !items || items.length === 0) {
       return res.status(400).json({ message: 'Customer, due date, and invoice items are required' });
@@ -25,11 +25,12 @@ const createInvoice = async (req, res) => {
     });
 
     const subtotal = processedItems.reduce((sum, item) => sum + item.total, 0);
+    const svcCharge = Number(serviceCharge || 0);
 
     // Apply CGST (9%) and SGST (9%)
     const cgst = Math.round(subtotal * 0.09 * 100) / 100;
     const sgst = Math.round(subtotal * 0.09 * 100) / 100;
-    const totalAmount = subtotal + cgst + sgst;
+    const totalAmount = subtotal + cgst + sgst + svcCharge;
 
     // Generate unique invoice ID: INV-2026-XXXX
     const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -46,6 +47,7 @@ const createInvoice = async (req, res) => {
       subtotal,
       cgst,
       sgst,
+      serviceCharge: svcCharge,
       totalAmount,
       paymentInstructions
     });
@@ -128,19 +130,40 @@ const getInvoiceById = async (req, res) => {
   }
 };
 
-// @desc    Update invoice status
+// @desc    Update invoice (status, items, amounts, etc.)
 // @route   PUT /api/invoices/:id
 // @access  Private (Admin)
 const updateInvoiceStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, items, subtotal, cgst, sgst, totalAmount, taxRate, customDuty, serviceCharge } = req.body;
     const invoice = await Invoice.findById(req.params.id);
 
     if (!invoice) {
       return res.status(404).json({ message: 'Invoice not found' });
     }
 
-    invoice.status = status || invoice.status;
+    if (status) invoice.status = status;
+    if (items) invoice.items = items;
+    if (subtotal !== undefined) invoice.subtotal = subtotal;
+    if (cgst !== undefined) invoice.cgst = cgst;
+    if (sgst !== undefined) invoice.sgst = sgst;
+    if (totalAmount !== undefined) invoice.totalAmount = totalAmount;
+    if (serviceCharge !== undefined) invoice.serviceCharge = serviceCharge;
+
+    // Recalculate total if items changed but totalAmount not provided
+    if (items && totalAmount === undefined) {
+      const newSubtotal = items.reduce((s, i) => s + (i.total || Number(i.qty || 0) * Number(i.unitPrice || 0)), 0);
+      const rate = taxRate || 18;
+      const newCgst = Math.round(newSubtotal * (rate / 2 / 100) * 100) / 100;
+      const newSgst = Math.round(newSubtotal * (rate / 2 / 100) * 100) / 100;
+      const extra = Number(customDuty || 0);
+      const svcCharge = Number(serviceCharge !== undefined ? serviceCharge : invoice.serviceCharge || 0);
+      invoice.subtotal = newSubtotal;
+      invoice.cgst = newCgst;
+      invoice.sgst = newSgst;
+      invoice.totalAmount = newSubtotal + newCgst + newSgst + extra + svcCharge;
+    }
+
     const updated = await invoice.save();
 
     res.json(updated);
