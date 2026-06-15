@@ -350,7 +350,9 @@ const PublicLayout = () => {
               <ul className="lp-contact-list">
                 <li>
                   <button
-                    style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '10px', color: 'inherit', fontFamily: 'inherit', fontSize: '0.82rem', textAlign: 'left' }}
+                    onClick={() => window.open('https://www.google.com/maps?q=Shree+Renukamba+Communication+MG+Road+Bengaluru', '_blank')}
+                    style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '10px', color: 'inherit', fontFamily: 'inherit', fontSize: '0.82rem', textAlign: 'left', cursor: 'pointer' }}
+                    title="Open in Google Maps"
                   >
                     <MapPin size={14} /> 123 MG Road, Bengaluru
                   </button>
