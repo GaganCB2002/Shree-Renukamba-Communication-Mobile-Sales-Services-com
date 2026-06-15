@@ -144,9 +144,9 @@ html {
 }
 
 .lp-nav a {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--clr-nav-link);
   transition: color var(--transition);
@@ -154,7 +154,7 @@ html {
   padding: 8px 0;
   display: flex;
   align-items: center;
-  line-height: 1;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
@@ -235,6 +235,12 @@ html {
 [data-theme="dark"] .lp-dropdown a:hover {
   background: rgba(255,255,255,0.05);
 }
+.lp-dropdown .lp-dropdown-cat-header {
+  color: var(--clr-text-light) !important;
+}
+.lp-dropdown .lp-dropdown-cat-item {
+  color: var(--clr-text) !important;
+}
 
 .lp-menu-toggle {
   display: none;
@@ -279,13 +285,45 @@ html {
 }
 
 .lp-header.scrolled .lp-btn-outline {
-  color: var(--clr-dark);
-  border-color: var(--clr-dark);
+  color: var(--clr-nav-link-scrolled);
+  border-color: var(--clr-nav-link-scrolled);
 }
 
 .lp-header.scrolled .lp-btn-outline:hover {
-  background: var(--clr-dark);
+  background: var(--clr-nav-link-scrolled);
   color: var(--clr-white);
+  border-color: var(--clr-nav-link-scrolled);
+}
+
+/* Sign-in header button - filled pill style */
+.lp-btn-signin {
+  background: var(--clr-primary);
+  color: #fff !important;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(196,122,106,0.3);
+}
+.lp-btn-signin:hover {
+  background: var(--clr-primary-dark);
+  box-shadow: 0 4px 16px rgba(196,122,106,0.4);
+  transform: translateY(-1px);
+}
+.lp-header.scrolled .lp-btn-signin {
+  box-shadow: 0 2px 8px rgba(196,122,106,0.2);
+}
+[data-theme="dark"] .lp-btn-signin {
+  box-shadow: 0 2px 12px rgba(196,122,106,0.25);
 }
 
 /* === MOBILE MENU === */
@@ -383,7 +421,8 @@ html {
   background-position: center;
   background-repeat: no-repeat;
   opacity: 0;
-  transition: opacity 1.2s ease;
+  transition: opacity 1.5s ease;
+  filter: brightness(0.85) saturate(1.05);
 }
 
 .lp-hero-bg.active {
@@ -393,7 +432,7 @@ html {
 .lp-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.6) 100%);
+  background: linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.55) 100%);
   z-index: 1;
 }
 
@@ -420,25 +459,29 @@ html {
 .lp-hero-title {
   font-size: 4rem;
   font-weight: 300;
-  line-height: 1.1;
-  color: var(--clr-white);
+  line-height: 1.15;
+  color: #fff;
   margin-bottom: 20px;
   letter-spacing: -0.02em;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.3);
 }
 
 .lp-hero-highlight {
-  font-weight: 700;
+  font-weight: 800;
   color: var(--clr-accent);
   display: block;
   font-size: 4.2rem;
+  letter-spacing: -0.03em;
+  text-shadow: 0 2px 30px rgba(0,0,0,0.4);
 }
 
 .lp-hero-desc {
   font-size: 1.05rem;
   line-height: 1.7;
-  color: rgba(255,255,255,0.75);
+  color: rgba(255,255,255,0.85);
   margin-bottom: 40px;
   max-width: 520px;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.2);
 }
 
 .lp-hero-buttons {
@@ -943,6 +986,181 @@ html {
   color: rgba(255,255,255,0.5);
 }
 
+/* === PROMOTIONAL DEALS === */
+.promo-section {
+  padding: 80px 0;
+  background: var(--clr-light);
+}
+[data-theme="dark"] .promo-section {
+  background: var(--clr-cream);
+}
+
+/* Section background utilities */
+.lp-section {
+  padding: 80px 0;
+  background: var(--clr-white);
+}
+.lp-section-alt {
+  padding: 80px 0;
+  background: var(--clr-light);
+}
+[data-theme="dark"] .lp-section-alt {
+  background: var(--clr-cream);
+}
+
+.promo-coupon-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, var(--clr-primary) 0%, var(--clr-primary-dark) 100%);
+  border-radius: 16px;
+  padding: 36px 40px;
+  margin-bottom: 48px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(196,122,106,0.2);
+}
+[data-theme="dark"] .promo-coupon-banner {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.promo-coupon-left {
+  flex: 1;
+  color: #fff;
+  padding-right: 24px;
+}
+.promo-coupon-left h3 {
+  color: #fff;
+}
+.promo-coupon-left p {
+  color: rgba(255,255,255,0.85);
+}
+.promo-coupon-right {
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.15);
+  border: 1.5px dashed rgba(255,255,255,0.4);
+  border-radius: 12px;
+  padding: 16px 24px;
+  text-align: center;
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+.promo-coupon-right code {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: #fff;
+  background: rgba(0,0,0,0.2);
+  padding: 8px 16px;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.promo-coupon-notch-left,
+.promo-coupon-notch-right {
+  position: absolute;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--clr-light);
+  transform: translateY(-50%);
+}
+[data-theme="dark"] .promo-coupon-notch-left,
+[data-theme="dark"] .promo-coupon-notch-right {
+  background: var(--clr-cream);
+}
+.promo-coupon-notch-left {
+  left: -14px;
+}
+.promo-coupon-notch-right {
+  right: -14px;
+}
+
+.promo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.promo-card {
+  background: var(--clr-white);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--clr-border);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+.promo-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+}
+[data-theme="dark"] .promo-card:hover {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+
+.promo-card-img-wrap {
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+}
+.promo-card-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+.promo-card:hover .promo-card-img-wrap img {
+  transform: scale(1.05);
+}
+
+.promo-card-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+}
+.promo-card-tag {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--clr-primary);
+  background: rgba(196,122,106,0.1);
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+[data-theme="dark"] .promo-card-tag {
+  background: rgba(196,122,106,0.2);
+}
+.promo-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--clr-text);
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+}
+.promo-card-desc {
+  font-size: 0.78rem;
+  color: var(--clr-text-light);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Category Quick Links - dark mode */
+[data-theme="dark"] .quick-cat-link div {
+  background: var(--clr-cream) !important;
+  border-color: var(--clr-border) !important;
+}
+[data-theme="dark"] .quick-cat-link span {
+  color: var(--clr-text) !important;
+}
+
 /* === NEWSLETTER === */
 .lp-newsletter {
   padding: 100px 0;
@@ -1163,10 +1381,13 @@ html {
     max-width: 500px;
     margin: 0 auto;
   }
+  .promo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
-  .lp-nav, .lp-header-actions .lp-btn-outline, .lp-header-actions .lp-icon-btn {
+  .lp-nav, .lp-header-actions .lp-btn-outline, .lp-header-actions .lp-icon-btn, .lp-header-actions .lp-btn-signin {
     display: none;
   }
   .lp-menu-toggle {
@@ -1244,6 +1465,19 @@ html {
   section {
     padding: 80px 0 !important;
   }
+  .promo-coupon-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 28px 24px;
+    gap: 16px;
+  }
+  .promo-coupon-left {
+    padding-right: 0;
+  }
+  .promo-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1264,5 +1498,19 @@ html {
   }
   .container {
     padding: 0 16px;
+  }
+  .promo-coupon-banner {
+    padding: 24px 16px;
+    border-radius: 12px;
+  }
+  .promo-coupon-left h3 {
+    font-size: 1.2rem !important;
+  }
+  .promo-coupon-right {
+    padding: 12px 16px;
+  }
+  .promo-coupon-right code {
+    font-size: 0.9rem;
+    letter-spacing: 2px;
   }
 }

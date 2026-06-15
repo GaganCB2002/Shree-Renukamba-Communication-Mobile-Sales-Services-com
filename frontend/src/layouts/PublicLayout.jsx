@@ -196,14 +196,14 @@ const PublicLayout = () => {
                     <>
                       <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)', margin: '4px 0' }}></div>
                       <div style={{ padding: '2px 0' }}>
-                        <div style={{ padding: '4px 16px 6px', fontSize: '0.6rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>All Categories</div>
+                        <div style={{ padding: '4px 16px 6px', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }} className="lp-dropdown-cat-header">All Categories</div>
                         {categories.map((cat) => (
                           <Link
                             key={cat._id}
                             to={`/shop?category=${cat._id}`}
                             onClick={() => setDropdownOpen(false)}
-                            className="block px-4 py-2 text-xs font-medium hover:bg-slate-50 transition-colors"
-                            style={{ textDecoration: 'none', color: '#334155', display: 'block', paddingLeft: 16 }}
+                            className="block px-4 py-2 text-xs font-medium hover:bg-slate-50 transition-colors lp-dropdown-cat-item"
+                            style={{ textDecoration: 'none', display: 'block', paddingLeft: 16 }}
                           >
                             {cat.categoryName}
                           </Link>
@@ -257,7 +257,7 @@ const PublicLayout = () => {
                 }}>{totalItems}</span>
               )}
             </Link>
-            {!isLoginPage && <Link to="/login" className="lp-btn-outline lp-btn-sm">{t('nav.signIn')}</Link>}
+            {!isLoginPage && <Link to="/login" className="lp-btn-signin">{t('nav.signIn')}</Link>}
             <button className="lp-menu-toggle" onClick={() => setMenuOpen(true)} aria-label="Menu"><Menu size={24} /></button>
           </div>
         </div>

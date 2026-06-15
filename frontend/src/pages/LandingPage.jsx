@@ -10,9 +10,9 @@ import { useToast } from '../contexts/ToastContext';
 import CategoryBadge from '../components/CategoryBadge';
 
 const heroImages = [
-  'https://images.unsplash.com/photo-1550009158-9efff6c0e561?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=1200',
-  'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&q=80&w=1200',
+  'https://images.unsplash.com/photo-1550009158-9efff6c0e561?auto=format&fit=crop&q=90&w=1600',
+  'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=90&w=1600',
+  'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&q=90&w=1600',
 ];
 
 const collections = [
@@ -182,11 +182,11 @@ export default function LandingPage() {
       </section>
 
       {/* ── CATEGORY QUICK LINKS (FLIPKART STYLE) ── */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #E2E8F0', padding: '16px 0', boxShadow: '0 2px 4px rgba(0,0,0,0.01)' }} className="reveal">
+      <div style={{ background: 'var(--clr-white)', borderBottom: '1px solid var(--clr-border)', padding: '16px 0', boxShadow: '0 2px 4px rgba(0,0,0,0.01)' }} className="reveal">
         <div className="container" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '36px', overflowX: 'auto', paddingBottom: '4px' }}>
             <Link to="/shop" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textDecoration: 'none', gap: '8px', flexShrink: 0 }} className="quick-cat-link">
-              <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid #E2E8F0', overflow: 'hidden', transition: 'all 0.2s' }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--clr-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid var(--clr-border)', overflow: 'hidden', transition: 'all 0.2s' }}>
                 <span style={{ fontSize: '1.3rem' }}>🛍️</span>
               </div>
               <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>All Products</span>
@@ -194,7 +194,7 @@ export default function LandingPage() {
             
             {categories.map((cat) => (
               <Link key={cat._id} to={`/shop?category=${cat._id}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textDecoration: 'none', gap: '8px', flexShrink: 0 }} className="quick-cat-link">
-                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid #E2E8F0', overflow: 'hidden', transition: 'all 0.2s' }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--clr-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid var(--clr-border)', overflow: 'hidden', transition: 'all 0.2s' }}>
                   {cat.categoryImage ? (
                     <img src={cat.categoryImage} alt={cat.categoryName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
@@ -325,8 +325,8 @@ export default function LandingPage() {
             </div>
             
             {/* Dotted border circles on ticket sides */}
-            <div style={{ position: 'absolute', left: '-12px', top: '50%', transform: 'translateY(-50%)', width: '24px', height: '24px', borderRadius: '50%', background: '#f8fafc' }}></div>
-            <div style={{ position: 'absolute', right: '-12px', top: '50%', transform: 'translateY(-50%)', width: '24px', height: '24px', borderRadius: '50%', background: '#f8fafc' }}></div>
+            <div className="promo-coupon-notch-left"></div>
+            <div className="promo-coupon-notch-right"></div>
           </div>
 
           {/* Three-Column Offer Banners */}
@@ -386,7 +386,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── NEW STOCKS ── */}
-      <section style={{ padding: '80px 0', background: '#F8FAFC' }}>
+      <section className="lp-section-alt">
         <div className="container" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
           <div className="lp-section-head reveal">
             <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: '#4F46E5' }}>{t('home.newStocks')}</span>
@@ -396,7 +396,7 @@ export default function LandingPage() {
           {newStocks.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
               {newStocks.map((product, i) => (
-                <div key={product._id} className="reveal" style={{ borderRadius: 16, overflow: 'hidden', background: '#fff', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <div key={product._id} className="reveal" style={{ borderRadius: 16, overflow: 'hidden', background: 'var(--clr-white)', border: '1px solid var(--clr-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                   <Link to={`/products/${product._id}`} style={{ display: 'block', textDecoration: 'none' }}>
                     <div style={{ height: 200, background: '#F1F5F9', position: 'relative', overflow: 'hidden' }}>
                       {product.images && product.images[0] ? (
@@ -461,7 +461,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── REPAIR SERVICES ── */}
-      <section style={{ padding: '80px 0', background: '#fff' }}>
+      <section className="lp-section">
         <div className="container" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
           <div className="lp-section-head reveal">
             <span className="lp-section-tag" style={{ borderColor: 'rgba(234,88,12,0.3)', color: '#EA580C' }}>Repair Services</span>
@@ -470,7 +470,7 @@ export default function LandingPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px', marginTop: 48 }}>
             {repairServices.map((svc, i) => (
-              <div key={i} className="reveal" style={{ padding: '32px', borderRadius: 20, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+              <div key={i} className="reveal" style={{ padding: '32px', borderRadius: 20, background: 'var(--clr-cream)', border: '1px solid var(--clr-border)' }}>
                 <div style={{ width: 56, height: 56, borderRadius: 16, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                   <svc.icon size={28} style={{ color: '#4F46E5' }} />
                 </div>
@@ -486,7 +486,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── BEST SELLERS ── */}
-      <section style={{ padding: '80px 0', background: '#F8FAFC' }}>
+      <section className="lp-section-alt">
         <div className="container" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
           <div className="lp-section-head reveal">
             <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: '#4F46E5' }}>{t('home.featured')}</span>
@@ -496,13 +496,13 @@ export default function LandingPage() {
           {loading ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
               {[0, 1, 2, 3].map(i => (
-                <div key={i} style={{ height: 350, background: '#fff', borderRadius: 16, opacity: 0.5, border: '1px solid #E2E8F0' }} />
+                <div key={i} style={{ height: 350, background: 'var(--clr-white)', borderRadius: 16, opacity: 0.5, border: '1px solid var(--clr-border)' }} />
               ))}
             </div>
           ) : bestSellers.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
               {bestSellers.map((product, i) => (
-                <div key={product._id} className="reveal" style={{ borderRadius: 16, overflow: 'hidden', background: '#fff', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <div key={product._id} className="reveal" style={{ borderRadius: 16, overflow: 'hidden', background: 'var(--clr-white)', border: '1px solid var(--clr-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                   <Link to={`/products/${product._id}`} style={{ display: 'block', textDecoration: 'none' }}>
                     <div style={{ height: 220, background: '#F1F5F9', position: 'relative', overflow: 'hidden' }}>
                       {product.images && product.images[0] ? (
@@ -571,7 +571,7 @@ export default function LandingPage() {
       {/* ── ACCESSORIES SHOWCASE — MOVED TO POSITION 3 (ABOVE) ── */}
 
       {/* ── ABOUT / WHY CHOOSE US ── */}
-      <section style={{ padding: '80px 0', background: '#fff' }}>
+      <section className="lp-section">
         <div className="container" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
             <div className="reveal" style={{ position: 'relative' }}>
@@ -599,7 +599,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── COLLECTIONS ── */}
-      <section style={{ padding: '80px 0', background: '#F8FAFC' }}>
+      <section className="lp-section-alt">
         <div className="container" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
           <div className="lp-section-head reveal">
             <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: '#4F46E5' }}>{t('home.categories')}</span>
@@ -608,7 +608,7 @@ export default function LandingPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
             {collections.map((col, i) => (
-              <div key={i} className="reveal" style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid #E2E8F0', cursor: 'pointer' }}>
+              <div key={i} className="reveal" style={{ background: 'var(--clr-white)', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--clr-border)', cursor: 'pointer' }}>
                 <Link to={col.link} style={{ textDecoration: 'none', color: 'inherit' }}>
                   <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '4/5' }}>
                     <img src={col.image} alt={col.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
@@ -665,7 +665,7 @@ export default function LandingPage() {
             <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>{t('home.stayUpdated')}</h2>
             <p style={{ fontSize: '0.9rem', color: '#64748B', marginBottom: 36, lineHeight: 1.6 }}>{t('home.stayUpdatedDesc')}</p>
             <form onSubmit={(e) => e.preventDefault()} style={{ display: 'flex', gap: 0, maxWidth: 440, margin: '0 auto' }}>
-              <input type="email" placeholder={t('home.emailPlaceholder')} required style={{ flex: 1, padding: '16px 20px', border: '1px solid #E2E8F0', borderRight: 'none', borderRadius: '12px 0 0 12px', outline: 'none', fontSize: '0.85rem', background: '#F8FAFC' }} />
+              <input type="email" placeholder={t('home.emailPlaceholder')} required style={{ flex: 1, padding: '16px 20px', border: '1px solid var(--clr-border)', borderRight: 'none', borderRadius: '12px 0 0 12px', outline: 'none', fontSize: '0.85rem', background: 'var(--clr-cream)' }} />
               <button type="submit" style={{ padding: '16px 28px', background: '#4F46E5', color: '#fff', fontWeight: 600, fontSize: '0.8rem', border: 'none', borderRadius: '0 12px 12px 0', cursor: 'pointer' }}>{t('home.subscribe')}</button>
             </form>
           </div>
