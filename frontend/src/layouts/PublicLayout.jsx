@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Search, ShoppingBag, Heart, Menu, X, Globe, MapPin, Phone, Mail, ChevronDown, Smartphone, Wrench, Shield, Headphones, Gift, Bluetooth, RotateCcw } from 'lucide-react';
+import { Search, ShoppingBag, Heart, Menu, X, Globe, MapPin, Phone, Mail, ChevronDown, Smartphone, Wrench, Shield, Headphones, Gift, Bluetooth, RotateCcw, Sun, Moon } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { getCategories } from '../api/productsApi';
 import SearchSuggest from '../components/SearchSuggest';
 import CookieConsent from '../components/CookieConsent';
@@ -77,6 +78,7 @@ const staticCategories = [
 
 const PublicLayout = () => {
   const { t, lang, switchLang } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
   const [menuOpen, setMenuOpen] = useState(false);
@@ -124,16 +126,16 @@ const PublicLayout = () => {
     <div className="lp-page">
       <header className={`lp-header${scrolled ? ' scrolled' : ''}`}>
         <div className="lp-header-inner">
-          <div className="lp-logo" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <div className="lp-logo" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginRight: 'auto' }}>
             <img 
               src="/logo.png" 
               alt="Shree Renukamba Logo" 
               onClick={() => setLogoModalOpen(true)}
-              style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginRight: 10, background: '#fff', cursor: 'pointer' }} 
+              style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginRight: 10, background: '#fff', cursor: 'pointer' }} 
             />
             <Link to="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column' }}>
-              <span className="lp-logo-text" style={{ fontSize: '0.72rem', opacity: 1, margin: 0, lineHeight: 1.2 }}>SR Communication</span>
-              <div style={{ fontSize: '0.5rem', color: 'inherit', opacity: 0.6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Mobile &amp; Electronics</div>
+              <span className="lp-logo-text" style={{ fontSize: '0.85rem', fontWeight: 700, opacity: 1, margin: 0, lineHeight: 1.2, letterSpacing: '0.02em' }}>SR Communication</span>
+              <div style={{ fontSize: '0.55rem', color: 'inherit', opacity: 0.65, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1 }}>Mobiles &amp; Electronics</div>
             </Link>
           </div>
           <nav className="lp-nav" style={{ flex: '1 1 auto', justifyContent: 'center', margin: '0 20px' }}>
@@ -152,10 +154,9 @@ const PublicLayout = () => {
               </Link>
               {dropdownOpen && (
                 <div 
-                  className="absolute left-0 mt-2 bg-white rounded-2xl shadow-xl z-50 p-4 min-w-[560px]"
+                  className="absolute left-0 mt-2 shadow-xl z-50 p-4 min-w-[560px] lp-dropdown"
                   style={{
                     boxShadow: '0 20px 40px rgba(15, 23, 42, 0.12)',
-                    background: '#fff',
                     borderRadius: '20px',
                     border: '1px solid rgba(15, 23, 42, 0.06)',
                     display: 'grid',
@@ -219,6 +220,14 @@ const PublicLayout = () => {
             <Link to="/contact">{t('nav.contact')}</Link>
           </nav>
           <div className="lp-header-actions">
+            <button
+              onClick={toggleTheme}
+              className="lp-icon-btn"
+              aria-label={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
             <SearchSuggest headerScrolled={scrolled} />
             <button
               onClick={() => switchLang(lang === 'en' ? 'kn' : 'en')}
@@ -289,6 +298,12 @@ const PublicLayout = () => {
             <Link to="/accessories" onClick={() => setMenuOpen(false)}>{t('nav.accessories')}</Link>
             <Link to="/wishlist" onClick={() => setMenuOpen(false)}>Wishlist</Link>
             <Link to="/contact" onClick={() => setMenuOpen(false)}>{t('nav.contact')}</Link>
+            <button
+              onClick={() => { toggleTheme(); setMenuOpen(false); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '1.5rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', padding: 0, fontFamily: 'inherit' }}
+            >
+              {theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+            </button>
             <button
               onClick={() => { switchLang(lang === 'en' ? 'kn' : 'en'); setMenuOpen(false); }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '1.5rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', padding: 0, fontFamily: 'inherit' }}

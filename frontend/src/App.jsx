@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { ThemeProvider } from './contexts/ThemeContext';
 import PublicLayout from './layouts/PublicLayout';
 import DashboardLayout from './layouts/DashboardLayout';
 import LandingPage from './pages/LandingPage';
@@ -29,6 +30,7 @@ import AdminBilling from './pages/admin/AdminBilling';
 
 function App() {
   return (
+    <ThemeProvider>
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -76,6 +78,7 @@ function App() {
         } />
       </Routes>
     </Router>
+    </ThemeProvider>
   );
 }
 

@@ -12,6 +12,16 @@
   --clr-text: #3A3330;
   --clr-text-light: #8A7A6A;
   --clr-white: #FFF;
+  --clr-header-bg: transparent;
+  --clr-header-scrolled: rgba(255,255,255,0.95);
+  --clr-nav-link: #fff;
+  --clr-nav-link-scrolled: #3A3330;
+  --clr-icon-btn: #fff;
+  --clr-icon-btn-scrolled: #3A3330;
+  --clr-footer-bg: #2C2826;
+  --clr-footer-text: #E8D6C0;
+  --clr-footer-heading: #F5E6D3;
+  --clr-toggle-bg: #E8D6C0;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
@@ -19,6 +29,36 @@
   --shadow-xl: 0 20px 60px rgba(0,0,0,0.15);
   --radius: 2px;
   --transition: 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+[data-theme="dark"] {
+  --clr-primary: #D4897A;
+  --clr-primary-dark: #C47A6A;
+  --clr-accent: #C49A6E;
+  --clr-accent-light: #A8885E;
+  --clr-dark: #E8E0D8;
+  --clr-darker: #F0E8E0;
+  --clr-cream: #3A3530;
+  --clr-cream-dark: #4A4540;
+  --clr-light: #1E1B18;
+  --clr-border: #3A3530;
+  --clr-text: #E0D8D0;
+  --clr-text-light: #A09888;
+  --clr-white: #1A1714;
+  --clr-header-bg: transparent;
+  --clr-header-scrolled: rgba(30,27,24,0.96);
+  --clr-nav-link: #E0D8D0;
+  --clr-nav-link-scrolled: #E0D8D0;
+  --clr-icon-btn: #E0D8D0;
+  --clr-icon-btn-scrolled: #E0D8D0;
+  --clr-footer-bg: #141210;
+  --clr-footer-text: #A09888;
+  --clr-footer-heading: #E0D8D0;
+  --clr-toggle-bg: #4A4540;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,0.5);
+  --shadow-xl: 0 20px 60px rgba(0,0,0,0.6);
 }
 
 html {
@@ -44,7 +84,7 @@ html {
 }
 
 .lp-header.scrolled {
-  background: rgba(255,255,255,0.95);
+  background: var(--clr-header-scrolled);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   padding: 10px 0;
@@ -70,7 +110,7 @@ html {
 }
 
 .lp-header.scrolled .lp-logo {
-  color: var(--clr-dark);
+  color: var(--clr-nav-link-scrolled);
 }
 
 .lp-logo-icon {
@@ -108,7 +148,7 @@ html {
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.85);
+  color: var(--clr-nav-link);
   transition: color var(--transition);
   position: relative;
   padding: 8px 0;
@@ -134,17 +174,14 @@ html {
 }
 
 .lp-nav a:hover {
-  color: var(--clr-white);
-}
-
-.lp-header.scrolled .lp-nav a {
-  color: var(--clr-text);
-}
-
-.lp-header.scrolled .lp-nav a:hover {
   color: var(--clr-primary);
 }
-
+.lp-header.scrolled .lp-nav a {
+  color: var(--clr-nav-link-scrolled);
+}
+.lp-header.scrolled .lp-nav a:hover {
+  color: var(--clr-primary-dark);
+}
 .lp-header.scrolled .lp-nav a::after {
   background: var(--clr-primary);
 }
@@ -159,7 +196,7 @@ html {
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(255,255,255,0.85);
+  color: var(--clr-icon-btn);
   padding: 6px;
   border-radius: 50%;
   transition: all var(--transition);
@@ -168,17 +205,35 @@ html {
 }
 
 .lp-icon-btn:hover {
-  color: var(--clr-white);
+  color: var(--clr-primary);
   background: rgba(255,255,255,0.1);
 }
 
 .lp-header.scrolled .lp-icon-btn {
-  color: var(--clr-text);
+  color: var(--clr-icon-btn-scrolled);
 }
 
 .lp-header.scrolled .lp-icon-btn:hover {
-  color: var(--clr-primary);
+  color: var(--clr-primary-dark);
   background: rgba(0,0,0,0.05);
+}
+
+/* dropdown menu */
+.lp-dropdown {
+  background: var(--clr-white);
+}
+[data-theme="dark"] .lp-dropdown {
+  background: var(--clr-cream);
+  border-color: var(--clr-border);
+}
+.lp-dropdown a span:first-of-type {
+  color: var(--clr-text);
+}
+.lp-dropdown a span:last-of-type {
+  color: var(--clr-text-light);
+}
+[data-theme="dark"] .lp-dropdown a:hover {
+  background: rgba(255,255,255,0.05);
 }
 
 .lp-menu-toggle {
@@ -246,6 +301,16 @@ html {
   flex-direction: column;
   padding: 24px 32px;
   animation: menuSlideIn 0.3s ease forwards;
+}
+
+[data-theme="dark"] .lp-mobile-menu {
+  background: #141210;
+}
+[data-theme="dark"] .lp-mobile-nav a {
+  color: rgba(255,255,255,0.6);
+}
+[data-theme="dark"] .lp-mobile-nav a:hover {
+  color: #D4897A;
 }
 
 @keyframes menuSlideIn {
@@ -527,7 +592,8 @@ html {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(139,26,26,0.1) 0%, transparent 50%);
+  background: linear-gradient(135deg, var(--clr-primary) 0%, transparent 50%);
+  opacity: 0.08;
 }
 
 .lp-about-image img {
@@ -801,7 +867,7 @@ html {
 }
 
 .lp-testimonials .lp-section-tag {
-  border-color: rgba(201,168,76,0.3);
+  border-color: rgba(212,165,116,0.3);
 }
 
 .lp-testimonials .lp-section-head h2 {
@@ -922,7 +988,7 @@ html {
 }
 
 .lp-newsletter-form input::placeholder {
-  color: #aaa;
+  color: var(--clr-text-light);
 }
 
 .lp-newsletter-form .lp-btn-primary {
@@ -933,20 +999,20 @@ html {
 }
 
 .lp-newsletter-form .lp-btn-primary:hover {
-  background: #333;
+  background: var(--clr-primary-dark);
   transform: none;
   box-shadow: none;
 }
 
 /* === FOOTER === */
 .lp-footer {
-  background: var(--clr-darker);
-  color: rgba(255,255,255,0.7);
+  background: var(--clr-footer-bg, var(--clr-darker));
+  color: var(--clr-footer-text);
   padding: 80px 0 0;
 }
 
 .lp-footer .lp-logo {
-  color: var(--clr-white);
+  color: var(--clr-footer-heading);
   margin-bottom: 16px;
 }
 
@@ -959,13 +1025,14 @@ html {
   grid-template-columns: 2fr 1fr 1fr 1.2fr;
   gap: 48px;
   padding-bottom: 60px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--clr-border);
 }
 
 .lp-footer-brand p {
   font-size: 0.82rem;
   line-height: 1.7;
-  color: rgba(255,255,255,0.5);
+  color: var(--clr-footer-text);
+  opacity: 0.7;
   max-width: 320px;
   margin-bottom: 24px;
   margin-top: 12px;
@@ -980,11 +1047,11 @@ html {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.15);
+  border: 1px solid var(--clr-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255,255,255,0.5);
+  color: var(--clr-footer-text);
   transition: all var(--transition);
 }
 
@@ -999,7 +1066,7 @@ html {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--clr-white);
+  color: var(--clr-footer-heading);
   margin-bottom: 24px;
 }
 
@@ -1011,7 +1078,7 @@ html {
 
 .lp-footer-col a {
   font-size: 0.82rem;
-  color: rgba(255,255,255,0.5);
+  color: var(--clr-footer-text);
   text-decoration: none;
   transition: color var(--transition);
 }
@@ -1025,7 +1092,7 @@ html {
   align-items: center;
   gap: 10px;
   font-size: 0.82rem;
-  color: rgba(255,255,255,0.5);
+  color: var(--clr-footer-text);
 }
 
 .lp-contact-list svg {
@@ -1039,7 +1106,8 @@ html {
   align-items: center;
   padding: 24px 0;
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.35);
+  color: var(--clr-footer-text);
+  opacity: 0.6;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
