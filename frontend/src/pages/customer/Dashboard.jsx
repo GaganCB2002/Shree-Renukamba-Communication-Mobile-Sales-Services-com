@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Bell, Wrench, ShoppingBag, Star, ArrowRight, RefreshCw } from 'lucide-react';
+import { Bell, Wrench, ShoppingBag, Star, ArrowRight, RefreshCw, Calendar, Clock, Eye, CheckCircle, PauseCircle } from 'lucide-react';
 import { getMyRepairs } from '../../api/repairsApi';
 import { getMyInvoices } from '../../api/invoicesApi';
 import { PageLoading } from '../../components/LoadingSpinner';
@@ -92,7 +92,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-border relative overflow-hidden">
           <div className="flex justify-between items-start mb-4">
             <h3 className="font-bold text-primary-950">Active Repairs</h3>
@@ -108,6 +108,14 @@ const Dashboard = () => {
           </div>
           <div className="text-5xl font-bold text-primary-950 mb-2">{repairs.length}</div>
           <div className="text-xs font-bold text-secondary-500 uppercase tracking-wider">All time</div>
+        </div>
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-border relative overflow-hidden">
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="font-bold text-primary-950">Completed</h3>
+            <div className="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center"><CheckCircle size={16} /></div>
+          </div>
+          <div className="text-5xl font-bold text-green-600 mb-2">{repairs.filter(r => r.repairStatus === 'Delivered').length}</div>
+          <div className="text-xs font-bold text-secondary-500 uppercase tracking-wider">Delivered devices</div>
         </div>
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-border relative overflow-hidden">
           <div className="flex justify-between items-start mb-4">
@@ -135,9 +143,21 @@ const Dashboard = () => {
                 <div className="w-16 h-16 bg-secondary-200 rounded-xl flex items-center justify-center text-2xl">
                   {statusIcons[currentRepair.repairStatus] || '📱'}
                 </div>
-                <div>
+                <div className="flex-1">
                   <h3 className="font-bold text-primary-950 text-lg">{currentRepair.device?.brand || 'Device'} {currentRepair.device?.model || ''}</h3>
                   <p className="text-sm text-secondary-600">{currentRepair.issueDescription}</p>
+                  {currentRepair.onHold && (
+                    <div className="flex items-center gap-1.5 mt-2 text-amber-600 text-xs font-bold">
+                      <PauseCircle size={14} />
+                      On Hold - {currentRepair.holdReason || 'Waiting for parts'}
+                    </div>
+                  )}
+                  {currentRepair.expectedDeliveryDate && (
+                    <div className="flex items-center gap-1.5 mt-1.5 text-indigo-600 text-xs font-bold">
+                      <Calendar size={14} />
+                      Expected Delivery: {new Date(currentRepair.expectedDeliveryDate).toLocaleDateString()}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -156,6 +176,11 @@ const Dashboard = () => {
                       </div>
                       <div className={`w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl ${isCurrent ? 'bg-primary-50 border border-primary-100' : ''}`}>
                         <div className={`font-bold mb-1 ${isCurrent ? 'text-primary-600' : isPast ? 'text-primary-950' : 'text-secondary-500'}`}>{status}</div>
+                        {isCurrent && currentRepair.expectedDeliveryDate && (
+                          <div className="text-xs text-indigo-600 font-semibold flex items-center gap-1 mt-1">
+                            <Calendar size={12} /> Est. delivery: {new Date(currentRepair.expectedDeliveryDate).toLocaleDateString()}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -186,6 +211,7 @@ const Dashboard = () => {
                       <th className="pb-4 font-bold text-secondary-500 uppercase tracking-wider text-xs">Ticket</th>
                       <th className="pb-4 font-bold text-secondary-500 uppercase tracking-wider text-xs">Device</th>
                       <th className="pb-4 font-bold text-secondary-500 uppercase tracking-wider text-xs">Status</th>
+                      <th className="pb-4 font-bold text-secondary-500 uppercase tracking-wider text-xs">Delivery</th>
                       <th className="pb-4 font-bold text-secondary-500 uppercase tracking-wider text-xs text-right">Cost</th>
                       <th className="pb-4 font-bold text-secondary-500 uppercase tracking-wider text-xs text-right">Bill</th>
                     </tr>
@@ -194,12 +220,29 @@ const Dashboard = () => {
                     {repairs.slice(0, 5).map((repair) => (
                       <tr key={repair._id}>
                         <td className="py-4 text-secondary-900 font-medium">{new Date(repair.createdAt).toLocaleDateString()}</td>
-                        <td className="py-4 text-secondary-500 font-mono text-xs">{repair.repairId}</td>
+                        <td className="py-4">
+                          <span className="text-secondary-500 font-mono text-xs">{repair.repairId}</span>
+                        </td>
                         <td className="py-4 font-bold text-primary-950">{repair.device?.brand || 'Device'}</td>
                         <td className="py-4">
-                          <span className={`text-xs font-bold px-2.5 py-1 rounded-md border ${getStatusColor(repair.repairStatus)}`}>
-                            {repair.repairStatus}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-xs font-bold px-2.5 py-1 rounded-md border ${getStatusColor(repair.repairStatus)}`}>
+                              {repair.repairStatus}
+                            </span>
+                            {repair.onHold && (
+                              <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">HOLD</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4">
+                          {repair.expectedDeliveryDate ? (
+                            <span className="text-xs text-indigo-600 font-medium flex items-center gap-1">
+                              <Calendar size={11} />
+                              {new Date(repair.expectedDeliveryDate).toLocaleDateString()}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-secondary-400">-</span>
+                          )}
                         </td>
                         <td className="py-4 font-bold text-primary-950 text-right">
                           {repair.finalCost ? `₹${repair.finalCost}` : repair.estimatedCost ? `₹${repair.estimatedCost}` : '-'}
@@ -271,6 +314,9 @@ const Dashboard = () => {
               </Link>
               <Link to="/shop" className="w-full bg-secondary-50 hover:bg-secondary-100 border border-border text-primary-900 rounded-xl py-3 flex items-center justify-center gap-2 font-bold transition-colors">
                 <ShoppingBag size={18} /> Browse Store
+              </Link>
+              <Link to="/track" className="w-full bg-white border border-border text-primary-950 rounded-xl py-3 flex items-center justify-center gap-2 font-bold hover:bg-secondary-50 transition-colors">
+                <Eye size={18} /> Track Repair
               </Link>
             </div>
           </div>

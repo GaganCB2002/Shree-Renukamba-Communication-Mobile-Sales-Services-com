@@ -215,6 +215,99 @@ export default function LandingPage() {
         </div>
       </div>
 
+      {/* ── ACCESSORIES SHOWCASE (MARQUEE) — MOVED TO TOP 3RD POSITION ── */}
+      <section style={{ padding: '60px 0', background: '#F1F5F9', overflow: 'hidden' }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: '#4F46E5' }}>Accessories Showcase</span>
+          <h2 style={{ fontSize: '2rem', color: '#0F172A', marginBottom: 8 }}>All Types of Mobile Accessories</h2>
+          <p style={{ color: '#64748B' }}>Screen guards, back cases, chargers, and everything your device needs.</p>
+        </div>
+        
+        <div className="accessories-marquee-container">
+          <div className="accessories-marquee">
+            {[...slidingAccessories, ...slidingAccessories].map((item, idx) => (
+              <div key={idx} className="marquee-item">
+                <div className="marquee-img-wrap">
+                  <img src={item.image} alt={item.title} />
+                </div>
+                <div className="marquee-details">
+                  <h4>{item.title}</h4>
+                  <span>{item.price}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <style dangerouslySetInnerHTML={{__html: `
+          .accessories-marquee-container {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            background: #fff;
+            padding: 30px 0;
+            border-top: 1px solid #E2E8F0;
+            border-bottom: 1px solid #E2E8F0;
+          }
+          .accessories-marquee {
+            display: flex;
+            gap: 24px;
+            width: max-content;
+            animation: marqueeScroll 45s linear infinite;
+            padding-left: 24px;
+          }
+          .accessories-marquee:hover {
+            animation-play-state: paused;
+          }
+          .marquee-item {
+            width: 200px;
+            background: #F8FAFC;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #E2E8F0;
+            flex-shrink: 0;
+            transition: transform 0.3s ease;
+          }
+          .marquee-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+          }
+          .marquee-img-wrap {
+            height: 140px;
+            width: 100%;
+            background: #fff;
+            border-bottom: 1px solid #E2E8F0;
+          }
+          .marquee-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 16px;
+          }
+          .marquee-details {
+            padding: 12px 16px;
+            text-align: center;
+          }
+          .marquee-details h4 {
+            font-size: 0.85rem;
+            color: #0F172A;
+            margin: 0 0 4px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .marquee-details span {
+            font-size: 0.8rem;
+            color: #4F46E5;
+            font-weight: 600;
+          }
+          @keyframes marqueeScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(-50% - 12px)); }
+          }
+        `}} />
+      </section>
+
       {/* ── PROMOTIONAL DEALS & COUPONS (FLIPKART STYLE) ── */}
       <section className="promo-section reveal">
         <div className="container" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
@@ -475,232 +568,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── ACCESSORIES SHOWCASE (MARQUEE) ── */}
-      <section style={{ padding: '60px 0', background: '#F1F5F9', overflow: 'hidden' }}>
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <span className="lp-section-tag" style={{ borderColor: 'rgba(79,70,229,0.3)', color: '#4F46E5' }}>Accessories Showcase</span>
-          <h2 style={{ fontSize: '2rem', color: '#0F172A', marginBottom: 8 }}>All Types of Mobile Accessories</h2>
-          <p style={{ color: '#64748B' }}>Screen guards, back cases, chargers, and everything your device needs.</p>
-        </div>
-        
-        <div className="accessories-marquee-container">
-          <div className="accessories-marquee">
-            {[...slidingAccessories, ...slidingAccessories].map((item, idx) => (
-              <div key={idx} className="marquee-item">
-                <div className="marquee-img-wrap">
-                  <img src={item.image} alt={item.title} />
-                </div>
-                <div className="marquee-details">
-                  <h4>{item.title}</h4>
-                  <span>{item.price}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <style dangerouslySetInnerHTML={{__html: `
-          .accessories-marquee-container {
-            width: 100%;
-            overflow: hidden;
-            position: relative;
-            background: #fff;
-            padding: 30px 0;
-            border-top: 1px solid #E2E8F0;
-            border-bottom: 1px solid #E2E8F0;
-          }
-          .accessories-marquee {
-            display: flex;
-            gap: 24px;
-            width: max-content;
-            animation: marqueeScroll 45s linear infinite;
-            padding-left: 24px;
-          }
-          .accessories-marquee:hover {
-            animation-play-state: paused;
-          }
-          .marquee-item {
-            width: 200px;
-            background: #F8FAFC;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #E2E8F0;
-            flex-shrink: 0;
-            transition: transform 0.3s ease;
-          }
-          .marquee-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-          }
-          .marquee-img-wrap {
-            height: 140px;
-            width: 100%;
-            background: #fff;
-            border-bottom: 1px solid #E2E8F0;
-          }
-          .marquee-img-wrap img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            padding: 16px;
-          }
-          .marquee-details {
-            padding: 12px 16px;
-            text-align: center;
-          }
-          .marquee-details h4 {
-            font-size: 0.85rem;
-            color: #0F172A;
-            margin: 0 0 4px 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
-          .marquee-details span {
-            font-size: 0.8rem;
-            color: #4F46E5;
-            font-weight: 600;
-          }
-          @keyframes marqueeScroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(calc(-50% - 12px)); }
-          }
-          
-          /* --- FLIPKART STYLE QUICK LINKS --- */
-          .quick-cat-link {
-            transition: transform 0.2s ease, opacity 0.2s ease;
-          }
-          .quick-cat-link:hover {
-            transform: translateY(-3px);
-            opacity: 0.95;
-          }
-          .quick-cat-link:hover span {
-            color: var(--clr-primary) !important;
-          }
-          .quick-cat-link:hover div {
-            border-color: var(--clr-primary) !important;
-            box-shadow: 0 6px 14px rgba(196,122,106,0.15);
-          }
-
-          /* --- FLIPKART STYLE PROMO SECTIONS --- */
-          .promo-section {
-            padding: 40px 0;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-          }
-          .promo-coupon-banner {
-            background: linear-gradient(135deg, #c47a6a 0%, #1e1b4b 100%);
-            color: #fff;
-            border-radius: 20px;
-            padding: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 10px 30px -10px rgba(196,122,106,0.25);
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 24px;
-          }
-          .promo-coupon-left {
-            max-width: 65%;
-            position: relative;
-            z-index: 2;
-          }
-          .promo-coupon-right {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(8px);
-            border: 1px dashed rgba(255,255,255,0.4);
-            padding: 16px 24px;
-            border-radius: 12px;
-            text-align: center;
-            position: relative;
-            z-index: 2;
-          }
-          .promo-coupon-right code {
-            font-size: 1.15rem;
-            font-weight: 800;
-            letter-spacing: 2.5px;
-            font-family: monospace;
-          }
-          .promo-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-          }
-          @media (max-width: 768px) {
-            .promo-grid {
-              grid-template-columns: 1fr;
-            }
-            .promo-coupon-banner {
-              flex-direction: column;
-              text-align: center;
-              gap: 20px;
-            }
-            .promo-coupon-left {
-              max-width: 100%;
-            }
-          }
-          .promo-card {
-            border-radius: 20px;
-            overflow: hidden;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-          }
-          .promo-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08);
-          }
-          .promo-card-img-wrap {
-            height: 160px;
-            background: #f1f5f9;
-            position: relative;
-            overflow: hidden;
-          }
-          .promo-card-img-wrap img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-          }
-          .promo-card:hover .promo-card-img-wrap img {
-            transform: scale(1.05);
-          }
-          .promo-card-content {
-            padding: 20px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-          }
-          .promo-card-tag {
-            color: var(--clr-primary);
-            font-size: 0.65rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 8px;
-          }
-          .promo-card-title {
-            font-size: 1.05rem;
-            font-weight: 750;
-            color: #0f172a;
-            margin-bottom: 8px;
-            line-height: 1.35;
-          }
-          .promo-card-desc {
-            font-size: 0.8rem;
-            color: #64748b;
-            line-height: 1.6;
-          }
-        `}} />
-      </section>
+      {/* ── ACCESSORIES SHOWCASE — MOVED TO POSITION 3 (ABOVE) ── */}
 
       {/* ── ABOUT / WHY CHOOSE US ── */}
       <section style={{ padding: '80px 0', background: '#fff' }}>

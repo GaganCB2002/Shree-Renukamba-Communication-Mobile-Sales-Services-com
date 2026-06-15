@@ -1,13 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser, getUserProfile, forgotPassword, getSecurityQuestions, getUsers } = require('../controllers/authController');
+const {
+  registerUser,
+  loginUser,
+  getUserProfile,
+  updateUserProfile,
+  changePassword,
+  resendOtp,
+  forgotPassword,
+  getSecurityQuestions,
+  getUsers,
+  getAllCustomers,
+} = require('../controllers/authController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
-router.post('/register', registerUser);
-router.post('/login', loginUser);
-router.post('/forgot-password', forgotPassword);
-router.post('/get-security-questions', getSecurityQuestions);
-router.get('/profile', protect, getUserProfile);
-router.get('/users', protect, admin, getUsers);
+router.route('/register').post(registerUser);
+router.route('/login').post(loginUser);
+router.route('/forgot-password').post(forgotPassword);
+router.route('/get-security-questions').post(getSecurityQuestions);
+router.route('/resend-otp').post(resendOtp);
+router.route('/profile')
+  .get(protect, getUserProfile)
+  .put(protect, updateUserProfile);
+router.route('/change-password').put(protect, changePassword);
+router.route('/users').get(protect, admin, getUsers);
+router.route('/customers').get(protect, admin, getAllCustomers);
 
 module.exports = router;

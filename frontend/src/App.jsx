@@ -17,11 +17,15 @@ import Laptops from './pages/ecommerce/Laptops';
 import Accessories from './pages/ecommerce/Accessories';
 import Cart from './pages/ecommerce/Cart';
 import Wishlist from './pages/ecommerce/Wishlist';
+import Coupons from './pages/ecommerce/Coupons';
+import InvoiceDetail from './pages/ecommerce/InvoiceDetail';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRepairs from './pages/admin/AdminRepairs';
+import AdminCoupons from './pages/admin/AdminCoupons';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminInventory from './pages/admin/AdminInventory';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminBilling from './pages/admin/AdminBilling';
 
 function App() {
   return (
@@ -42,6 +46,7 @@ function App() {
           <Route path="products/:id" element={<ProductDetail />} />
           <Route path="terms" element={<TermsAndConditions />} />
           <Route path="privacy" element={<PrivacyPolicy />} />
+          <Route path="coupons" element={<Coupons />} />
         </Route>
 
         <Route path="/dashboard" element={<DashboardLayout />}>
@@ -49,12 +54,15 @@ function App() {
           <Route path="repairs/new" element={<BookRepair />} />
         </Route>
 
+        <Route path="/invoices/:id" element={<InvoiceDetail />} />
         <Route path="/admin" element={<DashboardLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="repairs" element={<AdminRepairs />} />
+          <Route path="coupons" element={<AdminCoupons />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="inventory" element={<AdminInventory />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="billing" element={<AdminBilling />} />
         </Route>
 
         <Route path="*" element={

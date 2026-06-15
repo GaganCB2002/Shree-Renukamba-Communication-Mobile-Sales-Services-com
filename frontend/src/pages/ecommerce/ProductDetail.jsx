@@ -313,44 +313,101 @@ const ProductDetail = () => {
           </section>
         )}
 
+        {/* ── FULL PRODUCT SPECIFICATIONS (Flipkart/Amazon style) ── */}
         <section className="mt-16 mb-8">
-          <div className="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-border">
-            <h2 className="text-xl font-bold text-primary-950 mb-6">Product Details</h2>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div>
-                <h3 className="text-sm font-bold text-primary-950 uppercase tracking-wider mb-4">Description</h3>
-                <p className="text-secondary-600 leading-relaxed">{product.description}</p>
-                <ul className="mt-4 space-y-2">
-                  {[
-                    '45-point quality inspection performed',
-                    '1-year comprehensive warranty included',
-                    'Free shipping with tracking',
-                    '30-day hassle-free returns',
-                    '24/7 customer support',
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-secondary-600">
-                      <CheckCircle size={14} className="text-green-500 shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-primary-950 uppercase tracking-wider mb-4">Full Specifications</h3>
-                {specs.length > 0 ? (
-                  <table className="w-full text-sm">
-                    <tbody>
-                      {specs.map(([key, val], i) => (
-                        <tr key={key} className={i % 2 === 0 ? 'bg-secondary-50' : ''}>
-                          <td className="py-2.5 px-4 text-secondary-500 font-medium w-2/5">{key}</td>
-                          <td className="py-2.5 px-4 text-primary-950 font-semibold">{val}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <p className="text-secondary-500">No specifications available.</p>
-                )}
+          <div className="bg-white rounded-3xl shadow-sm border border-border overflow-hidden">
+            <div className="px-8 py-5 border-b border-border bg-secondary-50/30">
+              <h2 className="text-xl font-bold text-primary-950 flex items-center gap-2">
+                <span style={{ width: 4, height: 24, background: '#6366f1', borderRadius: 2, display: 'inline-block' }}></span>
+                Product Specifications
+              </h2>
+            </div>
+            <div className="p-8 md:p-10">
+              {specs.length > 0 ? (
+                <table className="w-full text-sm border-collapse">
+                  <tbody>
+                    {specs.map(([key, val], i) => (
+                      <tr key={key} className={i % 2 === 0 ? 'bg-secondary-50/50' : 'bg-white'}>
+                        <td className="py-3.5 px-5 text-secondary-500 font-medium w-2/5 border-b border-border/50" style={{ color: '#64748b' }}>{key}</td>
+                        <td className="py-3.5 px-5 text-primary-950 font-semibold border-b border-border/50">{val}</td>
+                      </tr>
+                    ))}
+                    <tr className={specs.length % 2 === 0 ? 'bg-secondary-50/50' : 'bg-white'}>
+                      <td className="py-3.5 px-5 text-secondary-500 font-medium w-2/5 border-b border-border/50" style={{ color: '#64748b' }}>Warranty</td>
+                      <td className="py-3.5 px-5 text-primary-950 font-semibold border-b border-border/50">1 Year Comprehensive Warranty</td>
+                    </tr>
+                    <tr className={(specs.length + 1) % 2 === 0 ? 'bg-secondary-50/50' : 'bg-white'}>
+                      <td className="py-3.5 px-5 text-secondary-500 font-medium w-2/5 border-b border-border/50" style={{ color: '#64748b' }}>Condition</td>
+                      <td className="py-3.5 px-5 text-primary-950 font-semibold border-b border-border/50">{product.discount > 0 ? 'Certified Pre-Owned' : 'New'}</td>
+                    </tr>
+                    <tr className={(specs.length + 2) % 2 === 0 ? 'bg-secondary-50/50' : 'bg-white'}>
+                      <td className="py-3.5 px-5 text-secondary-500 font-medium w-2/5" style={{ color: '#64748b' }}>In The Box</td>
+                      <td className="py-3.5 px-5 text-primary-950 font-semibold">
+                        {product.title}, Charging Cable, SIM ejector tool, User Manual, Warranty Card
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              ) : (
+                <div className="text-center py-12">
+                  <Package size={40} className="mx-auto text-slate-300 mb-3" />
+                  <p className="text-secondary-500">Detailed specifications are not available for this product.</p>
+                  <p className="text-secondary-400 text-xs mt-2">Contact our support team for more information.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ── HIGHLIGHTS SECTION (Flipkart style) ── */}
+        <section className="mt-8 mb-8">
+          <div className="bg-white rounded-3xl shadow-sm border border-border overflow-hidden">
+            <div className="px-8 py-5 border-b border-border bg-secondary-50/30">
+              <h2 className="text-xl font-bold text-primary-950 flex items-center gap-2">
+                <span style={{ width: 4, height: 24, background: '#6366f1', borderRadius: 2, display: 'inline-block' }}></span>
+                Product Description
+              </h2>
+            </div>
+            <div className="p-8 md:p-10">
+              <div className="grid md:grid-cols-2 gap-10">
+                <div>
+                  <p className="text-secondary-600 leading-relaxed">{product.description}</p>
+                  <ul className="mt-5 space-y-3">
+                    {[
+                      '45-point quality inspection performed',
+                      '1-year comprehensive warranty included',
+                      'Free shipping with tracking',
+                      '30-day hassle-free returns',
+                      '24/7 customer support',
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-center gap-3 text-sm text-secondary-600">
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1', display: 'inline-block', flexShrink: 0 }}></span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-secondary-50/30 rounded-2xl p-6">
+                  <h3 className="text-sm font-bold text-primary-950 uppercase tracking-wider mb-5">Why buy from SR Communication?</h3>
+                  <div className="space-y-5">
+                    {[
+                      { icon: Shield, title: 'Certified Quality', desc: 'Every product undergoes a rigorous 45-point inspection process.' },
+                      { icon: Truck, title: 'Free Delivery', desc: 'Free shipping on all orders with real-time tracking.' },
+                      { icon: RotateCcw, title: 'Easy Returns', desc: '30-day return policy. No questions asked.' },
+                      { icon: CheckCircle, title: '1 Year Warranty', desc: 'Comprehensive warranty covering manufacturing defects.' },
+                    ].map((item, i) => (
+                      <div key={i} className="flex gap-4 items-start">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                          <item.icon size={18} className="text-indigo-600" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-primary-950">{item.title}</div>
+                          <div className="text-xs text-secondary-500 mt-0.5">{item.desc}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -98,22 +98,24 @@ html {
 
 .lp-nav {
   display: flex;
-  gap: 32px;
+  gap: 24px;
   align-items: center;
+  justify-content: center;
 }
 
 .lp-nav a {
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.85);
   transition: color var(--transition);
   position: relative;
-  padding: 6px 0;
+  padding: 8px 0;
   display: flex;
   align-items: center;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .lp-nav a::after {

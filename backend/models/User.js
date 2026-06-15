@@ -50,7 +50,20 @@ const userSchema = new mongoose.Schema(
     ],
     profileImage: {
       type: String,
-      default: 'default-profile.png', // Or cloudinary URL
+      default: '',
+    },
+    otp: {
+      type: String,
+      select: false,
+    },
+    otpExpires: {
+      type: Date,
+      select: false,
+    },
+    passwordHistory: {
+      type: [String],
+      default: [],
+      select: false,
     },
   },
   {
@@ -58,7 +71,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Encrypt password before saving
 userSchema.pre('save', async function () {
   if (this.isModified('password')) {
     const salt = await bcrypt.genSalt(10);
@@ -74,12 +86,10 @@ userSchema.pre('save', async function () {
   }
 });
 
-// Method to check if entered password matches hashed password in DB
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Method to check a security answer
 userSchema.methods.matchSecurityAnswer = async function (questionIndex, enteredAnswer) {
   if (!this.securityQuestions[questionIndex]) return false;
   return await bcrypt.compare(enteredAnswer, this.securityQuestions[questionIndex].answer);

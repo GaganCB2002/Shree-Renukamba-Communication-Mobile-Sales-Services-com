@@ -32,8 +32,10 @@ const Products = () => {
   useEffect(() => {
     const cat = searchParams.get('category') || '';
     const keyword = searchParams.get('keyword') || '';
+    const cond = searchParams.get('condition') || '';
     setSelectedCategory(cat);
     setSearchTerm(keyword);
+    setSelectedCondition(cond);
   }, [searchParams]);
 
   useEffect(() => {
@@ -98,6 +100,7 @@ const Products = () => {
 
   const filteredProducts = products.filter((p) => {
     if (selectedCondition) {
+      if (selectedCondition.toLowerCase() === 'refurbished') return true;
       const cond = p.condition || p.specifications?.Condition || '';
       return cond.toLowerCase() === selectedCondition.toLowerCase();
     }

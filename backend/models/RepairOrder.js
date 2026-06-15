@@ -58,7 +58,26 @@ const repairOrderSchema = new mongoose.Schema(
     },
     warrantyExpiresAt: {
       type: Date,
-    }
+    },
+    expectedDeliveryDate: {
+      type: Date,
+    },
+    onHold: {
+      type: Boolean,
+      default: false,
+    },
+    holdReason: {
+      type: String,
+      default: '',
+    },
+    diagnosisDetails: {
+      type: String,
+      default: '',
+    },
+    customerNotes: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,

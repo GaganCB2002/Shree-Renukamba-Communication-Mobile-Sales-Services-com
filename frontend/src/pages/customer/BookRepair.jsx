@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Smartphone, Tablet, Laptop, Watch, Monitor, HelpCircle, ArrowRight, ArrowLeft, Check, Loader2 } from 'lucide-react';
-import { bookRepair } from '../../api/repairsApi';
+import { Smartphone, Tablet, Laptop, Watch, Monitor, HelpCircle, ArrowRight, ArrowLeft, Check, Loader2, Upload, Camera, Search } from 'lucide-react';
+import { bookRepair, imeiLookup } from '../../api/repairsApi';
 import { useSelector } from 'react-redux';
 
 const devices = [
@@ -39,6 +39,9 @@ const BookRepair = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
+  const [imeiLoading, setImeiLoading] = useState(false);
+  const [imeiResult, setImeiResult] = useState(null);
+  const fileInputRef = useRef(null);
 
   if (!userInfo) {
     navigate('/login');
@@ -47,6 +50,59 @@ const BookRepair = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleImeiLookup = async (imeiValue) => {
+    if (!imeiValue || imeiValue.length < 10) return;
+    try {
+      setImeiLoading(true);
+      setError('');
+      setImeiResult(null);
+      const result = await imeiLookup({ imei: imeiValue });
+      if (result.found) {
+        setImeiResult(result);
+        if (result.brand) setFormData(prev => ({ ...prev, brand: result.brand }));
+        if (result.model) setFormData(prev => ({ ...prev, model: result.model }));
+      } else {
+        setImeiResult(result);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not look up IMEI');
+    } finally {
+      setImeiLoading(false);
+    }
+  };
+
+  const handleScreenshotUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setImeiLoading(true);
+      setError('');
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target.result;
+        const result = await imeiLookup({ screenshot: base64 });
+
+        if (result.imei) {
+          setFormData(prev => ({ ...prev, imei: result.imei }));
+        }
+        if (result.found) {
+          setImeiResult(result);
+          if (result.brand) setFormData(prev => ({ ...prev, brand: result.brand }));
+          if (result.model) setFormData(prev => ({ ...prev, model: result.model }));
+        } else {
+          setImeiResult(result);
+        }
+        setImeiLoading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setError('Failed to read screenshot. Please enter IMEI manually.');
+      setImeiLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -60,7 +116,7 @@ const BookRepair = () => {
           imei: formData.imei,
           condition: formData.condition,
         },
-        issueDescription: formData.issueDescription,
+        issueDescription: formData.issueDescription || formData.issueCategory,
         estimatedCost: formData.estimatedCost ? Number(formData.estimatedCost) : undefined,
       };
       const result = await bookRepair(data);
@@ -87,10 +143,11 @@ const BookRepair = () => {
         </div>
         <h2 className="text-3xl font-bold text-primary-950 mb-2">Repair Booked!</h2>
         <p className="text-secondary-600 mb-2">Your repair ticket <span className="font-bold text-primary-600">{success.repairId}</span> has been created.</p>
-        <p className="text-sm text-secondary-500 mb-8">We'll notify you of the status updates.</p>
+        <p className="text-sm text-secondary-500 mb-8">We'll notify you of the status updates via email.</p>
         <button onClick={() => navigate('/dashboard')} className="btn-primary">
           View My Dashboard
         </button>
+        <p className="text-xs text-secondary-400 mt-4">You can track your repair status in real-time from your dashboard.</p>
       </div>
     );
   }
@@ -201,7 +258,86 @@ const BookRepair = () => {
                 <h2 className="text-2xl font-bold text-primary-950">Device Details</h2>
                 <p className="text-secondary-500 mt-1">Help us identify your device precisely.</p>
               </div>
+
+              <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-5 mb-8">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                    <Camera size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-indigo-900 text-sm mb-1">Auto-Detect Device</h3>
+                    <p className="text-xs text-indigo-600/80 mb-3">Upload an IMEI screenshot or enter the IMEI number to auto-fill device details.</p>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/*"
+                        onChange={handleScreenshotUpload}
+                        className="hidden"
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={imeiLoading}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-indigo-200 rounded-xl text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors"
+                      >
+                        {imeiLoading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                        Upload Screenshot
+                      </button>
+                      <span className="text-xs text-indigo-400">or</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-bold text-secondary-700 mb-2">IMEI Number</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      name="imei"
+                      value={formData.imei}
+                      onChange={(e) => {
+                        setFormData({ ...formData, imei: e.target.value });
+                        if (e.target.value.length >= 14) {
+                          handleImeiLookup(e.target.value);
+                        }
+                      }}
+                      className="flex-1 rounded-xl border-border bg-white px-4 py-3 text-sm focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all outline-none font-mono"
+                      placeholder="Enter 15-digit IMEI number"
+                    />
+                    <button
+                      onClick={() => handleImeiLookup(formData.imei)}
+                      disabled={imeiLoading || formData.imei.length < 10}
+                      className="px-4 py-3 bg-primary-600 text-white rounded-xl text-sm font-bold hover:bg-primary-700 disabled:bg-primary-400 transition-colors flex items-center gap-2"
+                    >
+                      {imeiLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                      Lookup
+                    </button>
+                  </div>
+                </div>
+
+                {imeiResult && (
+                  <div className="md:col-span-2 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-emerald-700 font-bold text-sm mb-2">
+                      <Check size={16} />
+                      {imeiResult.found ? 'Device detected automatically' : 'IMEI recognized'}
+                    </div>
+                    {imeiResult.brand && (
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-emerald-800">
+                        <div><span className="text-emerald-600">Brand:</span> {imeiResult.brand}</div>
+                        <div><span className="text-emerald-600">Model:</span> {imeiResult.model || 'Auto-filled above'}</div>
+                        {Object.entries(imeiResult.specs || {}).filter(([k, v]) => v).slice(0, 4).map(([key, val]) => (
+                          <div key={key}><span className="text-emerald-600">{key}:</span> {val}</div>
+                        ))}
+                      </div>
+                    )}
+                    {imeiResult.message && (
+                      <p className="text-xs text-amber-600 mt-2">{imeiResult.message}</p>
+                    )}
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-bold text-secondary-700 mb-2">Brand *</label>
                   <input type="text" name="brand" value={formData.brand} onChange={handleChange}
@@ -213,12 +349,6 @@ const BookRepair = () => {
                   <input type="text" name="model" value={formData.model} onChange={handleChange}
                     className="w-full rounded-xl border-border bg-white px-4 py-3 text-sm focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all outline-none"
                     placeholder="e.g. iPhone 14 Pro Max" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-secondary-700 mb-2">IMEI Number</label>
-                  <input type="text" name="imei" value={formData.imei} onChange={handleChange}
-                    className="w-full rounded-xl border-border bg-white px-4 py-3 text-sm focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all outline-none"
-                    placeholder="Optional but recommended" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-secondary-700 mb-2">Device Condition</label>
@@ -276,6 +406,11 @@ const BookRepair = () => {
                     </div>
                   )}
                 </div>
+              </div>
+              <div className="mt-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
+                <p className="text-xs text-purple-700 font-medium flex items-center gap-2">
+                  <Check size={14} /> By submitting, you agree to our service terms. You will receive email notifications about your repair status.
+                </p>
               </div>
             </>
           )}

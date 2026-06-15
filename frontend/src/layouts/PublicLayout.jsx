@@ -1,12 +1,79 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Search, ShoppingBag, Heart, Menu, X, Globe, MapPin, Phone, Mail, ChevronDown } from 'lucide-react';
+import { Search, ShoppingBag, Heart, Menu, X, Globe, MapPin, Phone, Mail, ChevronDown, Smartphone, Wrench, Shield, Headphones, Gift, Bluetooth, RotateCcw } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getCategories } from '../api/productsApi';
 import SearchSuggest from '../components/SearchSuggest';
 import CookieConsent from '../components/CookieConsent';
 import '../pages/LandingPage.css';
+
+const staticCategories = [
+  { 
+    label: 'Smartphones', 
+    desc: 'Latest iOS & Android devices', 
+    icon: Smartphone, 
+    path: '/smartphones', 
+    color: '#3b82f6', 
+    bgColor: '#eff6ff' 
+  },
+  { 
+    label: 'Refurbished Phones', 
+    desc: 'Quality pre-owned phones', 
+    icon: RotateCcw, 
+    path: '/shop?condition=refurbished', 
+    color: '#10b981', 
+    bgColor: '#ecfdf5' 
+  },
+  { 
+    label: 'Phone Repair', 
+    desc: 'Expert screen & battery fixes', 
+    icon: Wrench, 
+    path: '/dashboard/repairs/new', 
+    color: '#8b5cf6', 
+    bgColor: '#f5f3ff' 
+  },
+  { 
+    label: 'Tempered Glass', 
+    desc: '9H hardness screen guards', 
+    icon: Shield, 
+    path: '/shop?keyword=tempered', 
+    color: '#f59e0b', 
+    bgColor: '#fffbeb' 
+  },
+  { 
+    label: 'Screen & Camera Protectors', 
+    desc: 'Camera lens & back guards', 
+    icon: Shield, 
+    path: '/shop?keyword=protector', 
+    color: '#ec4899', 
+    bgColor: '#fdf2f8' 
+  },
+  { 
+    label: 'Bluetooth Devices', 
+    desc: 'Speakers, trackers & smart tech', 
+    icon: Bluetooth, 
+    path: '/shop?keyword=buds', 
+    color: '#ef4444', 
+    bgColor: '#fef2f2' 
+  },
+  { 
+    label: 'Earphones & Audio', 
+    desc: 'Wireless buds & headphones', 
+    icon: Headphones, 
+    path: '/shop?keyword=buds', 
+    color: '#06b6d4', 
+    bgColor: '#ecfeff' 
+  },
+  { 
+    label: 'Coupons & Deals', 
+    desc: 'Active promo codes & discounts', 
+    icon: Gift, 
+    path: '/coupons', 
+    color: '#f97316', 
+    bgColor: '#fff7ed' 
+  },
+];
 
 const PublicLayout = () => {
   const { t, lang, switchLang } = useLanguage();
@@ -17,6 +84,17 @@ const PublicLayout = () => {
   const [logoModalOpen, setLogoModalOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   
   // Safely get cart items count, handle case where cart state might be undefined or array might not exist
   const cartItems = useSelector((state) => state.cart?.cartItems || []);
@@ -46,7 +124,7 @@ const PublicLayout = () => {
     <div className="lp-page">
       <header className={`lp-header${scrolled ? ' scrolled' : ''}`}>
         <div className="lp-header-inner">
-          <div className="lp-logo" style={{ display: 'flex', alignItems: 'center' }}>
+          <div className="lp-logo" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <img 
               src="/logo.png" 
               alt="Shree Renukamba Logo" 
@@ -58,57 +136,86 @@ const PublicLayout = () => {
               <div style={{ fontSize: '0.5rem', color: 'inherit', opacity: 0.6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Mobile &amp; Electronics</div>
             </Link>
           </div>
-          <nav className="lp-nav" style={{ alignItems: 'center' }}>
+          <nav className="lp-nav" style={{ flex: '1 1 auto', justifyContent: 'center', margin: '0 20px' }}>
             <div 
+              ref={dropdownRef}
               className="relative"
               onMouseEnter={() => setDropdownOpen(true)}
-              onMouseLeave={() => setDropdownOpen(false)}
               style={{ display: 'inline-block' }}
             >
               <Link 
                 to="/shop" 
-                className="flex items-center gap-1"
-                style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                className="flex items-center gap-1 nav-link"
+                style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', whiteSpace: 'nowrap' }}
               >
                 All Products <ChevronDown size={14} className={`transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
               </Link>
               {dropdownOpen && (
                 <div 
-                  className="absolute left-0 mt-2 bg-white rounded-xl shadow-lg z-50 border border-border py-2 min-w-[200px]"
+                  className="absolute left-0 mt-2 bg-white rounded-2xl shadow-xl z-50 p-4 min-w-[560px]"
                   style={{
-                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                    boxShadow: '0 20px 40px rgba(15, 23, 42, 0.12)',
                     background: '#fff',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(0,0,0,0.08)'
+                    borderRadius: '20px',
+                    border: '1px solid rgba(15, 23, 42, 0.06)',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '8px'
                   }}
                 >
-                  <Link 
-                    to="/shop" 
-                    onClick={() => setDropdownOpen(false)}
-                    className="block px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-primary-600 hover:bg-slate-50 transition-colors"
-                    style={{ textDecoration: 'none', color: 'var(--clr-primary)', display: 'block' }}
-                  >
-                    All Categories
-                  </Link>
-                  <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)', margin: '4px 0' }}></div>
-                  {categories.map((cat) => (
-                    <Link
-                      key={cat._id}
-                      to={`/shop?category=${cat._id}`}
-                      onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2.5 text-xs font-medium hover:bg-slate-50 transition-colors"
-                      style={{ textDecoration: 'none', color: '#1e293b', display: 'block' }}
-                    >
-                      {cat.categoryName}
-                    </Link>
-                  ))}
+                  <div style={{ display: 'contents' }}>
+                    {staticCategories.map((cat) => (
+                      <Link
+                        key={cat.label}
+                        to={cat.path}
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-all duration-200 group"
+                        style={{ textDecoration: 'none' }}
+                      >
+                        <div 
+                          className="flex items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105"
+                          style={{ 
+                            width: 44, 
+                            height: 44, 
+                            backgroundColor: cat.bgColor, 
+                            color: cat.color, 
+                            flexShrink: 0 
+                          }}
+                        >
+                          <cat.icon size={22} strokeWidth={2} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a' }}>{cat.label}</span>
+                          <span style={{ fontSize: '0.68rem', color: '#64748b', marginTop: 2 }}>{cat.desc}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  {categories.length > 0 && (
+                    <>
+                      <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)', margin: '4px 0' }}></div>
+                      <div style={{ padding: '2px 0' }}>
+                        <div style={{ padding: '4px 16px 6px', fontSize: '0.6rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>All Categories</div>
+                        {categories.map((cat) => (
+                          <Link
+                            key={cat._id}
+                            to={`/shop?category=${cat._id}`}
+                            onClick={() => setDropdownOpen(false)}
+                            className="block px-4 py-2 text-xs font-medium hover:bg-slate-50 transition-colors"
+                            style={{ textDecoration: 'none', color: '#334155', display: 'block', paddingLeft: 16 }}
+                          >
+                            {cat.categoryName}
+                          </Link>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
             <Link to="/smartphones">{t('nav.smartphones')}</Link>
             <Link to="/laptops">{t('nav.laptops')}</Link>
             <Link to="/accessories">{t('nav.accessories')}</Link>
-            <Link to="/about">{t('nav.about')}</Link>
             <Link to="/contact">{t('nav.contact')}</Link>
           </nav>
           <div className="lp-header-actions">
@@ -155,12 +262,23 @@ const PublicLayout = () => {
           </div>
           <nav className="lp-mobile-nav">
             <Link to="/shop" onClick={() => setMenuOpen(false)} style={{ fontWeight: 700 }}>All Products</Link>
+            {staticCategories.map((cat) => (
+              <Link
+                key={cat.label}
+                to={cat.path}
+                onClick={() => setMenuOpen(false)}
+                style={{ paddingLeft: '20px', fontSize: '1rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: 8 }}
+              >
+                — {cat.label}
+              </Link>
+            ))}
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '10px 0' }}></div>
             {categories.map((cat) => (
               <Link 
                 key={cat._id} 
                 to={`/shop?category=${cat._id}`} 
                 onClick={() => setMenuOpen(false)}
-                style={{ paddingLeft: '20px', fontSize: '1.1rem', opacity: 0.8 }}
+                style={{ paddingLeft: '20px', fontSize: '1rem', opacity: 0.7 }}
               >
                 — {cat.categoryName}
               </Link>
@@ -170,7 +288,6 @@ const PublicLayout = () => {
             <Link to="/laptops" onClick={() => setMenuOpen(false)}>{t('nav.laptops')}</Link>
             <Link to="/accessories" onClick={() => setMenuOpen(false)}>{t('nav.accessories')}</Link>
             <Link to="/wishlist" onClick={() => setMenuOpen(false)}>Wishlist</Link>
-            <Link to="/about" onClick={() => setMenuOpen(false)}>{t('nav.about')}</Link>
             <Link to="/contact" onClick={() => setMenuOpen(false)}>{t('nav.contact')}</Link>
             <button
               onClick={() => { switchLang(lang === 'en' ? 'kn' : 'en'); setMenuOpen(false); }}

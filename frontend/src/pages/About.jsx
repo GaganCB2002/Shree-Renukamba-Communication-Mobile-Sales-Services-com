@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Shield, Truck, RotateCcw, Star, Users, Award, Wrench, ChevronRight } from 'lucide-react';
+import { Shield, Truck, RotateCcw, Star, Users, CheckCircle, Wrench, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const About = () => {
@@ -94,7 +94,7 @@ const About = () => {
             { icon: <Shield size={24} className="text-indigo-600" />, title: 'Certified Quality', desc: 'Every device passes a 45-point inspection. We only sell products that meet our strict quality standards.' },
             { icon: <Truck size={24} className="text-green-600" />, title: 'Free Shipping', desc: 'Free express delivery on orders above $50. Track your order every step of the way.' },
             { icon: <RotateCcw size={24} className="text-purple-600" />, title: '30-Day Returns', desc: 'Not satisfied? Return any device within 30 days for a full refund. No questions asked.' },
-            { icon: <Award size={24} className="text-orange-600" />, title: '1 Year Warranty', desc: 'All devices come with a comprehensive 1-year warranty covering defects and malfunctions.' },
+            { icon: <CheckCircle size={24} className="text-orange-600" />, title: '1 Year Warranty', desc: 'All devices come with a comprehensive 1-year warranty covering defects and malfunctions.' },
             { icon: <Users size={24} className="text-blue-600" />, title: 'Expert Support', desc: 'Our team of certified technicians is available 24/7 to help with any questions or issues.' },
             { icon: <Star size={24} className="text-yellow-600" />, title: 'Best Prices', desc: 'We guarantee the best prices on certified refurbished devices. Price match included.' },
           ].map((item, i) => (

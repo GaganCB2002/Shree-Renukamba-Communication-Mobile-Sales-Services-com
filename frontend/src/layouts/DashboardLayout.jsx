@@ -12,6 +12,7 @@ import {
   Plus,
   Loader2,
   BarChart2,
+  Gift,
 } from 'lucide-react';
 import { logout } from '../redux/slices/authSlice';
 
@@ -59,6 +60,7 @@ const DashboardLayout = () => {
     { path: '/admin/repairs', label: 'Active Repairs', icon: Wrench },
     { path: '/admin/orders', label: 'Orders', icon: ShoppingBag },
     { path: '/admin/inventory', label: 'Inventory', icon: Package },
+    { path: '/admin/coupons', label: 'Coupons', icon: Gift },
     { path: '/admin/billing', label: 'Billing & Analytics', icon: BarChart2 },
     { path: '/admin/settings', label: 'Settings', icon: Settings },
   ] : [

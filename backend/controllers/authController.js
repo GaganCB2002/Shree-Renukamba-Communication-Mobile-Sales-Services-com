@@ -1,10 +1,9 @@
 const User = require('../models/User');
 const Customer = require('../models/Customer');
 const generateToken = require('../utils/generateToken');
+const { sendEmail } = require('../services/emailService');
+const { sendEmailNodemailer } = require('../services/nodemailerService');
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Public
 const registerUser = async (req, res) => {
   try {
     const { fullName, phoneNumber, email, password, role, securityQuestions } = req.body;
@@ -19,6 +18,9 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
     const userRole = role && ['admin', 'technician'].includes(role) ? role : 'customer';
 
     const user = await User.create({
@@ -28,12 +30,40 @@ const registerUser = async (req, res) => {
       password,
       role: userRole,
       securityQuestions,
+      otp,
+      otpExpires,
+      passwordHistory: [password],
     });
 
     if (user) {
-      // If customer, create customer profile
       if (user.role === 'customer') {
         await Customer.create({ userId: user._id });
+      }
+
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #6366f1, #4f46e5); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 22px;">Welcome to SR Communication!</h1>
+          </div>
+          <div style="background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
+            <p style="font-size: 16px; color: #374151;">Dear <strong>${fullName}</strong>,</p>
+            <p style="font-size: 16px; color: #374151;">Your account has been created successfully.</p>
+            <p style="font-size: 16px; color: #374151;">Your one-time OTP for login is:</p>
+            <div style="background: #4f46e5; color: white; font-size: 32px; font-weight: 800; text-align: center; padding: 20px; border-radius: 8px; letter-spacing: 8px; font-family: monospace; margin: 20px 0;">
+              ${otp}
+            </div>
+            <p style="font-size: 14px; color: #6b7280;">This OTP will be used every time you log in. Please keep it secure.</p>
+            <p style="font-size: 14px; color: #374151;">Thank you for joining us!</p>
+          </div>
+        </div>
+      `;
+
+      try {
+        await sendEmail({ to: email, subject: 'Welcome - Your OTP for Login', html: emailHtml });
+      } catch {
+        try {
+          await sendEmailNodemailer({ to: email, subject: 'Welcome - Your OTP for Login', html: emailHtml });
+        } catch (e2) {}
       }
 
       res.status(201).json({
@@ -42,6 +72,7 @@ const registerUser = async (req, res) => {
         email: user.email,
         role: user.role,
         token: generateToken(user._id),
+        otp,
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
@@ -51,39 +82,79 @@ const registerUser = async (req, res) => {
   }
 };
 
-// @desc    Auth user & get token
-// @route   POST /api/auth/login
-// @access  Public
 const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, otp } = req.body;
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select('+password +otp +otpExpires');
 
-    if (user && (await user.matchPassword(password))) {
-      res.json({
-        _id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id),
-      });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    if (user.otpExpires && user.otpExpires < new Date()) {
+      const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      user.otp = newOtp;
+      user.otpExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await user.save();
+
+      const otpHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #6366f1, #4f46e5); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 22px;">Your OTP for Login</h1>
+          </div>
+          <div style="background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb;">
+            <p style="font-size: 16px; color: #374151;">Dear <strong>${user.fullName}</strong>,</p>
+            <p style="font-size: 16px; color: #374151;">Your OTP has been refreshed. Use this code to login:</p>
+            <div style="background: #4f46e5; color: white; font-size: 32px; font-weight: 800; text-align: center; padding: 20px; border-radius: 8px; letter-spacing: 8px; font-family: monospace; margin: 20px 0;">
+              ${newOtp}
+            </div>
+            <p style="font-size: 14px; color: #6b7280;">This OTP expires in 24 hours.</p>
+          </div>
+        </div>
+      `;
+
+      try {
+        await sendEmail({ to: email, subject: 'Your OTP for Login - SR Communication', html: otpHtml });
+      } catch {
+        try { await sendEmailNodemailer({ to: email, subject: 'Your OTP for Login - SR Communication', html: otpHtml }); } catch (e2) {}
+      }
+
+      return res.status(200).json({ otpRequired: true, message: 'OTP has been sent to your email.' });
+    }
+
+    if (otp && user.otp !== otp) {
+      return res.status(401).json({ message: 'Invalid OTP. Please check your email for the correct OTP.' });
+    }
+
+    if (!user.otp || (otp && user.otp === otp)) {
+      if (user && (await user.matchPassword(password))) {
+        res.json({
+          _id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          role: user.role,
+          address: user.address,
+          token: generateToken(user._id),
+        });
+      } else {
+        return res.status(401).json({ message: 'Invalid email or password' });
+      }
     } else {
-      res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(200).json({ otpRequired: true, message: 'OTP is required. Please enter the OTP sent to your email.' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Get user profile
-// @route   GET /api/auth/profile
-// @access  Private
 const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
     if (user) {
+      const customer = await Customer.findOne({ userId: user._id }).populate('devices').populate('repairHistory');
       res.json({
         _id: user._id,
         fullName: user.fullName,
@@ -91,6 +162,13 @@ const getUserProfile = async (req, res) => {
         role: user.role,
         phoneNumber: user.phoneNumber,
         address: user.address,
+        profileImage: user.profileImage,
+        customer: customer ? {
+          _id: customer._id,
+          devices: customer.devices,
+          repairHistory: customer.repairHistory,
+          loyaltyPoints: customer.loyaltyPoints,
+        } : null,
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -100,9 +178,118 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-// @desc    Forgot password - verify security question
-// @route   POST /api/auth/forgot-password
-// @access  Public
+const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const { fullName, phoneNumber, address, profileImage } = req.body;
+    if (fullName) user.fullName = fullName;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (address) user.address = address;
+    if (profileImage) user.profileImage = profileImage;
+
+    const updated = await user.save();
+    res.json({
+      _id: updated._id,
+      fullName: updated.fullName,
+      email: updated.email,
+      role: updated.role,
+      phoneNumber: updated.phoneNumber,
+      address: updated.address,
+      profileImage: updated.profileImage,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user._id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!(await user.matchPassword(currentPassword))) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const passwordHistory = user.passwordHistory || [];
+
+    for (const oldPw of passwordHistory.slice(-3)) {
+      const isMatch = await require('bcryptjs').compare(newPassword, oldPw);
+      if (isMatch) {
+        return res.status(400).json({ message: 'New password must be different from your last 3 passwords' });
+      }
+    }
+
+    passwordHistory.push(newPassword);
+
+    if (passwordHistory.length > 10) {
+      passwordHistory.splice(0, passwordHistory.length - 10);
+    }
+
+    user.password = newPassword;
+    user.passwordHistory = passwordHistory;
+    await user.save();
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email }).select('+otp +otpExpires');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const otp = user.otp || Math.floor(100000 + Math.random() * 900000).toString();
+    if (!user.otp) {
+      user.otp = otp;
+      user.otpExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await user.save();
+    }
+
+    const otpHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #6366f1, #4f46e5); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 22px;">Your OTP for Login</h1>
+        </div>
+        <div style="background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb;">
+          <p style="font-size: 16px; color: #374151;">Your one-time password for login is:</p>
+          <div style="background: #4f46e5; color: white; font-size: 32px; font-weight: 800; text-align: center; padding: 20px; border-radius: 8px; letter-spacing: 8px; font-family: monospace; margin: 20px 0;">
+            ${otp}
+          </div>
+          <p style="font-size: 14px; color: #6b7280;">This OTP is valid for 24 hours.</p>
+        </div>
+      </div>
+    `;
+
+    try {
+      await sendEmail({ to: email, subject: 'Your OTP for Login - SR Communication', html: otpHtml });
+    } catch {
+      await sendEmailNodemailer({ to: email, subject: 'Your OTP for Login - SR Communication', html: otpHtml });
+    }
+
+    res.json({ message: 'OTP sent to your email' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const forgotPassword = async (req, res) => {
   try {
     const { email, questionIndex, answer, newPassword } = req.body;
@@ -139,9 +326,6 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-// @desc    Get security questions for a user (by email)
-// @route   POST /api/auth/get-security-questions
-// @access  Public
 const getSecurityQuestions = async (req, res) => {
   try {
     const { email } = req.body;
@@ -165,7 +349,6 @@ const getSecurityQuestions = async (req, res) => {
       question: sq.question,
     }));
 
-    // Pick a random question for the user to answer
     const randomIdx = Math.floor(Math.random() * questions.length);
 
     res.json({
@@ -177,13 +360,39 @@ const getSecurityQuestions = async (req, res) => {
   }
 };
 
-// @desc    Get all users (admin only)
-// @route   GET /api/auth/users
-// @access  Private (Admin)
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find({}).select('fullName email phoneNumber');
+    const users = await User.find({}).select('fullName email phoneNumber role address createdAt');
     res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getAllCustomers = async (req, res) => {
+  try {
+    const customers = await Customer.find({})
+      .populate({
+        path: 'userId',
+        select: 'fullName email phoneNumber address createdAt role',
+      })
+      .populate('devices')
+      .populate('repairHistory');
+
+    const enriched = customers.filter(c => c.userId).map(c => ({
+      _id: c._id,
+      fullName: c.userId.fullName,
+      email: c.userId.email,
+      phoneNumber: c.userId.phoneNumber,
+      address: c.userId.address,
+      role: c.userId.role,
+      createdAt: c.userId.createdAt,
+      devicesCount: c.devices?.length || 0,
+      repairsCount: c.repairHistory?.length || 0,
+      loyaltyPoints: c.loyaltyPoints || 0,
+    }));
+
+    res.json(enriched);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -193,7 +402,11 @@ module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
+  updateUserProfile,
+  changePassword,
+  resendOtp,
   forgotPassword,
   getSecurityQuestions,
   getUsers,
+  getAllCustomers,
 };

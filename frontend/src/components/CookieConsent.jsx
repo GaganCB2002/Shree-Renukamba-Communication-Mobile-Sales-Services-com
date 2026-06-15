@@ -6,9 +6,9 @@ const CookieConsent = () => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const consent = localStorage.getItem('privacyConsent');
-    if (!consent) {
-      setVisible(true);
+    const consented = sessionStorage.getItem('privacyConsent');
+    if (!consented) {
+      setTimeout(() => setVisible(true), 500);
     }
   }, []);
 
@@ -19,12 +19,12 @@ const CookieConsent = () => {
       language: navigator.language,
       timestamp: new Date().toISOString(),
     };
-    localStorage.setItem('privacyConsent', JSON.stringify(details));
+    sessionStorage.setItem('privacyConsent', JSON.stringify(details));
     setVisible(false);
   };
 
   const handleDecline = () => {
-    localStorage.setItem('privacyConsent', JSON.stringify({ consented: false, timestamp: new Date().toISOString() }));
+    sessionStorage.setItem('privacyConsent', JSON.stringify({ consented: false, timestamp: new Date().toISOString() }));
     setVisible(false);
   };
 
