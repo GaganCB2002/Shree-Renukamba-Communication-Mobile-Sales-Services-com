@@ -65,7 +65,8 @@ const deleteCategory = async (req, res) => {
     const category = await Category.findById(req.params.id);
 
     if (category) {
-      await Category.deleteOne({ _id: req.params.id });
+      const { pool } = require('../config/db');
+      await pool.query('DELETE FROM categories WHERE id = $1', [req.params.id]);
       res.json({ message: 'Category removed' });
     } else {
       res.status(404).json({ message: 'Category not found' });

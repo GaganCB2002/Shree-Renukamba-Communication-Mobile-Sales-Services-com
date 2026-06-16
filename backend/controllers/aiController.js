@@ -22,7 +22,7 @@ const chatLanding = async (req, res) => {
       });
     }
 
-    const reply = await aiService.getLandingPageResponse(sid, message);
+    const reply = await aiService.getAIResponse([{ content: message }]);
     res.json({ reply, sessionId: sid });
   } catch (err) {
     console.error('Landing AI error:', err.message);
@@ -48,12 +48,7 @@ const chatCustomer = async (req, res) => {
       });
     }
 
-    const userContext = {
-      fullName: req.user.fullName,
-      email: req.user.email,
-    };
-
-    const reply = await aiService.getCustomerAssistantResponse(sid, message, userContext);
+    const reply = await aiService.getAIResponse([{ content: message }]);
     res.json({ reply, sessionId: sid });
   } catch (err) {
     console.error('Customer AI error:', err.message);
@@ -79,33 +74,7 @@ const chatAdmin = async (req, res) => {
       });
     }
 
-    const [repairs, products, customers, invoices] = await Promise.all([
-      Repairs.find(),
-      Products.find(),
-      Customers.find().populate('userId', 'fullName email'),
-      Invoices.find(),
-    ]);
-
-    const totalRevenue = invoices
-      .filter(i => i.status === 'Paid')
-      .reduce((sum, i) => sum + (i.totalAmount || 0), 0);
-
-    const activeRepairs = repairs.filter(r => !['Delivered', 'Cancelled'].includes(r.repairStatus));
-    const lowStockProducts = products.filter(p => p.stock <= 5);
-
-    const analyticsData = {
-      totalRepairs: repairs.length,
-      activeRepairs: activeRepairs.length,
-      completedRepairs: repairs.filter(r => r.repairStatus === 'Delivered').length,
-      totalRevenue: totalRevenue,
-      totalProducts: products.length,
-      lowStockItems: lowStockProducts.length,
-      totalCustomers: customers.length,
-      totalInvoices: invoices.length,
-      pendingInvoices: invoices.filter(i => i.status === 'Pending').length,
-    };
-
-    const reply = await aiService.getAdminAssistantResponse(sid, message, analyticsData);
+    const reply = await aiService.getAIResponse([{ content: message }]);
     res.json({ reply, sessionId: sid });
   } catch (err) {
     console.error('Admin AI error:', err.message);
@@ -128,10 +97,7 @@ const getChatHistory = async (req, res) => {
 
 const getAdminSessions = async (req, res) => {
   try {
-    const sessions = await ChatSession.find({ source: { $ne: 'whatsapp' } })
-      .populate('userId', 'fullName email')
-      .sort({ updatedAt: -1 })
-      .limit(20);
+    const sessions = await ChatSession.find({});
     res.json(sessions);
   } catch (err) {
     res.status(500).json({ message: err.message });

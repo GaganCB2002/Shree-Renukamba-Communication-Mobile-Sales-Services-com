@@ -119,7 +119,8 @@ const deleteProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (product) {
-      await Product.deleteOne({ _id: req.params.id });
+      const { pool } = require('../config/db');
+      await pool.query('DELETE FROM products WHERE id = $1', [req.params.id]);
       res.json({ message: 'Product removed' });
     } else {
       res.status(404).json({ message: 'Product not found' });

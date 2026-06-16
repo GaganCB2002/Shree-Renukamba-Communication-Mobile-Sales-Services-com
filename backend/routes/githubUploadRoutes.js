@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const os = require('os');
 const { protect, admin } = require('../middleware/authMiddleware');
-const { uploadToGitHub } = require('../services/githubUploadService');
+const { uploadFile } = require('../services/githubUploadService');
 const ActivityLog = require('../models/ActivityLog');
 
 const memoryStorage = multer.memoryStorage();
@@ -21,7 +24,12 @@ router.post('/', protect, admin, upload.single('file'), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
-    const result = await uploadToGitHub(req.file.buffer, req.file.originalname, req.file.mimetype);
+    const tmpDir = path.join(os.tmpdir(), 'uploads');
+    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+    const tmpPath = path.join(tmpDir, req.file.originalname);
+    fs.writeFileSync(tmpPath, req.file.buffer);
+    const url = await uploadFile(tmpPath, req.file.originalname);
+    try { fs.unlinkSync(tmpPath); } catch {}
     await ActivityLog.create({
       userId: req.user._id,
       userName: req.user.fullName,
@@ -29,11 +37,11 @@ router.post('/', protect, admin, upload.single('file'), async (req, res) => {
       userRole: 'admin',
       action: 'github_upload',
       resourceType: 'file',
-      resourceId: result.filename,
-      details: { originalName: result.originalName, mimeType: req.file.mimetype, size: result.size, url: result.url, githubPath: result.githubPath },
+      resourceId: req.file.originalname,
+      details: { originalName: req.file.originalname, mimeType: req.file.mimetype, size: req.file.size, url },
       ipAddress: req.ip,
     });
-    res.json(result);
+    res.json({ url, filename: req.file.originalname, originalName: req.file.originalname, size: req.file.size });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -45,9 +53,14 @@ router.post('/multiple', protect, admin, upload.array('files', 10), async (req, 
       return res.status(400).json({ message: 'No files uploaded' });
     }
     const results = [];
+    const tmpDir = path.join(os.tmpdir(), 'uploads');
+    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
     for (const f of req.files) {
-      const result = await uploadToGitHub(f.buffer, f.originalname, f.mimetype);
-      results.push(result);
+      const tmpPath = path.join(tmpDir, f.originalname);
+      fs.writeFileSync(tmpPath, f.buffer);
+      const url = await uploadFile(tmpPath, f.originalname);
+      try { fs.unlinkSync(tmpPath); } catch {}
+      results.push({ url, filename: f.originalname, originalName: f.originalname, size: f.size });
     }
     await ActivityLog.create({
       userId: req.user._id,

@@ -62,11 +62,20 @@ class SqliteAdapter {
     }
 
     if (isUpdate && hasReturning) {
-      const whereMatch = convertedSql.match(/WHERE\s+(.+?)(?:ORDER\s+BY|LIMIT|$)/is);
-      stmt.run(...params);
-      const selectSql = `SELECT * FROM ${convertedSql.match(/UPDATE\s+(\w+)/i)[1]}`;
-      const rows = conn.prepare(selectSql).all();
-      return { rows };
+      const updateSql = convertedSql.replace(/\s+RETURNING\s+\*?\s*$/i, '');
+      conn.prepare(updateSql).run(...params);
+      const tableMatch = convertedSql.match(/UPDATE\s+(\w+)/i);
+      const whereMatch = convertedSql.match(/WHERE\s+(.+?)(?:\s+RETURNING|\s*$)/i);
+      if (tableMatch && whereMatch) {
+        const table = tableMatch[1];
+        const whereClause = whereMatch[1];
+        const preWhere = convertedSql.substring(0, convertedSql.indexOf('WHERE'));
+        const preWhereCount = (preWhere.match(/\?/g) || []).length;
+        const whereParams = params.slice(preWhereCount);
+        const rows = conn.prepare(`SELECT * FROM ${table} WHERE ${whereClause}`).all(...whereParams);
+        return { rows };
+      }
+      return { rows: [] };
     }
 
     const result = stmt.run(...params);

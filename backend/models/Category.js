@@ -18,6 +18,26 @@ class CategoryInstance {
     this.createdAt = row.created_at;
     this.updatedAt = row.updated_at;
   }
+
+  async save() {
+    const sql = `
+      UPDATE categories
+      SET category_name = $1, category_image = $2
+      WHERE id = $3
+      RETURNING *
+    `;
+    const vals = [
+      this.categoryName,
+      this.categoryImage || '',
+      this.id
+    ];
+    const res = await pool.query(sql, vals);
+    if (res.rows.length > 0) {
+      this.categoryName = res.rows[0].category_name;
+      this.categoryImage = res.rows[0].category_image;
+    }
+    return this;
+  }
 }
 
 class Category {

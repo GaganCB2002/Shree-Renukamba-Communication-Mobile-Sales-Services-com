@@ -1,13 +1,11 @@
+const { pool } = require('../config/db');
 const PageVisit = require('../models/PageVisit');
 const SearchQuery = require('../models/SearchQuery');
 
 const trackVisit = async (req, res) => {
   try {
     await PageVisit.create({
-      path: req.body.path || '/',
-      ip: req.ip || req.connection?.remoteAddress,
-      userAgent: req.headers['user-agent'],
-      referrer: req.headers['referer'] || '',
+      page: req.body.path || '/',
       user: req.user?._id,
     });
     res.json({ success: true });
@@ -18,25 +16,33 @@ const trackVisit = async (req, res) => {
 
 const getAnalytics = async (req, res) => {
   try {
-    const totalVisits = await PageVisit.countDocuments();
-    const todayVisits = await PageVisit.countDocuments({
-      visitedAt: { $gte: new Date().setHours(0, 0, 0, 0) },
-    });
-    const uniqueVisitors = await PageVisit.distinct('ip').then(ips => ips.length);
-    const todayUnique = await PageVisit.distinct('ip', {
-      visitedAt: { $gte: new Date().setHours(0, 0, 0, 0) },
-    }).then(ips => ips.length);
+    const totalRes = await pool.query('SELECT COUNT(*) as count FROM page_visits');
+    const totalVisits = totalRes.rows[0]?.count || 0;
 
-    const topPages = await PageVisit.aggregate([
-      { $group: { _id: '$path', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 10 },
-    ]);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayRes = await pool.query(
+      "SELECT COUNT(*) as count FROM page_visits WHERE timestamp >= $1",
+      [todayStart.toISOString()]
+    );
+    const todayVisits = todayRes.rows[0]?.count || 0;
 
-    const recentVisits = await PageVisit.find({})
-      .populate('user', 'fullName email')
-      .sort({ visitedAt: -1 })
-      .limit(20);
+    const uniqueRes = await pool.query('SELECT COUNT(DISTINCT user_id) as count FROM page_visits');
+    const uniqueVisitors = uniqueRes.rows[0]?.count || 0;
+
+    const todayUniqueRes = await pool.query(
+      "SELECT COUNT(DISTINCT user_id) as count FROM page_visits WHERE timestamp >= $1",
+      [todayStart.toISOString()]
+    );
+    const todayUnique = todayUniqueRes.rows[0]?.count || 0;
+
+    const topRes = await pool.query(
+      'SELECT page, COUNT(*) as count FROM page_visits GROUP BY page ORDER BY count DESC LIMIT 10'
+    );
+    const topPages = topRes.rows;
+
+    const recentRes = await pool.query('SELECT * FROM page_visits ORDER BY timestamp DESC LIMIT 20');
+    const recentVisits = recentRes.rows;
 
     res.json({
       totalVisits,
@@ -53,9 +59,7 @@ const getAnalytics = async (req, res) => {
 
 const getSearchQueries = async (req, res) => {
   try {
-    const queries = await SearchQuery.find({ found: false })
-      .populate('user', 'fullName email')
-      .sort({ searchedAt: -1 });
+    const queries = await SearchQuery.find({});
     res.json(queries);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -64,10 +68,7 @@ const getSearchQueries = async (req, res) => {
 
 const getAllSearchQueries = async (req, res) => {
   try {
-    const queries = await SearchQuery.find({})
-      .populate('user', 'fullName email')
-      .sort({ searchedAt: -1 })
-      .limit(100);
+    const queries = await SearchQuery.find({});
     res.json(queries);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -80,8 +81,6 @@ const saveSearchQuery = async (req, res) => {
     const search = await SearchQuery.create({
       query,
       user: req.user?._id,
-      resultsCount: resultsCount || 0,
-      found: (resultsCount || 0) > 0,
     });
     res.json(search);
   } catch (error) {
