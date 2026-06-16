@@ -83,13 +83,13 @@ const OrderHistory = () => {
   return (
     <>
       {showSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { setShowSuccess(false); window.history.replaceState({}, document.title); }}>
-          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm mx-4 text-center animate-bounce-in" onClick={(e) => e.stopPropagation()}>
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center animate-scale-check">
-              <Check size={44} className="text-green-600" strokeWidth={3} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-emerald-600 via-green-500 to-teal-600/90" onClick={() => { setShowSuccess(false); window.history.replaceState({}, document.title); }}>
+          <div className="text-center animate-bounce-in" onClick={(e) => e.stopPropagation()}>
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/20 flex items-center justify-center animate-scale-check shadow-lg backdrop-blur-sm">
+              <Check size={52} className="text-white" strokeWidth={3} />
             </div>
-            <h3 className="text-2xl font-bold text-green-700 mb-2">{successMessage}</h3>
-            <p className="text-sm text-secondary-500">Check your order status below</p>
+            <h3 className="text-2xl font-bold text-white mb-3 drop-shadow-lg">{successMessage}</h3>
+            <p className="text-emerald-100 font-medium">Check your order status below</p>
           </div>
           <style>{`
             @keyframes bounce-in {

@@ -222,6 +222,10 @@ CREATE INDEX IF NOT EXISTS idx_invoices_customer ON invoices(customer_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_repair_order ON invoices(repair_order_id);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_user ON chat_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_inventory_product ON inventory(product_id);
+
+ALTER TABLE orders ADD COLUMN subtotal REAL DEFAULT 0;
+ALTER TABLE orders ADD COLUMN coupon_code TEXT DEFAULT '';
+ALTER TABLE orders ADD COLUMN coupon_discount REAL DEFAULT 0;
 `;
   return schema;
 }

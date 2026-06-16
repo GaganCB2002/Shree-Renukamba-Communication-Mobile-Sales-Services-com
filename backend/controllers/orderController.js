@@ -109,7 +109,8 @@ const addOrderItems = async (req, res) => {
     const populatedOrder = await Order.findById(order._id).populate('customer');
     res.status(201).json(populatedOrder || order);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('addOrderItems error:', error.message, error.stack);
+    res.status(500).json({ message: error.message || 'Failed to create order' });
   }
 };
 

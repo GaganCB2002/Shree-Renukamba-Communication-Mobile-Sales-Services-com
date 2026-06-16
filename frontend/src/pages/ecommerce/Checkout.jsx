@@ -6,7 +6,7 @@ import { clearCart } from '../../redux/slices/cartSlice';
 import { getProducts } from '../../api/productsApi';
 import { createOrder } from '../../api/ordersApi';
 import { useToast } from '../../contexts/ToastContext';
-import { validateCoupon } from '../../api/couponsApi';
+import { getCoupons, validateCoupon } from '../../api/couponsApi';
 
 const Checkout = () => {
   const dispatch = useDispatch();
@@ -37,10 +37,21 @@ const Checkout = () => {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
 
   useEffect(() => {
     fetchLivePrices();
+    fetchAvailableCoupons();
   }, []);
+
+  const fetchAvailableCoupons = async () => {
+    try {
+      const data = await getCoupons();
+      setAvailableCoupons(Array.isArray(data) ? data : []);
+    } catch {
+      // no coupons available
+    }
+  };
 
   useEffect(() => {
     let timer;
@@ -55,7 +66,7 @@ const Checkout = () => {
               setSuccessMessage('Payment received successfully!');
               setShowSuccess(true);
               setTimeout(() => {
-                navigate('/orders', { state: { orderSuccess: true, message: 'Payment received successfully!' } });
+                navigate('/dashboard/orders', { state: { orderSuccess: true, message: 'Payment received successfully!' } });
               }, 3000);
             }, 1000);
             return 0;
@@ -144,14 +155,6 @@ const Checkout = () => {
     setCountdown(600);
   };
 
-  const showSuccessOverlay = (msg) => {
-    setSuccessMessage(msg);
-    setShowSuccess(true);
-    setTimeout(() => {
-      navigate('/');
-    }, 3000);
-  };
-
   const handlePlaceOrder = async () => {
     if (!paymentMethod) {
       showToast('Please select a payment method');
@@ -193,13 +196,17 @@ const Checkout = () => {
         couponDiscount: appliedCoupon?.discountAmount || 0,
       });
 
+      if (!order || !order.orderId) {
+        throw new Error('Invalid response from server - no order ID received');
+      }
+
       const orderId = order.orderId;
       dispatch(clearCart());
       setPlacing(false);
       setLoading(false);
 
       const redirectToOrders = () => {
-        navigate('/orders', { state: { orderSuccess: true, orderId, message: paymentMethod === 'cod' ? 'Your order was placed successfully!' : 'Payment received successfully!' } });
+        navigate('/dashboard/orders', { state: { orderSuccess: true, orderId, message: paymentMethod === 'cod' ? 'Your order was placed successfully!' : 'Payment received successfully!' } });
       };
 
       if (paymentMethod === 'cod') {
@@ -212,7 +219,8 @@ const Checkout = () => {
     } catch (err) {
       setPlacing(false);
       setLoading(false);
-      showToast(err.response?.data?.message || 'Failed to place order');
+      const errMsg = err.response?.data?.message || err.message || 'Failed to place order';
+      showToast(errMsg);
     }
   };
 
@@ -224,13 +232,13 @@ const Checkout = () => {
 
   if (showSuccess) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-emerald-600 via-green-500 to-teal-600">
         <div className="text-center animate-bounce-in">
-          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center animate-scale-check">
-            <Check size={56} className="text-green-600" strokeWidth={3} />
+          <div className="w-28 h-28 mx-auto mb-6 rounded-full bg-white/20 flex items-center justify-center animate-scale-check shadow-lg backdrop-blur-sm">
+            <Check size={64} className="text-white" strokeWidth={3} />
           </div>
-          <h2 className="text-3xl font-bold text-green-700 mb-3">{successMessage}</h2>
-          <p className="text-green-600">Redirecting to home page...</p>
+          <h2 className="text-3xl font-bold text-white mb-3 drop-shadow-lg">{successMessage}</h2>
+          <p className="text-emerald-100 font-medium">Redirecting to your orders...</p>
         </div>
         <style>{`
           @keyframes bounce-in {
@@ -498,7 +506,7 @@ const Checkout = () => {
                       Remove
                     </button>
                   </div>
-                ) : (
+                  ) : (
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <input
@@ -509,6 +517,7 @@ const Checkout = () => {
                         className="flex-1 px-3 py-2 bg-secondary-50 border border-border rounded-xl text-sm focus:outline-none focus:border-primary-400 font-mono tracking-wider"
                       />
                       <button
+                        id="apply-coupon-btn"
                         type="button"
                         onClick={handleApplyCoupon}
                         disabled={couponLoading || !couponCode.trim()}
@@ -518,6 +527,26 @@ const Checkout = () => {
                       </button>
                     </div>
                     {couponError && <p className="text-xs text-red-500">{couponError}</p>}
+                    {availableCoupons.length > 0 && !appliedCoupon && (
+                      <div className="pt-2">
+                        <p className="text-[10px] font-bold text-secondary-500 uppercase tracking-wider mb-1.5">Available Coupons</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {availableCoupons.map((c) => (
+                            <button
+                              key={c._id}
+                              type="button"
+                              onClick={() => {
+                                setCouponCode(c.code);
+                                setTimeout(() => document.getElementById('apply-coupon-btn')?.click(), 50);
+                              }}
+                              className="text-[10px] font-mono font-bold px-2 py-1 rounded-lg border border-dashed border-indigo-300 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                            >
+                              {c.code} {c.discountType === 'percentage' ? `${c.discountValue}% OFF` : `₹${c.discountValue} OFF`}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

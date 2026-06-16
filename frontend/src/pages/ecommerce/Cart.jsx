@@ -54,7 +54,8 @@ const Cart = () => {
   }, [cartWithLivePrices]);
 
   const handleQuantity = (item, delta) => {
-    const newQty = item.quantity + delta;
+    const currentQty = Math.max(1, Number(item?.quantity) || 1);
+    const newQty = currentQty + delta;
     if (newQty < 1) {
       dispatch(removeFromCart(item._id || item.id));
     } else {

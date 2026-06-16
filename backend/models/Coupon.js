@@ -119,7 +119,17 @@ class Coupon {
 
       if (query.isActive !== undefined) {
         conditions.push(`is_active = $${vals.length + 1}`);
-        vals.push(query.isActive);
+        vals.push(query.isActive ? 1 : 0);
+      }
+
+      if (query.validFrom && query.validFrom.$lte) {
+        conditions.push(`valid_from <= $${vals.length + 1}`);
+        vals.push(query.validFrom.$lte.toISOString());
+      }
+
+      if (query.validUntil && query.validUntil.$gte) {
+        conditions.push(`valid_until >= $${vals.length + 1}`);
+        vals.push(query.validUntil.$gte.toISOString());
       }
 
       if (conditions.length > 0) {
