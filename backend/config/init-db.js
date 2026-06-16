@@ -232,7 +232,9 @@ async function initDatabase(db) {
     try {
       db.exec(stmt + ';');
     } catch (err) {
-      console.warn('Schema init warning:', err.message);
+      if (!err.message.toLowerCase().includes('duplicate column name')) {
+        console.warn('Schema init warning:', err.message);
+      }
     }
   }
   console.log('SQLite database initialized successfully');

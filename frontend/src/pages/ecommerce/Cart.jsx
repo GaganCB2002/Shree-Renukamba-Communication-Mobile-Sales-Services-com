@@ -36,7 +36,10 @@ const Cart = () => {
     return cartItems.map(item => {
       const id = item._id || item.id;
       const live = liveProductMap[id];
-      return live || item;
+      if (live) {
+        return { ...live, quantity: item.quantity };
+      }
+      return item;
     });
   }, [cartItems, liveProductMap]);
 

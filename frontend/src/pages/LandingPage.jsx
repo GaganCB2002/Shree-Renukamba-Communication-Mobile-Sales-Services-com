@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, Star, Shield, Truck, RotateCcw, Package, ShoppingCart, Sparkles, Clock, Wrench, Smartphone, Battery, Droplets, Cpu, Heart, ArrowRight, Search, Loader2, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -70,6 +70,7 @@ export default function LandingPage() {
   const observerRef = useRef(null);
   
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const wishlistItems = useSelector((state) => state.wishlist?.items || []);
   const [products, setProducts] = useState([]);
@@ -438,8 +439,7 @@ export default function LandingPage() {
           ) : newStocks.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
               {newStocks.map((product, i) => (
-                <div key={product._id} className="reveal" style={{ borderRadius: 16, overflow: 'hidden', background: 'var(--clr-white)', border: '1px solid var(--clr-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                  <Link to={`/products/${product._id}`} style={{ display: 'block', textDecoration: 'none' }}>
+                <div key={product._id} className="reveal" onClick={() => navigate(`/products/${product._id}`)} style={{ borderRadius: 16, overflow: 'hidden', background: 'var(--clr-white)', border: '1px solid var(--clr-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', cursor: 'pointer' }}>
                     <div style={{ height: 200, background: 'var(--clr-icon-bg)', position: 'relative', overflow: 'hidden' }}>
                       {product.images && product.images[0] ? (
                         <img src={product.images[0]} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -457,14 +457,11 @@ export default function LandingPage() {
                         </span>
                       )}
                     </div>
-                  </Link>
                   <div style={{ padding: '16px' }}>
                     <div style={{ display: 'flex', gap: 2, marginBottom: 6 }}>
                       {[...Array(5)].map((_, s) => <Star key={s} size={12} fill={s < 4 ? "var(--clr-star-active)" : "var(--clr-star-inactive)"} color={s < 4 ? "var(--clr-star-active)" : "var(--clr-star-inactive)"} />)}
                     </div>
-                    <Link to={`/products/${product._id}`} style={{ textDecoration: 'none' }}>
                       <h3 style={{ fontSize: '0.95rem', color: 'var(--clr-text-on-light)', margin: '0 0 8px 0', fontWeight: 600 }}>{product.title}</h3>
-                    </Link>
                     <div style={{ marginBottom: '6px' }}><CategoryBadge category={product.category} /></div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--clr-text-muted)', marginBottom: 8 }}>
                       <Clock size={12} style={{ display: 'inline', marginRight: 4 }} /> {product.stock} units available
@@ -477,12 +474,12 @@ export default function LandingPage() {
                         <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--clr-accent-brand)' }}>₹{discountedPrice(product)}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button type="button" onClick={(e) => { e.preventDefault(); handleLike(product); }}
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleLike(product); }}
                           style={{ background: isLiked(product) ? '#FEE2E2' : '#F1F5F9', border: 'none', color: isLiked(product) ? '#EF4444' : '#64748B', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Heart size={13} fill={isLiked(product) ? 'currentColor' : 'none'} />
                         </button>
                         <button type="button"
-                          onClick={(e) => { e.preventDefault(); dispatch(addToCart(product)); showToast('Item added to cart successfully!'); }}
+                          onClick={(e) => { e.stopPropagation(); dispatch(addToCart(product)); showToast('Item added to cart successfully!'); }}
                           style={{ background: 'var(--clr-accent-brand)', border: 'none', color: '#fff', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         >
                           <ShoppingCart size={14} />
@@ -544,8 +541,7 @@ export default function LandingPage() {
           ) : bestSellers.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
               {bestSellers.map((product, i) => (
-                <div key={product._id} className="reveal" style={{ borderRadius: 16, overflow: 'hidden', background: 'var(--clr-white)', border: '1px solid var(--clr-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                  <Link to={`/products/${product._id}`} style={{ display: 'block', textDecoration: 'none' }}>
+                <div key={product._id} className="reveal" onClick={() => navigate(`/products/${product._id}`)} style={{ borderRadius: 16, overflow: 'hidden', background: 'var(--clr-white)', border: '1px solid var(--clr-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', cursor: 'pointer' }}>
                     <div style={{ height: 220, background: 'var(--clr-icon-bg)', position: 'relative', overflow: 'hidden' }}>
                       {product.images && product.images[0] ? (
                         <img src={product.images[0]} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -560,14 +556,11 @@ export default function LandingPage() {
                         </span>
                       )}
                     </div>
-                  </Link>
                   <div style={{ padding: '20px' }}>
                     <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
                       {[...Array(5)].map((_, s) => <Star key={s} size={12} fill={s < 4 ? "var(--clr-star-active)" : "var(--clr-star-inactive)"} color={s < 4 ? "var(--clr-star-active)" : "var(--clr-star-inactive)"} />)}
                     </div>
-                    <Link to={`/products/${product._id}`} style={{ textDecoration: 'none' }}>
                       <h3 style={{ fontSize: '1rem', color: 'var(--clr-text-on-light)', margin: '0 0 4px 0', fontWeight: 600 }}>{product.title}</h3>
-                    </Link>
                     <div style={{ marginBottom: '6px' }}><CategoryBadge category={product.category} /></div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--clr-text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Shield size={12} /> Certified quality
@@ -580,12 +573,12 @@ export default function LandingPage() {
                         <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--clr-accent-brand)' }}>₹{discountedPrice(product)}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button type="button" onClick={(e) => { e.preventDefault(); handleLike(product); }}
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleLike(product); }}
                           style={{ background: isLiked(product) ? '#FEE2E2' : '#F1F5F9', border: 'none', color: isLiked(product) ? '#EF4444' : '#64748B', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Heart size={13} fill={isLiked(product) ? 'currentColor' : 'none'} />
                         </button>
                         <button type="button"
-                          onClick={(e) => { e.preventDefault(); dispatch(addToCart(product)); showToast('Item added to cart successfully!'); }}
+                          onClick={(e) => { e.stopPropagation(); dispatch(addToCart(product)); showToast('Item added to cart successfully!'); }}
                           style={{ background: 'var(--clr-accent-brand)', border: 'none', color: '#fff', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         >
                           <ShoppingCart size={15} />

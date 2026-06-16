@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Heart, ShoppingCart, ChevronDown, CheckCircle2, Sparkles, Search, X } from 'lucide-react';
 import { getProducts, getCategories } from '../../api/productsApi';
@@ -13,6 +13,7 @@ import EmptyState from '../../components/EmptyState';
 
 const Products = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const { userInfo } = useSelector((state) => state.auth);
   const wishlistItems = useSelector((state) => state.wishlist?.items || []);
@@ -419,8 +420,12 @@ const Products = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {sortedProducts.map((product) => (
-                <div key={product._id} className="bg-white rounded-3xl p-5 shadow-sm border border-border relative group hover:shadow-soft transition-all">
-                  <button onClick={() => handleLike(product)} className={`absolute top-5 right-5 z-10 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm transition-colors ${
+                <div
+                  key={product._id}
+                  onClick={() => navigate(`/products/${product._id}`)}
+                  className="bg-white rounded-3xl p-5 shadow-sm border border-border relative group hover:shadow-soft transition-all cursor-pointer"
+                >
+                  <button onClick={(e) => { e.stopPropagation(); handleLike(product); }} className={`absolute top-5 right-5 z-10 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm transition-colors ${
                     isLiked(product) ? 'text-red-500' : 'text-secondary-400 hover:text-red-500'
                   }`}>
                     <Heart size={16} fill={isLiked(product) ? 'currentColor' : 'none'} />
@@ -430,21 +435,17 @@ const Products = () => {
                     <CheckCircle2 size={12} /> Excellent
                   </div>
 
-                  <Link to={`/products/${product._id}`}>
-                    <div className="bg-secondary-50 rounded-2xl h-60 mb-5 relative overflow-hidden flex items-center justify-center">
-                      {product.images && product.images.length > 0 ? (
-                        <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-7xl">📱</span>
-                      )}
-                    </div>
-                  </Link>
+                  <div className="bg-secondary-50 rounded-2xl h-60 mb-5 relative overflow-hidden flex items-center justify-center">
+                    {product.images && product.images.length > 0 ? (
+                      <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-7xl">📱</span>
+                    )}
+                  </div>
 
                   <div className="space-y-4">
                     <div>
-                      <Link to={`/products/${product._id}`}>
-                        <h3 className="text-xl font-bold text-primary-950 hover:text-primary-600 transition-colors">{product.title}</h3>
-                      </Link>
+                      <h3 className="text-xl font-bold text-primary-950 group-hover:text-primary-600 transition-colors">{product.title}</h3>
                       <p className="text-xs text-secondary-500 font-mono mt-1 uppercase">SKU: {product.productId}</p>
                       <div style={{ marginTop: '6px' }}>
                         <CategoryBadge category={product.category} />
@@ -465,10 +466,10 @@ const Products = () => {
                         <div className="text-3xl font-bold text-primary-950">₹{product.discount > 0 ? discountedPrice(product) : product.price}</div>
                       </div>
                       <button
-                        onClick={() => handleAddToCart(product)}
+                        onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
                         className="bg-primary-600 hover:bg-primary-700 text-white font-medium text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 transition-colors shadow-sm"
                       >
-                        Add <ShoppingCart size={16} />
+                        Add to Cart <ShoppingCart size={16} />
                       </button>
                     </div>
                   </div>
