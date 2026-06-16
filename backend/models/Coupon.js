@@ -25,8 +25,8 @@ class CouponInstance {
     this.isActive = row.is_active;
     this.usageLimit = row.usage_limit || 0;
     this.usedCount = row.used_count || 0;
-    this.applicableProducts = row.applicable_products || [];
-    this.applicableCategories = row.applicable_categories || [];
+    this.applicableProducts = typeof row.applicable_products === 'string' ? JSON.parse(row.applicable_products) : (row.applicable_products || []);
+    this.applicableCategories = typeof row.applicable_categories === 'string' ? JSON.parse(row.applicable_categories) : (row.applicable_categories || []);
     this.createdAt = row.created_at;
     this.updatedAt = row.updated_at;
   }

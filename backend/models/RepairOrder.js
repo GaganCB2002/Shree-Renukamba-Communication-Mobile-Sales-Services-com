@@ -20,12 +20,12 @@ class RepairOrderInstance {
     this.device = row.device_id;
     this.deviceId = row.device_id;
     this.issueDescription = row.issue_description;
-    this.selectedIssues = row.selected_issues || [];
+    this.selectedIssues = typeof row.selected_issues === 'string' ? JSON.parse(row.selected_issues) : (row.selected_issues || []);
     this.estimatedCost = row.estimated_cost ? parseFloat(row.estimated_cost) : null;
     this.finalCost = row.final_cost ? parseFloat(row.final_cost) : null;
     this.technicianNotes = row.technician_notes || '';
     this.repairStatus = row.repair_status;
-    this.repairImages = row.repair_images || [];
+    this.repairImages = typeof row.repair_images === 'string' ? JSON.parse(row.repair_images) : (row.repair_images || []);
     this.assignedTechnician = row.assigned_technician_id;
     this.assignedTechnicianId = row.assigned_technician_id;
     this.warrantyExpiresAt = row.warranty_expires_at;

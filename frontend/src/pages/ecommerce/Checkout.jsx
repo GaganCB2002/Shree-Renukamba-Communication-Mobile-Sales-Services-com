@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShoppingBag, CreditCard, Banknote, QrCode, ArrowLeft, Loader2, CheckCircle2, RefreshCw } from 'lucide-react';
+import { ShoppingBag, CreditCard, Banknote, QrCode, ArrowLeft, Loader2, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { clearCart } from '../../redux/slices/cartSlice';
 import { getProducts } from '../../api/productsApi';
 import { createOrder } from '../../api/ordersApi';
@@ -15,8 +15,6 @@ const Checkout = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const [liveProducts, setLiveProducts] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('');
-  const [orderPlaced, setOrderPlaced] = useState(false);
-  const [orderId, setOrderId] = useState('');
   const [loading, setLoading] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
     fullName: userInfo?.fullName || '',
@@ -90,50 +88,15 @@ const Checkout = () => {
         paymentMethod,
       });
 
-      setOrderId(order.orderId);
-      setOrderPlaced(true);
       dispatch(clearCart());
       showToast('Order placed successfully!');
+      navigate(`/order/${order.orderId}`);
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to place order');
     } finally {
       setLoading(false);
     }
   };
-
-  if (orderPlaced) {
-    return (
-      <div className="min-h-screen bg-background py-16 px-4">
-        <div className="max-w-lg mx-auto text-center">
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-border">
-            <CheckCircle2 size={64} className="mx-auto text-green-500 mb-4" />
-            <h1 className="text-2xl font-bold text-primary-950 mb-2">Order Placed!</h1>
-            <p className="text-secondary-600 mb-4">Your order has been placed successfully.</p>
-            <div className="bg-primary-50 rounded-xl p-4 mb-6">
-              <p className="text-sm text-secondary-500 mb-1">Order ID</p>
-              <p className="text-xl font-bold text-primary-700 font-mono tracking-wider">{orderId}</p>
-            </div>
-            {paymentMethod === 'cod' && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-sm text-amber-800">
-                Our team will contact you. You have to pay 50% of the product cost at the time of delivery.
-              </div>
-            )}
-            {paymentMethod === 'upi' && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-sm text-blue-800">
-                Complete your payment via UPI. Use Order ID as reference.
-              </div>
-            )}
-            <div className="flex gap-3 justify-center">
-              <Link to="/shop" className="btn-primary text-sm">Continue Shopping</Link>
-              <Link to="/dashboard/live-tracking" className="text-sm font-medium text-primary-600 hover:text-primary-700 border border-primary-200 rounded-xl px-4 py-2.5">
-                Track Order
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (cartWithLivePrices.length === 0) {
     return (

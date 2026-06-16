@@ -5,6 +5,7 @@ const {
   getInvoices,
   getMyInvoices,
   getInvoiceById,
+  getInvoiceByOrder,
   updateInvoiceStatus
 } = require('../controllers/invoiceController');
 const { protect, admin } = require('../middleware/authMiddleware');
@@ -14,6 +15,7 @@ router.route('/')
   .post(protect, admin, createInvoice);
 
 router.route('/myinvoices').get(protect, getMyInvoices);
+router.route('/byorder/:orderId').get(protect, getInvoiceByOrder);
 
 router.route('/:id')
   .get(protect, getInvoiceById)

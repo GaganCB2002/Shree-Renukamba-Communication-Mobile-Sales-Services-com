@@ -14,6 +14,7 @@ import BookRepair from './pages/customer/BookRepair';
 import CustomerSettings from './pages/customer/CustomerSettings';
 import LiveTracking from './pages/customer/LiveTracking';
 import CustomerSupport from './pages/customer/CustomerSupport';
+import OrderHistory from './pages/customer/OrderHistory';
 import Products from './pages/ecommerce/Products';
 import ProductDetail from './pages/ecommerce/ProductDetail';
 import Smartphones from './pages/ecommerce/Smartphones';
@@ -24,6 +25,7 @@ import Checkout from './pages/ecommerce/Checkout';
 import Wishlist from './pages/ecommerce/Wishlist';
 import Coupons from './pages/ecommerce/Coupons';
 import InvoiceDetail from './pages/ecommerce/InvoiceDetail';
+import OrderDetail from './pages/ecommerce/OrderDetail';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRepairs from './pages/admin/AdminRepairs';
 import AdminCoupons from './pages/admin/AdminCoupons';
@@ -63,10 +65,12 @@ function App() {
           <Route path="repairs/new" element={<BookRepair />} />
           <Route path="settings" element={<CustomerSettings />} />
           <Route path="live-tracking" element={<LiveTracking />} />
+          <Route path="orders" element={<OrderHistory />} />
           <Route path="support" element={<CustomerSupport />} />
         </Route>
 
         <Route path="/invoices/:id" element={<InvoiceDetail />} />
+        <Route path="/order/:orderId" element={<OrderDetail />} />
         <Route path="/admin" element={<DashboardLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="repairs" element={<AdminRepairs />} />

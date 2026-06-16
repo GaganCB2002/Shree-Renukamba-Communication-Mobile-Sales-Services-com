@@ -22,10 +22,35 @@ class ProductInstance {
     this.stock = row.stock;
     this.price = parseFloat(row.price) || 0;
     this.discount = parseFloat(row.discount || 0) || 0;
+    const getAutoImage = (title) => {
+      const t = (title || '').toLowerCase();
+      if (t.includes('iphone')) return "https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('samsung') || t.includes('galaxy')) return "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('pixel') || t.includes('google')) return "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('macbook')) return "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('ipad') || t.includes('tablet')) return "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('watch') || t.includes('wearable')) return "https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('sony') || t.includes('headphones') || t.includes('xm6') || t.includes('xm5')) return "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('airpods') || t.includes('earbuds') || t.includes('buds')) return "https://images.unsplash.com/photo-1588449668365-d15e397f6787?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('dell') || t.includes('xps') || t.includes('laptop')) return "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('oneplus')) return "https://images.unsplash.com/photo-1565630916779-e303be97b6f5?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('mouse') || t.includes('keyboard') || t.includes('logitech')) return "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('charger') || t.includes('adapter')) return "https://images.unsplash.com/photo-1616401784845-180882ba9ba8?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('cable')) return "https://images.unsplash.com/photo-1588508065123-287b28e013da?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('case') || t.includes('cover')) return "https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('glass') || t.includes('protector')) return "https://images.unsplash.com/photo-1581090700227-1e37b190418e?auto=format&fit=crop&q=80&w=600";
+      if (t.includes('power') || t.includes('bank')) return "https://images.unsplash.com/photo-1609592424109-dd9892f1b17c?auto=format&fit=crop&q=80&w=600";
+      return "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=600";
+    };
+
     try {
-      this.images = typeof row.images === 'string' ? JSON.parse(row.images) : (row.images || []);
+      let imgs = typeof row.images === 'string' ? JSON.parse(row.images) : (row.images || []);
+      if (!imgs || imgs.length === 0 || !imgs[0] || imgs[0].includes('placeholder') || imgs[0].includes('picsum.photos')) {
+        imgs = [getAutoImage(row.title)];
+      }
+      this.images = imgs;
     } catch {
-      this.images = [];
+      this.images = [getAutoImage(row.title)];
     }
     try {
       this.specifications = typeof row.specifications === 'string' ? JSON.parse(row.specifications) : (row.specifications || {});

@@ -18,7 +18,7 @@ class DeviceInstance {
     this.model = row.model;
     this.imei = row.imei;
     this.condition = row.condition;
-    this.images = row.images || [];
+    this.images = typeof row.images === 'string' ? JSON.parse(row.images) : (row.images || []);
     this.createdAt = row.created_at;
     this.updatedAt = row.updated_at;
   }

@@ -39,6 +39,7 @@ const AdminBilling = () => {
     { description: '', qty: 1, unitPrice: '' }
   ]);
   const [paymentInstructions, setPaymentInstructions] = useState('');
+  const [linkOrderId, setLinkOrderId] = useState('');
 
   useEffect(() => {
     fetchBillingData();
@@ -110,7 +111,8 @@ const AdminBilling = () => {
         dueDate,
         status: invStatus,
         items: itemsPayload,
-        paymentInstructions: paymentInstructions || undefined
+        paymentInstructions: paymentInstructions || undefined,
+        ...(linkOrderId.trim() && { order: linkOrderId.trim() }),
       };
 
       await createInvoice(payload);
@@ -122,6 +124,7 @@ const AdminBilling = () => {
       setInvStatus('Pending');
       setInvoiceItems([{ description: '', qty: 1, unitPrice: '' }]);
       setPaymentInstructions('');
+      setLinkOrderId('');
       
       await fetchBillingData();
     } catch (err) {
@@ -335,6 +338,18 @@ const AdminBilling = () => {
                     <option key={u._id} value={u._id}>{u.fullName} ({u.email})</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Optional: Link to Order */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Link to Order (Optional)</label>
+                <input
+                  type="text"
+                  value={linkOrderId}
+                  onChange={(e) => setLinkOrderId(e.target.value)}
+                  placeholder="Enter Order ID (e.g. ORD-123456)"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400"
+                />
               </div>
 
               {/* Status and due date */}

@@ -1,4 +1,5 @@
 const Order = require('../models/Order');
+const RepairOrder = require('../models/RepairOrder');
 const Customer = require('../models/Customer');
 const { sendEmail } = require('../services/emailService');
 const { sendEmailNodemailer } = require('../services/nodemailerService');
@@ -83,17 +84,65 @@ const getOrderById = async (req, res) => {
   }
 };
 
+// @desc    Get all orders (admin)
+// @route   GET /api/orders/all
+// @access  Private/Admin
+const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({}).populate('customer');
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get logged-in user's orders
+// @route   GET /api/orders/myorders
+// @access  Private
+const getMyOrders = async (req, res) => {
+  try {
+    let customer = await Customer.findOne({ userId: req.user._id });
+    if (!customer) {
+      return res.json([]);
+    }
+    const orders = await Order.find({ customer: customer._id }).populate('customer');
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Track order by Order ID (public - no auth required)
 // @route   GET /api/orders/track/:orderId
 // @access  Public
 const trackOrder = async (req, res) => {
   try {
-    const order = await Order.findOne({ orderId: req.params.orderId }).populate('customer');
+    const orderId = req.params.orderId;
+    const order = await Order.findOne({ orderId }).populate('customer');
     if (order) {
-      res.json(order);
-    } else {
-      res.status(404).json({ message: 'Order not found. Please check your Order ID.' });
+      return res.json(order);
     }
+    const repair = await RepairOrder.findOne({ repairId: orderId }).populate('device');
+    if (repair) {
+      return res.json({
+        _id: repair._id,
+        orderId: repair.repairId,
+        orderStatus: repair.repairStatus,
+        createdAt: repair.createdAt,
+        totalAmount: repair.finalCost || repair.estimatedCost || 0,
+        products: repair.device ? [{ title: `${repair.device.brand || ''} ${repair.device.model || ''}`, quantity: 1, price: repair.finalCost || repair.estimatedCost || 0 }] : [],
+        paymentStatus: repair.repairStatus === 'Delivered' ? 'Paid' : 'Pending',
+        isRepair: true,
+        issueDescription: repair.issueDescription,
+        diagnosisDetails: repair.diagnosisDetails,
+        estimatedCost: repair.estimatedCost,
+        finalCost: repair.finalCost,
+        expectedDeliveryDate: repair.expectedDeliveryDate,
+        repairImages: repair.repairImages,
+        deviceImages: repair.device?.images || [],
+      });
+    }
+    res.status(404).json({ message: 'Order not found. Please check your Order ID.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -102,5 +151,7 @@ const trackOrder = async (req, res) => {
 module.exports = {
   addOrderItems,
   getOrderById,
+  getMyOrders,
+  getAllOrders,
   trackOrder,
 };

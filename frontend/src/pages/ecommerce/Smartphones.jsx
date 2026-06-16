@@ -206,7 +206,7 @@ const Smartphones = () => {
                   <Link to={`/products/${product._id}`}>
                     <div className="h-56 bg-secondary-100 relative overflow-hidden">
                       <img
-                        src={phoneImages[idx % phoneImages.length]}
+                        src={(product.images && product.images[0]) || phoneImages[idx % phoneImages.length]}
                         alt={product.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />

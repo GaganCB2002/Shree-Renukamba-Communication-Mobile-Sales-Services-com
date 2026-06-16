@@ -7,7 +7,7 @@
     "price": 159999,
     "discount": 10,
     "stock": 15,
-    "images": ["https://picsum.photos/seed/iphone15/400/400"],
+    "images": ["https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&q=80&w=600"],
     "specifications": { "RAM": "8GB", "Storage": "256GB", "Color": "Natural Titanium" },
     "condition": "Excellent",
     "createdAt": "2026-06-01T00:00:00Z"
@@ -20,7 +20,7 @@
     "price": 134999,
     "discount": 8,
     "stock": 20,
-    "images": ["https://picsum.photos/seed/s25ultra/400/400"],
+    "images": ["https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&q=80&w=600"],
     "specifications": { "RAM": "12GB", "Storage": "256GB", "Color": "Titanium Gray" },
     "condition": "Excellent",
     "createdAt": "2026-05-28T00:00:00Z"
@@ -33,7 +33,7 @@
     "price": 114999,
     "discount": 5,
     "stock": 10,
-    "images": ["https://picsum.photos/seed/macbookair/400/400"],
+    "images": ["https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=600"],
     "specifications": { "RAM": "16GB", "Storage": "512GB", "Color": "Midnight" },
     "condition": "Excellent",
     "createdAt": "2026-06-05T00:00:00Z"
@@ -46,7 +46,7 @@
     "price": 59900,
     "discount": 0,
     "stock": 30,
-    "images": ["https://picsum.photos/seed/watchultra/400/400"],
+    "images": ["https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?auto=format&fit=crop&q=80&w=600"],
     "specifications": { "RAM": "2GB", "Storage": "64GB", "Color": "Titanium" },
     "condition": "Excellent",
     "createdAt": "2026-06-10T00:00:00Z"
@@ -59,7 +59,7 @@
     "price": 29999,
     "discount": 20,
     "stock": 50,
-    "images": ["https://picsum.photos/seed/sonyxm6/400/400"],
+    "images": ["https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&q=80&w=600"],
     "specifications": { "Type": "Over-Ear", "Battery": "30hrs", "Color": "Black" },
     "condition": "Excellent",
     "createdAt": "2026-06-08T00:00:00Z"
@@ -72,7 +72,7 @@
     "price": 79999,
     "discount": 5,
     "stock": 35,
-    "images": ["https://picsum.photos/seed/pixel9pro/400/400"],
+    "images": ["https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&q=80&w=600"],
     "specifications": { "RAM": "12GB", "Storage": "128GB", "Color": "Obsidian" },
     "condition": "Like New",
     "createdAt": "2026-06-12T00:00:00Z"

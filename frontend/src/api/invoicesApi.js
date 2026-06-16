@@ -24,3 +24,8 @@ export const updateInvoiceStatus = async (id, data) => {
   const response = await api.put(`/invoices/${id}`, data);
   return response.data;
 };
+
+export const getInvoiceByOrder = async (orderId) => {
+  const response = await api.get(`/invoices/byorder/${orderId}`);
+  return response.data;
+};

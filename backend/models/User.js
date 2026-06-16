@@ -20,12 +20,12 @@ class UserInstance {
     this.email = row.email;
     this.password = row.password;
     this.role = row.role;
-    this.address = row.address || {};
-    this.securityQuestions = row.security_questions || [];
+    this.address = typeof row.address === 'string' ? JSON.parse(row.address) : (row.address || {});
+    this.securityQuestions = typeof row.security_questions === 'string' ? JSON.parse(row.security_questions) : (row.security_questions || []);
     this.profileImage = row.profile_image || '';
     this.otp = row.otp;
     this.otpExpires = row.otp_expires;
-    this.passwordHistory = row.password_history || [];
+    this.passwordHistory = typeof row.password_history === 'string' ? JSON.parse(row.password_history) : (row.password_history || []);
     this.createdAt = row.created_at;
     this.updatedAt = row.updated_at;
   }

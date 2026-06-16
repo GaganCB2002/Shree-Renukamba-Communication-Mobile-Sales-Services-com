@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { getMyRepairs, acceptRepairCost } from '../../api/repairsApi';
 import { getMyInvoices } from '../../api/invoicesApi';
+import { getMyOrders } from '../../api/ordersApi';
 import { getProducts } from '../../api/productsApi';
 import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
@@ -24,6 +25,7 @@ const Dashboard = () => {
   const wishlistItems = useSelector((state) => state.wishlist?.items || []);
   const [repairs, setRepairs] = useState([]);
   const [invoices, setInvoices] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,13 +38,15 @@ const Dashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      const [repairsData, invoicesData, productsData] = await Promise.all([
+      const [repairsData, invoicesData, ordersData, productsData] = await Promise.all([
         getMyRepairs(),
         getMyInvoices(),
+        getMyOrders(),
         getProducts(),
       ]);
       setRepairs(Array.isArray(repairsData) ? repairsData : []);
       setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
       setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load dashboard data');
@@ -115,6 +119,12 @@ const Dashboard = () => {
 
   const completedCount = repairs.filter(r => r.repairStatus === 'Delivered').length;
 
+  const orderTotalSpent = orders
+    .filter(o => o.orderStatus === 'Delivered')
+    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+  const activeOrderCount = orders.filter(o => o.orderStatus !== 'Delivered' && o.orderStatus !== 'Cancelled').length;
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Welcome */}
@@ -155,7 +165,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Active Repairs</span>
@@ -168,33 +178,23 @@ const Dashboard = () => {
         </div>
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Repairs</span>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Active Orders</span>
             <div className="p-2 bg-purple-50 dark:bg-purple-500/10 rounded-lg">
               <ShoppingBag size={16} className="text-purple-600 dark:text-purple-400" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-900 dark:text-white">{repairs.length}</div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">All time repairs</p>
+          <div className="text-2xl font-extrabold text-slate-900 dark:text-white">{activeOrderCount}</div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Pending & shipped orders</p>
         </div>
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Completed</span>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Orders</span>
             <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
-              <CheckCircle size={16} className="text-emerald-600 dark:text-emerald-400" />
+              <Package size={16} className="text-emerald-600 dark:text-emerald-400" />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-900 dark:text-white">{completedCount}</div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Delivered devices</p>
-        </div>
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Spent</span>
-            <div className="p-2 bg-amber-50 dark:bg-amber-500/10 rounded-lg">
-              <TrendingUp size={16} className="text-amber-600 dark:text-amber-400" />
-            </div>
-          </div>
-          <div className="text-2xl font-extrabold text-slate-900 dark:text-white">₹{totalSpent > 0 ? totalSpent.toLocaleString('en-IN') : '0'}</div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Lifetime value</p>
+          <div className="text-2xl font-extrabold text-slate-900 dark:text-white">{orders.length}</div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">All time purchases</p>
         </div>
       </div>
 
@@ -441,6 +441,68 @@ const Dashboard = () => {
               </div>
             </div>
           )}
+
+          {/* Recent Orders */}
+          {orders.length > 0 && (
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Recent Orders</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Your latest purchases</p>
+                </div>
+                <Link to="/dashboard/orders" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+                  View All <ArrowRight size={12} />
+                </Link>
+              </div>
+              <div className="overflow-x-auto -mx-6">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100 dark:border-slate-700">
+                      <th className="pb-3 px-6 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Date</th>
+                      <th className="pb-3 px-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Order</th>
+                      <th className="pb-3 px-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Items</th>
+                      <th className="pb-3 px-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Status</th>
+                      <th className="pb-3 px-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-right">Total</th>
+                      <th className="pb-3 pr-6 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
+                    {orders.slice(0, 5).map((o) => (
+                      <tr key={o._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
+                        <td className="py-3.5 px-6 text-slate-600 dark:text-slate-400 text-xs font-medium">
+                          {new Date(o.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400">{o.orderId}</span>
+                        </td>
+                        <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white text-sm">
+                          {o.products?.length || 0} item(s)
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${
+                            o.orderStatus === 'Delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400' :
+                            o.orderStatus === 'Cancelled' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400' :
+                            o.orderStatus === 'Shipped' ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400' :
+                            'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400'
+                          }`}>
+                            {o.orderStatus || 'Processing'}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-bold text-slate-900 dark:text-white">
+                          ₹{Number(o.totalAmount || 0).toFixed(2)}
+                        </td>
+                        <td className="py-3.5 pr-6 text-right">
+                          <Link to={`/order/${o.orderId}`} className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800">
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Sidebar */}
@@ -472,6 +534,19 @@ const Dashboard = () => {
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Buy New Products</p>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400">Smartphones & accessories</p>
+                </div>
+                <ArrowRight size={14} className="text-slate-400" />
+              </Link>
+              <Link
+                to="/dashboard/orders"
+                className="flex items-center gap-3 p-3.5 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-xl transition-colors group"
+              >
+                <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <ShoppingBag size={16} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">My Orders</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">View order history & status</p>
                 </div>
                 <ArrowRight size={14} className="text-slate-400" />
               </Link>
@@ -510,7 +585,7 @@ const Dashboard = () => {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Live Tracking</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Real-time repair updates</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Real-time order & repair updates</p>
                 </div>
                 <ArrowRight size={14} className="text-slate-400" />
               </Link>

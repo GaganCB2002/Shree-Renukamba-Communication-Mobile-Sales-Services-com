@@ -17,12 +17,12 @@ class OrderInstance {
     this.orderId = row.order_id;
     this.customer = row.customer_id;
     this.customerId = row.customer_id;
-    this.products = row.products || [];
+    this.products = typeof row.products === 'string' ? JSON.parse(row.products) : (row.products || []);
     this.totalAmount = parseFloat(row.total_amount);
-    this.paymentInfo = row.payment_info || {};
+    this.paymentInfo = typeof row.payment_info === 'string' ? JSON.parse(row.payment_info) : (row.payment_info || {});
     this.paymentStatus = row.payment_status;
     this.orderStatus = row.order_status;
-    this.shippingAddress = row.shipping_address || {};
+    this.shippingAddress = typeof row.shipping_address === 'string' ? JSON.parse(row.shipping_address) : (row.shipping_address || {});
     this.createdAt = row.created_at;
     this.updatedAt = row.updated_at;
   }

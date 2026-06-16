@@ -6,7 +6,7 @@ const User = require('../models/User');
 // @access  Private (Admin)
 const createInvoice = async (req, res) => {
   try {
-    const { customer, repairOrder, date, dueDate, status, items, serviceCharge, paymentInstructions } = req.body;
+    const { customer, repairOrder, order, date, dueDate, status, items, serviceCharge, paymentInstructions } = req.body;
 
     if (!customer || !dueDate || !items || items.length === 0) {
       return res.status(400).json({ message: 'Customer, due date, and invoice items are required' });
@@ -40,6 +40,7 @@ const createInvoice = async (req, res) => {
       invoiceId,
       customer,
       repairOrder: repairOrder || undefined,
+      order: order || undefined,
       date: date || undefined,
       dueDate,
       status: status || 'Pending',
@@ -82,6 +83,7 @@ const getInvoices = async (req, res) => {
 // @access  Private
 const getMyInvoices = async (req, res) => {
   try {
+    // Invoice model stores customer_id as user_id (see populateInvoice)
     const invoices = await Invoice.find({ customer: req.user._id })
       .populate('customer', 'fullName email phoneNumber')
       .populate({
@@ -117,6 +119,7 @@ const getInvoiceById = async (req, res) => {
     }
 
     // Access check: Admin/Technician or Invoice Owner
+    // Note: Invoice model stores customer_id as user_id (see populateInvoice)
     const isOwner = invoice.customer._id.toString() === req.user._id.toString();
     const isStaff = ['admin', 'technician'].includes(req.user.role);
 
@@ -172,10 +175,33 @@ const updateInvoiceStatus = async (req, res) => {
   }
 };
 
+// @desc    Get invoice by order ID
+// @route   GET /api/invoices/byorder/:orderId
+// @access  Private
+const getInvoiceByOrder = async (req, res) => {
+  try {
+    const invoice = await Invoice.findOne({ order: req.params.orderId });
+    if (!invoice) {
+      return res.status(404).json({ message: 'No invoice found for this order' });
+    }
+    // Access check
+    // Note: Invoice model stores customer_id as user_id (see populateInvoice)
+    const isOwner = invoice.customerId?.toString() === req.user._id.toString();
+    const isStaff = ['admin', 'technician'].includes(req.user.role);
+    if (!isOwner && !isStaff) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+    res.json(invoice);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createInvoice,
   getInvoices,
   getMyInvoices,
   getInvoiceById,
+  getInvoiceByOrder,
   updateInvoiceStatus
 };

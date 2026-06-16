@@ -1,22 +1,17 @@
-const cloudinary = require('cloudinary').v2;
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'fallback_name',
-  api_key: process.env.CLOUDINARY_API_KEY || 'fallback_key',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'fallback_secret',
-});
+const path = require('path');
 
 const uploadImage = async (filePath) => {
-  try {
-    const result = await cloudinary.uploader.upload(filePath, {
-      folder: 'mobile_repair_shop',
-    });
-    return result.secure_url;
-  } catch (error) {
-    throw new Error('Image upload failed');
-  }
+  const filename = path.basename(filePath);
+  return `/uploads/images/${filename}`;
 };
 
-module.exports = {
-  uploadImage,
+const uploadBuffer = async (buffer, filename) => {
+  const fs = require('fs');
+  const uploadPath = path.join(__dirname, '..', 'uploads', 'images', filename);
+  const dir = path.dirname(uploadPath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(uploadPath, buffer);
+  return `/uploads/images/${filename}`;
 };
+
+module.exports = { uploadImage, uploadBuffer };

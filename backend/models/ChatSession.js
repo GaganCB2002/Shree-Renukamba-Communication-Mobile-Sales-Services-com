@@ -17,10 +17,10 @@ class ChatSessionInstance {
     this.userId = row.user_id;
     this.phoneNumber = row.phone_number;
     this.source = row.source;
-    this.messages = row.messages || [];
-    this.context = row.context || {};
+    this.messages = typeof row.messages === 'string' ? JSON.parse(row.messages) : (row.messages || []);
+    this.context = typeof row.context === 'string' ? JSON.parse(row.context) : (row.context || {});
     this.isResolved = row.is_resolved;
-    this.metadata = row.metadata || {};
+    this.metadata = typeof row.metadata === 'string' ? JSON.parse(row.metadata) : (row.metadata || {});
     this.createdAt = row.created_at;
     this.updatedAt = row.updated_at;
   }

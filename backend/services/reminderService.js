@@ -47,7 +47,7 @@ const checkDeliveryReminders = async () => {
         AND ro.expected_delivery_date IS NOT NULL
         AND ro.expected_delivery_date >= $1
         AND ro.expected_delivery_date < $2
-    `, [todayStart, todayEnd]);
+    `, [todayStart.toISOString(), todayEnd.toISOString()]);
 
     for (const row of res.rows) {
       await createReminderNotification(

@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Printer, CheckCircle, FileText, Landmark, Edit, Share2, Save, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle, FileText, Landmark, Edit, Share2, Save, RotateCcw, Download } from 'lucide-react';
 import { getInvoiceById, updateInvoiceStatus } from '../../api/invoicesApi';
+import api from '../../api/axios';
 import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 
@@ -186,6 +187,10 @@ const InvoiceDetail = () => {
             <button onClick={handlePrint} className="flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-bold shadow-sm transition-all">
               <Printer size={14} /> Print
             </button>
+            <a href={`/api/invoices/${id}/pdf`} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-200 rounded-xl text-xs font-bold shadow-sm transition-all">
+              <Download size={14} /> Download PDF
+            </a>
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all">
               <Share2 size={14} /> WhatsApp
             </a>

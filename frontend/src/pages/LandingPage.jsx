@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Star, Shield, Truck, RotateCcw, Package, ShoppingCart, Sparkles, Clock, Wrench, Smartphone, Battery, Droplets, Cpu, Heart, ArrowRight, Search, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { ChevronRight, Star, Shield, Truck, RotateCcw, Package, ShoppingCart, Sparkles, Clock, Wrench, Smartphone, Battery, Droplets, Cpu, Heart, ArrowRight, Search, Loader2, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getProducts, getCategories } from '../api/productsApi';
@@ -10,16 +10,19 @@ import { toggleWishlist } from '../redux/slices/wishlistSlice';
 import { useToast } from '../contexts/ToastContext';
 import CategoryBadge from '../components/CategoryBadge';
 
+const placeholder = (text, bg = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)') =>
+  `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='900'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea'/%3E%3Cstop offset='100%25' style='stop-color:%23764ba2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1600' height='900' fill='url(%23g)'/%3E%3Ctext x='800' y='450' text-anchor='middle' dominant-baseline='middle' font-family='Arial' font-size='48' fill='white'%3E${encodeURIComponent(text)}%3C/text%3E%3C/svg%3E`;
+
 const heroImages = [
-  'https://images.unsplash.com/photo-1550009158-9efff6c0e561?auto=format&fit=crop&q=90&w=1600',
-  'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=90&w=1600',
-  'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&q=90&w=1600',
+  'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=1600',
+  'https://images.unsplash.com/photo-1581090700227-1e37b190418e?auto=format&fit=crop&q=80&w=1600',
+  'https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&q=80&w=1600',
 ];
 
 const collections = [
-  { title: 'Premium Smartphones', desc: 'Certified pre-owned iPhones and Androids', image: 'https://images.unsplash.com/photo-1598327105666-5b89351cb31b?auto=format&fit=crop&q=80&w=800', link: '/smartphones' },
-  { title: 'Laptops & MacBooks', desc: 'High-performance machines for work and play', image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&q=80&w=800', link: '/laptops' },
-  { title: 'Accessories & Audio', desc: 'Headphones, chargers, and essential gear', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800', link: '/accessories' },
+  { title: 'Premium Smartphones', desc: 'Certified pre-owned iPhones and Androids', image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=600', link: '/smartphones' },
+  { title: 'Laptops & MacBooks', desc: 'High-performance machines for work and play', image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=600', link: '/laptops' },
+  { title: 'Accessories & Audio', desc: 'Headphones, chargers, and essential gear', image: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&q=80&w=600', link: '/accessories' },
 ];
 
 const testimonials = [
@@ -35,28 +38,30 @@ const repairServices = [
   { icon: Cpu, title: 'Hardware & Software', desc: 'From charging ports to motherboard repairs and software issues - we fix it all.', color: 'from-purple-500 to-purple-600' },
 ];
 
+const accPlaceholder = (text) => placeholder(text, 'linear-gradient(135deg, #a8edea, #fed6e3)');
+
 const slidingAccessories = [
-  { title: 'Premium iPhone 14 Screen Guard', price: '₹499', image: 'https://images.unsplash.com/photo-1612444530582-fc66183b16f7?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Silicone Back Case', price: '₹299', image: 'https://images.unsplash.com/photo-1608156639585-b3a032ef9689?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Type-C Fast Charger 20W', price: '₹999', image: 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Matte Finish Glass Protector', price: '₹349', image: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Leather Flip Cover', price: '₹599', image: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Wireless Charging Pad', price: '₹1499', image: 'https://images.unsplash.com/photo-1622445262465-2481c8573326?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Camera Lens Protector', price: '₹199', image: 'https://images.unsplash.com/photo-1612444530582-fc66183b16f7?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Clear Transparent Case', price: '₹249', image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Braided Data Cable', price: '₹399', image: 'https://images.unsplash.com/photo-1619191026573-0ff76d33f7fa?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Privacy Screen Guard', price: '₹599', image: 'https://images.unsplash.com/photo-1612444530582-fc66183b16f7?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Rugged Armor Case', price: '₹799', image: 'https://images.unsplash.com/photo-1608156639585-b3a032ef9689?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Car Charger Dual Port', price: '₹699', image: 'https://images.unsplash.com/photo-1629131726617-6f8a840939b9?auto=format&fit=crop&q=80&w=300' },
-  { title: 'UV Glue Tempered Glass', price: '₹899', image: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Magnetic Ring Case', price: '₹449', image: 'https://images.unsplash.com/photo-1608156639585-b3a032ef9689?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Power Bank 10000mAh', price: '₹1299', image: 'https://images.unsplash.com/photo-1609592424109-dd9892f1b17c?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Edge-to-Edge Screen Guard', price: '₹399', image: 'https://images.unsplash.com/photo-1612444530582-fc66183b16f7?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Liquid Silicone Cover', price: '₹349', image: 'https://images.unsplash.com/photo-1608156639585-b3a032ef9689?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Type-C to 3.5mm Adapter', price: '₹299', image: 'https://images.unsplash.com/photo-1619191026573-0ff76d33f7fa?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Gaming Glass Protector', price: '₹499', image: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&q=80&w=300' },
-  { title: 'Shockproof Bumper Case', price: '₹549', image: 'https://images.unsplash.com/photo-1608156639585-b3a032ef9689?auto=format&fit=crop&q=80&w=300' },
-  { title: '65W GaN Charger', price: '₹1999', image: 'https://images.unsplash.com/photo-1629131726617-6f8a840939b9?auto=format&fit=crop&q=80&w=300' },
+  { title: 'Premium iPhone 14 Screen Guard', price: '₹499', image: 'https://images.unsplash.com/photo-1581090700227-1e37b190418e?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Silicone Back Case', price: '₹299', image: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Type-C Fast Charger 20W', price: '₹999', image: 'https://images.unsplash.com/photo-1616401784845-180882ba9ba8?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Matte Finish Glass Protector', price: '₹349', image: 'https://images.unsplash.com/photo-1581090700227-1e37b190418e?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Leather Flip Cover', price: '₹599', image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Wireless Charging Pad', price: '₹1499', image: 'https://images.unsplash.com/photo-1622445262465-2481c4574875?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Camera Lens Protector', price: '₹199', image: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Clear Transparent Case', price: '₹249', image: 'https://images.unsplash.com/photo-1608156639585-b3a032ef9689?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Braided Data Cable', price: '₹399', image: 'https://images.unsplash.com/photo-1588508065123-287b28e013da?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Privacy Screen Guard', price: '₹599', image: 'https://images.unsplash.com/photo-1581090700227-1e37b190418e?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Rugged Armor Case', price: '₹799', image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Car Charger Dual Port', price: '₹699', image: 'https://images.unsplash.com/photo-1622445262465-2481c4574875?auto=format&fit=crop&q=80&w=400' },
+  { title: 'UV Glue Tempered Glass', price: '₹899', image: 'https://images.unsplash.com/photo-1581090700227-1e37b190418e?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Magnetic Ring Case', price: '₹449', image: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Power Bank 10000mAh', price: '₹1299', image: 'https://images.unsplash.com/photo-1609592424109-dd9892f1b17c?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Edge-to-Edge Screen Guard', price: '₹399', image: 'https://images.unsplash.com/photo-1581090700227-1e37b190418e?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Liquid Silicone Cover', price: '₹349', image: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Type-C to 3.5mm Adapter', price: '₹299', image: 'https://images.unsplash.com/photo-1616401784845-180882ba9ba8?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Gaming Glass Protector', price: '₹499', image: 'https://images.unsplash.com/photo-1581090700227-1e37b190418e?auto=format&fit=crop&q=80&w=400' },
+  { title: 'Shockproof Bumper Case', price: '₹549', image: 'https://images.unsplash.com/photo-1608156639585-b3a032ef9689?auto=format&fit=crop&q=80&w=400' },
+  { title: '65W GaN Charger', price: '₹1999', image: 'https://images.unsplash.com/photo-1616401784845-180882ba9ba8?auto=format&fit=crop&q=80&w=400' },
 ];
 
 export default function LandingPage() {
@@ -128,12 +133,7 @@ export default function LandingPage() {
     }
   };
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSlideIndex((prev) => (prev + 1) % heroImages.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, []);
+  // Auto-slide removed — user found it annoying
 
   useEffect(() => {
     const els = document.querySelectorAll('.reveal');
@@ -171,10 +171,7 @@ export default function LandingPage() {
         ))}
         <div className="lp-hero-overlay" />
         <div className="lp-hero-content">
-          <div className="reveal" style={{ width: 150, height: 150, margin: '0 auto 28px', borderRadius: '50%', background: 'var(--clr-card-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 4px rgba(255,255,255,0.3), 0 12px 40px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
-            <img src="/logo.png" alt="Shree Renukamba Communication" style={{ width: '92%', height: '92%', objectFit: 'contain' }} />
-          </div>
-          <h1 className="lp-hero-title reveal">
+          <h1 className="lp-hero-title reveal" style={{ marginTop: 40 }}>
             {t('home.heroTitle1')} <span className="lp-hero-highlight">{t('home.heroTitle2')}</span>
             <span className="lp-hero-highlight">{t('home.heroTitle3')}</span>
           </h1>
@@ -277,22 +274,25 @@ export default function LandingPage() {
         <style dangerouslySetInnerHTML={{__html: `
           .accessories-marquee-container {
             width: 100%;
-            overflow: hidden;
             position: relative;
             background: var(--clr-white);
             padding: 30px 0;
             border-top: 1px solid var(--clr-border);
             border-bottom: 1px solid var(--clr-border);
+            overflow: hidden;
           }
           .accessories-marquee {
             display: flex;
             gap: 24px;
             width: max-content;
-            animation: marqueeScroll 45s linear infinite;
-            padding-left: 24px;
+            animation: marquee-scroll 50s linear infinite;
           }
           .accessories-marquee:hover {
             animation-play-state: paused;
+          }
+          @keyframes marquee-scroll {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
           }
           .marquee-item {
             width: 200px;
@@ -336,10 +336,6 @@ export default function LandingPage() {
             color: var(--clr-primary);
             font-weight: 600;
           }
-          @keyframes marqueeScroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(calc(-50% - 12px)); }
-          }
         `}} />
       </section>
 
@@ -369,7 +365,7 @@ export default function LandingPage() {
             {/* Banner 1 */}
             <Link to="/shop" style={{ textDecoration: 'none' }} className="promo-card">
               <div className="promo-card-img-wrap">
-                <img src="https://images.unsplash.com/photo-1598327105666-5b89351cb31b?auto=format&fit=crop&q=80&w=600" alt="Mobiles Offer" onError={e => { e.target.style.display = 'none'; }} />
+                <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=600" alt="Mobiles Offer" />
               </div>
               <div className="promo-card-content">
                 <div>
@@ -386,7 +382,7 @@ export default function LandingPage() {
             {/* Banner 2 */}
             <Link to="/shop" style={{ textDecoration: 'none' }} className="promo-card">
               <div className="promo-card-img-wrap">
-                <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=600" alt="Laptops Offer" onError={e => { e.target.style.display = 'none'; }} />
+                <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=600" alt="Laptops Offer" />
               </div>
               <div className="promo-card-content">
                 <div>
@@ -403,7 +399,7 @@ export default function LandingPage() {
             {/* Banner 3 */}
             <Link to="/shop" style={{ textDecoration: 'none' }} className="promo-card">
               <div className="promo-card-img-wrap">
-                <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=600" alt="Accessories Offer" onError={e => { e.target.style.display = 'none'; }} />
+                <img src="https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&q=80&w=600" alt="Accessories Offer" />
               </div>
               <div className="promo-card-content">
                 <div>
@@ -622,7 +618,7 @@ export default function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
             <div className="reveal" style={{ position: 'relative' }}>
               <div style={{ overflow: 'hidden', borderRadius: 20 }}>
-                <img src="https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&q=80&w=800" alt="Repair" style={{ width: '100%', height: 480, objectFit: 'cover', display: 'block' }} onError={e => { e.target.style.display = 'none'; }} />
+                <img src={placeholder('Professional Repair Service', 'linear-gradient(135deg, #0c3483, #a2b6df)')} alt="Repair" style={{ width: '100%', height: 480, objectFit: 'cover', display: 'block' }} />
               </div>
               <div style={{ position: 'absolute', bottom: -16, right: -16, background: 'var(--clr-accent-brand)', color: '#fff', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', fontWeight: 600, borderRadius: 12 }}>
                 <Shield size={20} /> {t('home.val1')}
@@ -681,68 +677,126 @@ export default function LandingPage() {
               <div style={{ marginTop: 24, background: 'var(--clr-card-bg)', borderRadius: 16, border: '1px solid var(--clr-border)', overflow: 'hidden' }}>
                 <div style={{ padding: 20, borderBottom: '1px solid var(--clr-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Order ID</span>
-                    <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--clr-text-on-light)', fontFamily: 'monospace', margin: '4px 0 0' }}>{trackResult.orderId}</p>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{trackResult.isRepair ? 'Repair ID' : 'Order ID'}</span>
+                    <Link to={`/order/${trackResult.orderId}`} style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--clr-accent-brand)', fontFamily: 'monospace', margin: '4px 0 0', textDecoration: 'underline', textUnderlineOffset: 3 }}>{trackResult.orderId}</Link>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Status</span>
                     <p style={{
                       fontSize: '0.75rem', fontWeight: 700, padding: '4px 12px', borderRadius: 20, display: 'inline-block', margin: '4px 0 0',
-                      background: trackResult.orderStatus === 'Delivered' ? '#DCFCE7' : trackResult.orderStatus === 'Shipped' ? '#DBEAFE' : trackResult.orderStatus === 'Processing' ? '#FEF3C7' : '#F1F5F9',
-                      color: trackResult.orderStatus === 'Delivered' ? '#16A34A' : trackResult.orderStatus === 'Shipped' ? '#2563EB' : trackResult.orderStatus === 'Processing' ? '#D97706' : '#64748B'
+                      background: ['Delivered', 'Repair Completed'].includes(trackResult.orderStatus) ? '#DCFCE7' : trackResult.orderStatus === 'Shipped' ? '#DBEAFE' : ['Processing', 'Under Review', 'Awaiting Approval'].includes(trackResult.orderStatus) ? '#FEF3C7' : '#F1F5F9',
+                      color: ['Delivered', 'Repair Completed'].includes(trackResult.orderStatus) ? '#16A34A' : trackResult.orderStatus === 'Shipped' ? '#2563EB' : ['Processing', 'Under Review', 'Awaiting Approval'].includes(trackResult.orderStatus) ? '#D97706' : '#64748B'
                     }}>
                       {trackResult.orderStatus || 'Processing'}
                     </p>
                   </div>
                 </div>
-                <div style={{ padding: 20 }}>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
-                    <Clock size={14} color="var(--clr-text-muted)" />
-                    <span style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>Ordered on {new Date(trackResult.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
-                    <Package size={14} color="var(--clr-text-muted)" />
-                    <span style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>{trackResult.products?.length || 0} item(s)</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--clr-accent-brand)' }}>Total: ₹{trackResult.totalAmount}</span>
-                  </div>
 
-                  {/* Products List */}
-                  {trackResult.products && trackResult.products.length > 0 && (
-                    <div style={{ borderTop: '1px solid var(--clr-border)', paddingTop: 16, marginTop: 8 }}>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12, display: 'block' }}>Items</span>
-                      {trackResult.products.map((p, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < trackResult.products.length - 1 ? '1px solid var(--clr-border)' : 'none' }}>
-                          <span style={{ fontSize: '0.82rem', color: 'var(--clr-text-on-light)' }}>{p.title || p.name || `Product ${i + 1}`} {p.quantity ? `x${p.quantity}` : ''}</span>
-                          <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--clr-text-on-light)' }}>₹{p.price || p.totalPrice || 0}</span>
+                {trackResult.isRepair ? (
+                  <div style={{ padding: 20 }}>
+                    {/* Device Images */}
+                    {trackResult.deviceImages?.length > 0 && (
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 4 }}>
+                        {trackResult.deviceImages.map((img, idx) => (
+                          <img key={idx} src={img} alt={`Device ${idx + 1}`}
+                            style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--clr-border)', flexShrink: 0 }}
+                            onError={e => { e.target.style.display = 'none'; }} />
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                      <Clock size={14} color="var(--clr-text-muted)" />
+                      <span style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>Requested on {new Date(trackResult.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    </div>
+                    {trackResult.issueDescription && (
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 12 }}>
+                        <Wrench size={14} color="var(--clr-text-muted)" style={{ marginTop: 2 }} />
+                        <span style={{ fontSize: '0.8rem', color: 'var(--clr-text-on-light)' }}>{trackResult.issueDescription}</span>
+                      </div>
+                    )}
+                    {trackResult.diagnosisDetails && (
+                      <div style={{ padding: 12, background: '#F8FAFC', borderRadius: 8, marginBottom: 16, border: '1px solid var(--clr-border)' }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>Diagnosis</span>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--clr-text-on-light)', margin: 0 }}>{trackResult.diagnosisDetails}</p>
+                      </div>
+                    )}
+                    {(trackResult.estimatedCost || trackResult.finalCost) && (
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--clr-accent-brand)' }}>
+                          {trackResult.finalCost ? `Final: ₹${trackResult.finalCost}` : `Est: ₹${trackResult.estimatedCost}`}
+                        </span>
+                      </div>
+                    )}
+                    {trackResult.expectedDeliveryDate && (
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
+                        <Calendar size={14} color="var(--clr-text-muted)" />
+                        <span style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>Est. Delivery: {new Date(trackResult.expectedDeliveryDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                      </div>
+                    )}
+                    {/* Repair Images */}
+                    {trackResult.repairImages?.length > 0 && (
+                      <div style={{ borderTop: '1px solid var(--clr-border)', paddingTop: 16, marginTop: 8 }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12, display: 'block' }}>Repair Photos</span>
+                        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+                          {trackResult.repairImages.map((img, idx) => (
+                            <img key={idx} src={img} alt={`Repair ${idx + 1}`}
+                              style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--clr-border)', flexShrink: 0 }}
+                              onError={e => { e.target.style.display = 'none'; }} />
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Payment Status */}
-                  <div style={{ borderTop: '1px solid var(--clr-border)', paddingTop: 16, marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>Payment</span>
-                    <span style={{
-                      fontSize: '0.7rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20,
-                      background: trackResult.paymentStatus === 'Paid' ? '#DCFCE7' : '#FEF3C7',
-                      color: trackResult.paymentStatus === 'Paid' ? '#16A34A' : '#D97706'
-                    }}>
-                      {trackResult.paymentStatus || 'Pending'}
-                    </span>
+                      </div>
+                    )}
                   </div>
-
-                  {/* Shipping Address */}
-                  {trackResult.shippingAddress && (
-                    <div style={{ borderTop: '1px solid var(--clr-border)', paddingTop: 16, marginTop: 8 }}>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'block' }}>Shipping To</span>
-                      <p style={{ fontSize: '0.82rem', color: 'var(--clr-text-on-light)', margin: 0 }}>
-                        {trackResult.shippingAddress.address}, {trackResult.shippingAddress.city}, {trackResult.shippingAddress.state} - {trackResult.shippingAddress.zip}
-                      </p>
+                ) : (
+                  <div style={{ padding: 20 }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                      <Clock size={14} color="var(--clr-text-muted)" />
+                      <span style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>Ordered on {new Date(trackResult.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </div>
-                  )}
-                </div>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                      <Package size={14} color="var(--clr-text-muted)" />
+                      <span style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>{trackResult.products?.length || 0} item(s)</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--clr-accent-brand)' }}>Total: ₹{trackResult.totalAmount}</span>
+                    </div>
+
+                    {/* Products List */}
+                    {trackResult.products && trackResult.products.length > 0 && (
+                      <div style={{ borderTop: '1px solid var(--clr-border)', paddingTop: 16, marginTop: 8 }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12, display: 'block' }}>Items</span>
+                        {trackResult.products.map((p, i) => (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < trackResult.products.length - 1 ? '1px solid var(--clr-border)' : 'none' }}>
+                            <span style={{ fontSize: '0.82rem', color: 'var(--clr-text-on-light)' }}>{p.title || p.name || `Product ${i + 1}`} {p.quantity ? `x${p.quantity}` : ''}</span>
+                            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--clr-text-on-light)' }}>₹{p.price || p.totalPrice || 0}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Payment Status */}
+                    <div style={{ borderTop: '1px solid var(--clr-border)', paddingTop: 16, marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)' }}>Payment</span>
+                      <span style={{
+                        fontSize: '0.7rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                        background: trackResult.paymentStatus === 'Paid' ? '#DCFCE7' : '#FEF3C7',
+                        color: trackResult.paymentStatus === 'Paid' ? '#16A34A' : '#D97706'
+                      }}>
+                        {trackResult.paymentStatus || 'Pending'}
+                      </span>
+                    </div>
+
+                    {/* Shipping Address */}
+                    {trackResult.shippingAddress && (
+                      <div style={{ borderTop: '1px solid var(--clr-border)', paddingTop: 16, marginTop: 8 }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'block' }}>Shipping To</span>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--clr-text-on-light)', margin: 0 }}>
+                          {trackResult.shippingAddress.address}, {trackResult.shippingAddress.city}, {trackResult.shippingAddress.state} - {trackResult.shippingAddress.zip}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

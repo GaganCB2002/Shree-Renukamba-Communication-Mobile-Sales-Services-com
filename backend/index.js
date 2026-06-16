@@ -87,6 +87,7 @@ const PORT = process.env.PORT || 5000;
 function startServer(port) {
   const server = app.listen(port, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${port}`);
+    if (process.send) process.send('ready');
   });
 
   server.on('error', (err) => {

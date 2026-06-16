@@ -19,10 +19,12 @@ class InvoiceInstance {
     this.customerId = row.customer_id;
     this.repairOrder = row.repair_order_id;
     this.repairOrderId = row.repair_order_id;
+    this.order = row.order_id;
+    this.orderId = row.order_id;
     this.date = row.date;
     this.dueDate = row.due_date;
     this.status = row.status;
-    this.items = row.items || [];
+    this.items = typeof row.items === 'string' ? JSON.parse(row.items) : (row.items || []);
     this.subtotal = parseFloat(row.subtotal);
     this.cgst = parseFloat(row.cgst || 0);
     this.sgst = parseFloat(row.sgst || 0);
@@ -95,10 +97,10 @@ class Invoice {
       const id = generateId();
       const sql = `
         INSERT INTO invoices (
-          id, invoice_id, customer_id, repair_order_id, date, due_date, status, 
+          id, invoice_id, customer_id, repair_order_id, order_id, date, due_date, status, 
           items, subtotal, cgst, sgst, service_charge, total_amount, payment_instructions
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING *
       `;
       const vals = [
@@ -106,6 +108,7 @@ class Invoice {
         data.invoiceId,
         data.customer || data.customerId,
         data.repairOrder || data.repairOrderId || null,
+        data.order || data.orderId || null,
         data.date || new Date(),
         data.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         data.status || 'Pending',
@@ -140,6 +143,10 @@ class Invoice {
       if (query._id || query.id) {
         conditions.push(`id = $${vals.length + 1}`);
         vals.push(query._id || query.id);
+      }
+      if (query.order || query.orderId) {
+        conditions.push(`order_id = $${vals.length + 1}`);
+        vals.push(query.order || query.orderId);
       }
 
       if (conditions.length > 0) {

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Search, Wrench, Eye, Calendar } from 'lucide-react';
+import { ShoppingBag, Search, Wrench, Eye, Calendar, IndianRupee, User, Download } from 'lucide-react';
 import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import EmptyState from '../../components/EmptyState';
 import { getAllRepairs } from '../../api/repairsApi';
+import { getAllOrders } from '../../api/ordersApi';
 import { Link } from 'react-router-dom';
 
 const orderStatusColors = {
@@ -29,8 +30,12 @@ const AdminOrders = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const repairsData = await getAllRepairs();
+      const [repairsData, ordersData] = await Promise.all([
+        getAllRepairs(),
+        getAllOrders(),
+      ]);
       setRepairs(repairsData);
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load orders');
     } finally {
@@ -44,6 +49,13 @@ const AdminOrders = () => {
     return r.repairId?.toLowerCase().includes(q) ||
       r.device?.brand?.toLowerCase().includes(q) ||
       r.customer?.userId?.fullName?.toLowerCase().includes(q);
+  });
+
+  const filteredOrders = orders.filter(o => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return o.orderId?.toLowerCase().includes(q) ||
+      o.customer?.userId?.fullName?.toLowerCase().includes(q);
   });
 
   if (loading) return <PageLoading />;
@@ -139,11 +151,65 @@ const AdminOrders = () => {
           </div>
         )
       ) : (
-        <EmptyState
-          title="No E-Commerce Orders Yet"
-          description="Customer orders will appear here once the checkout is complete."
-          icon={ShoppingBag}
-        />
+        filteredOrders.length === 0 ? (
+          <EmptyState
+            title="No E-Commerce Orders Yet"
+            description={search ? 'No orders match your search.' : 'Customer orders will appear here once the checkout is complete.'}
+            icon={ShoppingBag}
+          />
+        ) : (
+          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-border bg-gray-50/50">
+                  <th className="px-5 py-3.5 text-xs text-secondary-500 font-bold uppercase tracking-wider">Order ID</th>
+                  <th className="px-5 py-3.5 text-xs text-secondary-500 font-bold uppercase tracking-wider">Customer</th>
+                  <th className="px-5 py-3.5 text-xs text-secondary-500 font-bold uppercase tracking-wider">Items</th>
+                  <th className="px-5 py-3.5 text-xs text-secondary-500 font-bold uppercase tracking-wider">Amount</th>
+                  <th className="px-5 py-3.5 text-xs text-secondary-500 font-bold uppercase tracking-wider">Status</th>
+                  <th className="px-5 py-3.5 text-xs text-secondary-500 font-bold uppercase tracking-wider">Date</th>
+                  <th className="px-5 py-3.5 text-xs text-secondary-500 font-bold uppercase tracking-wider text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredOrders.map((order) => (
+                  <tr key={order._id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-5 py-4">
+                      <span className="font-mono font-bold text-primary-600 text-sm">{order.orderId}</span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <User size={14} className="text-gray-400" />
+                        <span className="text-sm text-gray-800 font-medium">{order.customer?.userId?.fullName || 'Customer'}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-sm text-gray-600">
+                      {order.products?.length || 0} item(s)
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className="font-bold text-sm text-gray-900 flex items-center gap-1">
+                        <IndianRupee size={13} />{Number(order.totalAmount || 0).toFixed(2)}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${orderStatusColors[order.orderStatus] || 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                        {order.orderStatus || 'Processing'}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-xs text-gray-500">
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <Link to={`/order/${order.orderId}`} className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-800 font-medium">
+                        <Eye size={14} /> View
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
     </div>
   );

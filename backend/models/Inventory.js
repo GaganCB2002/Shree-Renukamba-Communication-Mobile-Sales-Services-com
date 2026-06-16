@@ -17,7 +17,7 @@ class InventoryInstance {
     this.productId = row.product_id;
     this.stockAvailable = row.stock_available;
     this.lowStockLimit = row.low_stock_limit;
-    this.supplierDetails = row.supplier_details || {};
+    this.supplierDetails = typeof row.supplier_details === 'string' ? JSON.parse(row.supplier_details) : (row.supplier_details || {});
     this.createdAt = row.created_at;
     this.updatedAt = row.updated_at;
   }

@@ -6,12 +6,12 @@ import {
   HelpCircle, Plus, Loader2, BarChart2, Gift,
   Bell, Search, Sun, Moon, ChevronDown, Users, X, Menu,
   User as UserIcon, LogOut as LogOutIcon, ChevronLeft, ChevronRight, MoreHorizontal,
-  Headphones, Tags
+  Headphones, Tags, MapPin
 } from 'lucide-react';
 import { logout } from '../redux/slices/authSlice';
 import { resetPageData } from '../redux/slices/pageSlice';
 import { useTheme } from '../contexts/ThemeContext';
-import { getUnreadCount, getMyNotifications, markAllAsRead } from '../api/notificationsApi';
+import { getUnreadCount, getMyNotifications, markAllAsRead, markAsRead } from '../api/notificationsApi';
 import CustomerAiAssistant from '../components/CustomerAiAssistant';
 import AdminAiAssistant from '../components/AdminAiAssistant';
 import DeliveryReminder from '../components/DeliveryReminder';
@@ -148,9 +148,10 @@ const DashboardLayout = () => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/', label: 'Homepage', icon: Package },
     { path: '/shop', label: 'Shop Products', icon: ShoppingBag },
+    { path: '/dashboard/orders', label: 'My Orders', icon: ShoppingBag },
+    { path: '/dashboard/live-tracking', label: 'Live Tracking', icon: MapPin },
     { path: '/accessories', label: 'Accessories', icon: Headphones },
     { path: '/dashboard/repairs/new', label: 'Book Repair', icon: Wrench },
-    { path: '/dashboard/live-tracking', label: 'Live Tracking', icon: Package },
     { path: '/dashboard/settings', label: 'Settings', icon: Settings },
     { path: '/dashboard/support', label: 'Support', icon: HelpCircle },
   ];
@@ -331,12 +332,26 @@ const DashboardLayout = () => {
                     {notifications.length === 0 ? (
                       <div className="p-6 text-center text-xs text-slate-400">No new updates</div>
                     ) : (
-                      notifications.map((n) => (
-                        <div key={n._id} className={`p-3 border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/20 ${!n.isRead ? 'bg-amber-500/5' : ''}`}>
-                          <p className="text-xs font-semibold text-slate-950 dark:text-white">{n.title}</p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">{n.message}</p>
-                        </div>
-                      ))
+                      notifications.map((n) => {
+                        const idMatch = n.message.match(/(REP-\d+|ORD-\d+)/);
+                        const refId = idMatch ? idMatch[1] : null;
+                        return (
+                          <div key={n._id} onClick={async () => {
+                            if (!n.isRead) {
+                              try {
+                                await markAsRead(n._id);
+                                setNotifications(prev => prev.map(x => x._id === n._id ? { ...x, isRead: true } : x));
+                                setUnreadCount(prev => Math.max(0, prev - 1));
+                              } catch {}
+                            }
+                            if (refId) navigate(`/order/${refId}`);
+                            setShowNotifications(false);
+                          }} className={`p-3 border-b border-slate-50 dark:border-slate-700/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/20 ${!n.isRead ? 'bg-amber-500/5' : ''}`}>
+                            <p className="text-xs font-semibold text-slate-950 dark:text-white">{n.title}</p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">{n.message}</p>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -417,21 +432,21 @@ const DashboardLayout = () => {
           </>
         ) : (
           <>
-            <Link to="/dashboard" className={`flex flex-col items-center justify-center ${isActive('/dashboard') && !isActive('/dashboard/repairs') && !isActive('/dashboard/live-tracking') ? 'text-amber-500' : 'text-slate-400'}`}>
+            <Link to="/dashboard" className={`flex flex-col items-center justify-center ${isActive('/dashboard') && !isActive('/dashboard/repairs') && !isActive('/dashboard/live-tracking') && !isActive('/dashboard/orders') ? 'text-amber-500' : 'text-slate-400'}`}>
               <LayoutDashboard size={20} />
               <span className="text-[9px] font-bold mt-1">Home</span>
             </Link>
-            <Link to="/dashboard/repairs/new" className={`flex flex-col items-center justify-center ${isActive('/dashboard/repairs/new') ? 'text-amber-500' : 'text-slate-400'}`}>
-              <Wrench size={20} />
-              <span className="text-[9px] font-bold mt-1">Book Repair</span>
+            <Link to="/dashboard/orders" className={`flex flex-col items-center justify-center ${isActive('/dashboard/orders') ? 'text-amber-500' : 'text-slate-400'}`}>
+              <ShoppingBag size={20} />
+              <span className="text-[9px] font-bold mt-1">Orders</span>
             </Link>
             <Link to="/dashboard/live-tracking" className={`flex flex-col items-center justify-center ${isActive('/dashboard/live-tracking') ? 'text-amber-500' : 'text-slate-400'}`}>
-              <Package size={20} />
-              <span className="text-[9px] font-bold mt-1">Tracking</span>
+              <MapPin size={20} />
+              <span className="text-[9px] font-bold mt-1">Track</span>
             </Link>
-            <Link to="/dashboard/settings" className={`flex flex-col items-center justify-center ${isActive('/dashboard/settings') ? 'text-amber-500' : 'text-slate-400'}`}>
-              <Settings size={20} />
-              <span className="text-[9px] font-bold mt-1">Settings</span>
+            <Link to="/dashboard/repairs/new" className={`flex flex-col items-center justify-center ${isActive('/dashboard/repairs/new') ? 'text-amber-500' : 'text-slate-400'}`}>
+              <Wrench size={20} />
+              <span className="text-[9px] font-bold mt-1">Repair</span>
             </Link>
             <button type="button" onClick={() => setSidebarOpen(true)} className="flex flex-col items-center justify-center text-slate-400">
               <MoreHorizontal size={20} />
