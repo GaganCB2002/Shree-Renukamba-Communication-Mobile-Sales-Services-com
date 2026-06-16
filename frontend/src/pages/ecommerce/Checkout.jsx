@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShoppingBag, CreditCard, Banknote, QrCode, ArrowLeft, Loader2, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { ShoppingBag, CreditCard, Banknote, QrCode, ArrowLeft, Loader2, RefreshCw, CheckCircle2, Tag } from 'lucide-react';
 import { clearCart } from '../../redux/slices/cartSlice';
 import { getProducts } from '../../api/productsApi';
 import { createOrder } from '../../api/ordersApi';
 import { useToast } from '../../contexts/ToastContext';
+import { validateCoupon } from '../../api/couponsApi';
 
 const Checkout = () => {
   const dispatch = useDispatch();
@@ -24,6 +25,12 @@ const Checkout = () => {
     state: '',
     pincode: '',
   });
+
+  // Coupon States
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
 
   useEffect(() => {
     fetchLivePrices();
@@ -52,10 +59,50 @@ const Checkout = () => {
     });
   }, [cartItems, liveProductMap]);
 
-  const subtotal = cartWithLivePrices.reduce((acc, item) => {
-    const price = item.discount > 0 ? (item.price * (1 - item.discount / 100)) : item.price;
-    return acc + price * item.quantity;
-  }, 0);
+  // Defensive calculations to prevent NaN
+  const subtotal = useMemo(() => {
+    return cartWithLivePrices.reduce((acc, item) => {
+      const rawPrice = Number(item?.price) || 0;
+      const rawDiscount = Number(item?.discount) || 0;
+      const price = rawDiscount > 0 ? (rawPrice * (1 - rawDiscount / 100)) : rawPrice;
+      const qty = Number(item?.quantity) || 1;
+      return acc + price * qty;
+    }, 0);
+  }, [cartWithLivePrices]);
+
+  const finalTotal = useMemo(() => {
+    if (appliedCoupon && appliedCoupon.valid) {
+      return Number(appliedCoupon.finalTotal) || 0;
+    }
+    return subtotal;
+  }, [appliedCoupon, subtotal]);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const data = await validateCoupon(couponCode, subtotal);
+      if (data.valid) {
+        setAppliedCoupon(data);
+        showToast('Coupon applied successfully!');
+      } else {
+        setCouponError(data.message || 'Invalid coupon');
+        setAppliedCoupon(null);
+      }
+    } catch (err) {
+      setCouponError(err.response?.data?.message || 'Failed to apply coupon');
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+  };
 
   const handlePlaceOrder = async () => {
     if (!paymentMethod) {
@@ -73,17 +120,22 @@ const Checkout = () => {
 
     try {
       setLoading(true);
-      const products = cartWithLivePrices.map((item) => ({
-        product: item._id || item.id,
-        name: item.title || item.name,
-        image: item.images?.[0] || '',
-        quantity: item.quantity,
-        price: item.discount > 0 ? (item.price * (1 - item.discount / 100)) : item.price,
-      }));
+      const products = cartWithLivePrices.map((item) => {
+        const rawPrice = Number(item?.price) || 0;
+        const rawDiscount = Number(item?.discount) || 0;
+        const finalPrice = rawDiscount > 0 ? (rawPrice * (1 - rawDiscount / 100)) : rawPrice;
+        return {
+          product: item._id || item.id,
+          name: item.title || item.name,
+          image: item.images?.[0] || '',
+          quantity: Number(item.quantity) || 1,
+          price: finalPrice,
+        };
+      });
 
       const order = await createOrder({
         products,
-        totalAmount: subtotal,
+        totalAmount: finalTotal,
         shippingAddress,
         paymentMethod,
       });
@@ -267,20 +319,103 @@ const Checkout = () => {
                   );
                 })}
               </div>
+              {/* Coupon Code Section */}
+              <div className="border-t border-border pt-4 pb-2">
+                <label className="text-xs font-bold text-secondary-500 uppercase tracking-wider block mb-2">Apply Coupon</label>
+                {appliedCoupon ? (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Tag size={16} className="text-green-600 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-green-800 font-mono tracking-wider">{appliedCoupon.coupon.code}</p>
+                        <p className="text-[10px] text-green-600">
+                          {appliedCoupon.coupon.discountType === 'percentage'
+                            ? `${appliedCoupon.coupon.discountValue}% Off applied`
+                            : `₹${appliedCoupon.coupon.discountValue} Flat Discount applied`}
+                        </p>
+                      </div>
+                    </div>
+                    <button type="button" onClick={handleRemoveCoupon} className="text-xs text-red-500 hover:text-red-700 font-semibold transition-colors">
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter coupon code"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        className="flex-1 px-3 py-2 bg-secondary-50 border border-border rounded-xl text-sm focus:outline-none focus:border-primary-400 font-mono tracking-wider"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={couponLoading || !couponCode.trim()}
+                        className="px-4 py-2 bg-secondary-900 hover:bg-secondary-800 disabled:bg-secondary-200 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition-colors"
+                      >
+                        {couponLoading ? '...' : 'Apply'}
+                      </button>
+                    </div>
+                    {couponError && <p className="text-xs text-red-500">{couponError}</p>}
+                  </div>
+                )}
+              </div>
+
               <div className="border-t border-border pt-4 space-y-2 text-sm">
                 <div className="flex justify-between text-secondary-600">
                   <span>Subtotal</span>
                   <span className="font-medium text-primary-950">₹{subtotal.toFixed(2)}</span>
                 </div>
+                
+                {appliedCoupon && (
+                  <>
+                    <div className="flex justify-between text-secondary-600">
+                      <span>Coupon Discount ({appliedCoupon.coupon.code})</span>
+                      <span className="font-medium text-red-600">-₹{appliedCoupon.discountAmount.toFixed(2)}</span>
+                    </div>
+                    
+                    {/* Deep Explanation Breakdown for Coupon Application */}
+                    <div className="text-[11px] text-secondary-600 bg-secondary-50 border border-secondary-200 p-3 rounded-xl leading-relaxed space-y-1">
+                      <p className="font-bold text-primary-900 mb-1">Coupon breakdown detail:</p>
+                      <div className="flex justify-between">
+                        <span>Original Price:</span>
+                        <span>₹{subtotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Discount Type:</span>
+                        <span>{appliedCoupon.coupon.discountType === 'percentage' ? 'Percentage Based' : 'Flat Discount'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Deduction Rate:</span>
+                        <span>{appliedCoupon.coupon.discountType === 'percentage' ? `${appliedCoupon.coupon.discountValue}%` : `₹${appliedCoupon.coupon.discountValue}`}</span>
+                      </div>
+                      {appliedCoupon.coupon.maxDiscount > 0 && (
+                        <div className="flex justify-between">
+                          <span>Max Discount Cap:</span>
+                          <span>₹{appliedCoupon.coupon.maxDiscount}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t border-secondary-200 pt-1 mt-1 font-semibold text-primary-950">
+                        <span>Net Savings:</span>
+                        <span>₹{appliedCoupon.discountAmount.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div className="flex justify-between text-secondary-600">
                   <span>Shipping</span>
                   <span className="font-medium text-green-600">Free</span>
                 </div>
               </div>
+              
               <div className="flex justify-between text-lg font-bold text-primary-950 border-t border-border pt-4 mt-4">
                 <span>Total</span>
-                <span>₹{subtotal.toFixed(2)}</span>
+                <span>₹{finalTotal.toFixed(2)}</span>
               </div>
+              
               <button
                 onClick={handlePlaceOrder}
                 disabled={loading || !paymentMethod}
@@ -291,7 +426,7 @@ const Checkout = () => {
                     <Loader2 size={18} className="animate-spin" /> Placing Order...
                   </>
                 ) : (
-                  `Place Order - ₹${subtotal.toFixed(2)}`
+                  `Place Order - ₹${finalTotal.toFixed(2)}`
                 )}
               </button>
             </div>

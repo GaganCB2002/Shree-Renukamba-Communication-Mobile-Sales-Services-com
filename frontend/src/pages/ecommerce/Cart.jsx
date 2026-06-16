@@ -40,10 +40,15 @@ const Cart = () => {
     });
   }, [cartItems, liveProductMap]);
 
-  const subtotal = cartWithLivePrices.reduce((acc, item) => {
-    const price = item.discount > 0 ? (item.price * (1 - item.discount / 100)) : item.price;
-    return acc + price * item.quantity;
-  }, 0);
+  const subtotal = useMemo(() => {
+    return cartWithLivePrices.reduce((acc, item) => {
+      const rawPrice = Number(item?.price) || 0;
+      const rawDiscount = Number(item?.discount) || 0;
+      const price = rawDiscount > 0 ? (rawPrice * (1 - rawDiscount / 100)) : rawPrice;
+      const qty = Number(item?.quantity) || 1;
+      return acc + price * qty;
+    }, 0);
+  }, [cartWithLivePrices]);
 
   const handleQuantity = (item, delta) => {
     const newQty = item.quantity + delta;
