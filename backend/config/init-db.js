@@ -258,7 +258,7 @@ async function initDatabase(db) {
     const productCount = db.prepare('SELECT COUNT(*) as count FROM products').get().count;
     if (productCount === 0) {
       console.log('Seeding products...');
-      const productsPath = path.join(__dirname, '..', 'data', 'products.json');
+      const productsPath = path.join(__dirname, '..', 'database', 'products.json');
       if (fs.existsSync(productsPath)) {
         const productsData = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
         const insertProd = db.prepare(`

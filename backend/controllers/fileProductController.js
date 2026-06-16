@@ -1,8 +1,8 @@
 const path = require('path');
 const fs = require('fs');
 
-const productsFilePath = path.join(__dirname, '../data/products.json');
-const newArrivalsFilePath = path.join(__dirname, '../data/new-arrivals.json');
+const productsFilePath = path.join(__dirname, '../database/products.json');
+const newArrivalsFilePath = path.join(__dirname, '../database/new-arrivals.json');
 
 const getFileProducts = (req, res) => {
   try {
