@@ -131,9 +131,12 @@ CREATE TABLE IF NOT EXISTS orders (
     customer_id TEXT NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
     products JSONB DEFAULT '[]'::jsonb,
     total_amount NUMERIC NOT NULL,
+    subtotal NUMERIC DEFAULT 0,
+    coupon_code TEXT DEFAULT '',
+    coupon_discount NUMERIC DEFAULT 0,
     payment_info JSONB DEFAULT '{}'::jsonb,
     payment_status TEXT DEFAULT 'Pending',
-    order_status TEXT DEFAULT 'Processing',
+    order_status TEXT DEFAULT 'Pending',
     shipping_address JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()

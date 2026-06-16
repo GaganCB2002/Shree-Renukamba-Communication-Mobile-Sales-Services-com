@@ -187,6 +187,10 @@ class Invoice {
         conditions.push(`id = $${vals.length + 1}`);
         vals.push(query._id || query.id);
       }
+      if (query.order || query.orderId) {
+        conditions.push(`order_id = $${vals.length + 1}`);
+        vals.push(query.order || query.orderId);
+      }
 
       if (conditions.length > 0) {
         sql += ' WHERE ' + conditions.join(' AND ');

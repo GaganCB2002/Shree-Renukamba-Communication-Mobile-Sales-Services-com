@@ -18,13 +18,22 @@ class OrderInstance {
     this.customer = row.customer_id;
     this.customerId = row.customer_id;
     this.products = typeof row.products === 'string' ? JSON.parse(row.products) : (row.products || []);
-    this.totalAmount = parseFloat(row.total_amount);
+    this.totalAmount = parseFloat(row.total_amount) || 0;
+    this.subtotal = parseFloat(row.subtotal) || 0;
+    this.couponCode = row.coupon_code || '';
+    this.couponDiscount = parseFloat(row.coupon_discount) || 0;
     this.paymentInfo = typeof row.payment_info === 'string' ? JSON.parse(row.payment_info) : (row.payment_info || {});
     this.paymentStatus = row.payment_status;
     this.orderStatus = row.order_status;
     this.shippingAddress = typeof row.shipping_address === 'string' ? JSON.parse(row.shipping_address) : (row.shipping_address || {});
     this.createdAt = row.created_at;
     this.updatedAt = row.updated_at;
+  }
+
+  async save() {
+    const sql = `UPDATE orders SET order_status = $1, payment_status = $2, updated_at = datetime('now') WHERE id = $3`;
+    await pool.query(sql, [this.orderStatus, this.paymentStatus, this.id]);
+    return this;
   }
 }
 
@@ -54,8 +63,8 @@ class Order {
     return new CustomQuery(async () => {
       const id = generateId();
       const sql = `
-        INSERT INTO orders (id, order_id, customer_id, products, total_amount, payment_info, payment_status, order_status, shipping_address)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO orders (id, order_id, customer_id, products, total_amount, subtotal, coupon_code, coupon_discount, payment_info, payment_status, order_status, shipping_address)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `;
       const vals = [
@@ -63,10 +72,13 @@ class Order {
         data.orderId,
         data.customer || data.customerId,
         JSON.stringify(data.products || []),
-        data.totalAmount,
+        data.totalAmount || 0,
+        data.subtotal || 0,
+        data.couponCode || '',
+        data.couponDiscount || 0,
         JSON.stringify(data.paymentInfo || {}),
         data.paymentStatus || 'Pending',
-        data.orderStatus || 'Processing',
+        data.orderStatus || 'Pending',
         JSON.stringify(data.shippingAddress || {})
       ];
 
@@ -92,6 +104,10 @@ class Order {
       if (query._id || query.id) {
         conditions.push(`id = $${vals.length + 1}`);
         vals.push(query._id || query.id);
+      }
+      if (query.orderStatus) {
+        conditions.push(`order_status = $${vals.length + 1}`);
+        vals.push(query.orderStatus);
       }
 
       if (conditions.length > 0) {
@@ -143,6 +159,24 @@ class Order {
       await populateOrder(o, populates);
       return o;
     });
+  }
+
+  static async updateOrderStatus(id, status) {
+    const res = await pool.query(
+      `UPDATE orders SET order_status = $1, updated_at = datetime('now') WHERE id = $2 RETURNING *`,
+      [status, id]
+    );
+    if (res.rows.length === 0) return null;
+    return new OrderInstance(res.rows[0]);
+  }
+
+  static async updatePaymentStatus(id, status) {
+    const res = await pool.query(
+      `UPDATE orders SET payment_status = $1, updated_at = datetime('now') WHERE id = $2 RETURNING *`,
+      [status, id]
+    );
+    if (res.rows.length === 0) return null;
+    return new OrderInstance(res.rows[0]);
   }
 
   static async deleteMany() {

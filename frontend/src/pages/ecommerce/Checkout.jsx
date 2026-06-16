@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShoppingBag, CreditCard, Banknote, QrCode, ArrowLeft, Loader2, RefreshCw, CheckCircle2, Tag } from 'lucide-react';
+import { ShoppingBag, CreditCard, Banknote, QrCode, ArrowLeft, Loader2, RefreshCw, CheckCircle2, Tag, Check, Clock } from 'lucide-react';
 import { clearCart } from '../../redux/slices/cartSlice';
 import { getProducts } from '../../api/productsApi';
 import { createOrder } from '../../api/ordersApi';
@@ -17,6 +17,12 @@ const Checkout = () => {
   const [liveProducts, setLiveProducts] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [loading, setLoading] = useState(false);
+  const [placing, setPlacing] = useState(false);
+  const [showPaymentScreen, setShowPaymentScreen] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [countdown, setCountdown] = useState(600);
+  const [paymentDone, setPaymentDone] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
     fullName: userInfo?.fullName || '',
     phone: userInfo?.phoneNumber || '',
@@ -35,6 +41,31 @@ const Checkout = () => {
   useEffect(() => {
     fetchLivePrices();
   }, []);
+
+  useEffect(() => {
+    let timer;
+    if (showPaymentScreen && countdown > 0 && !paymentDone) {
+      timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setPaymentDone(true);
+            setTimeout(() => {
+              setShowPaymentScreen(false);
+              setSuccessMessage('Payment received successfully!');
+              setShowSuccess(true);
+              setTimeout(() => {
+                navigate('/orders', { state: { orderSuccess: true, message: 'Payment received successfully!' } });
+              }, 3000);
+            }, 1000);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [showPaymentScreen, paymentDone, navigate]);
 
   const fetchLivePrices = async () => {
     try {
@@ -55,7 +86,10 @@ const Checkout = () => {
     return cartItems.map(item => {
       const id = item._id || item.id;
       const live = liveProductMap[id];
-      return live || item;
+      if (live) {
+        return { ...live, quantity: item.quantity };
+      }
+      return item;
     });
   }, [cartItems, liveProductMap]);
 
@@ -104,6 +138,20 @@ const Checkout = () => {
     setCouponError('');
   };
 
+  const showPaymentTimer = () => {
+    setShowPaymentScreen(true);
+    setPaymentDone(false);
+    setCountdown(600);
+  };
+
+  const showSuccessOverlay = (msg) => {
+    setSuccessMessage(msg);
+    setShowSuccess(true);
+    setTimeout(() => {
+      navigate('/');
+    }, 3000);
+  };
+
   const handlePlaceOrder = async () => {
     if (!paymentMethod) {
       showToast('Please select a payment method');
@@ -120,6 +168,8 @@ const Checkout = () => {
 
     try {
       setLoading(true);
+      setPlacing(true);
+
       const products = cartWithLivePrices.map((item) => {
         const rawPrice = Number(item?.price) || 0;
         const rawDiscount = Number(item?.discount) || 0;
@@ -136,19 +186,128 @@ const Checkout = () => {
       const order = await createOrder({
         products,
         totalAmount: finalTotal,
+        subtotal,
         shippingAddress,
         paymentMethod,
+        couponCode: appliedCoupon?.coupon?.code || '',
+        couponDiscount: appliedCoupon?.discountAmount || 0,
       });
 
+      const orderId = order.orderId;
       dispatch(clearCart());
-      showToast('Order placed successfully!');
-      navigate(`/order/${order.orderId}`);
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to place order');
-    } finally {
+      setPlacing(false);
       setLoading(false);
+
+      const redirectToOrders = () => {
+        navigate('/orders', { state: { orderSuccess: true, orderId, message: paymentMethod === 'cod' ? 'Your order was placed successfully!' : 'Payment received successfully!' } });
+      };
+
+      if (paymentMethod === 'cod') {
+        setSuccessMessage('Your order was placed successfully!');
+        setShowSuccess(true);
+        setTimeout(() => redirectToOrders(), 3000);
+      } else {
+        showPaymentTimer();
+      }
+    } catch (err) {
+      setPlacing(false);
+      setLoading(false);
+      showToast(err.response?.data?.message || 'Failed to place order');
     }
   };
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  if (showSuccess) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50">
+        <div className="text-center animate-bounce-in">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center animate-scale-check">
+            <Check size={56} className="text-green-600" strokeWidth={3} />
+          </div>
+          <h2 className="text-3xl font-bold text-green-700 mb-3">{successMessage}</h2>
+          <p className="text-green-600">Redirecting to home page...</p>
+        </div>
+        <style>{`
+          @keyframes bounce-in {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.1); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          @keyframes scale-check {
+            0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+            60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+          }
+          .animate-bounce-in { animation: bounce-in 0.8s ease-out forwards; }
+          .animate-scale-check { animation: scale-check 0.6s ease-out 0.3s both; }
+        `}</style>
+      </div>
+    );
+  }
+
+  if (showPaymentScreen) {
+    const isUpi = paymentMethod === 'upi';
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 text-center">
+          {paymentDone ? (
+            <div className="py-8">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+                <Check size={44} className="text-green-600" strokeWidth={3} />
+              </div>
+              <h3 className="text-2xl font-bold text-green-700 mb-2">Payment Successful!</h3>
+              <p className="text-secondary-500">Processing your order...</p>
+            </div>
+          ) : (
+            <>
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-indigo-100 flex items-center justify-center">
+                {isUpi ? <CreditCard size={40} className="text-indigo-600" /> : <QrCode size={40} className="text-indigo-600" />}
+              </div>
+              <h3 className="text-xl font-bold text-primary-950 mb-2">
+                {isUpi ? 'Complete your UPI Payment' : 'Scan QR to Pay'}
+              </h3>
+              <p className="text-secondary-500 text-sm mb-6">
+                {isUpi ? 'Send payment to UPI ID: renukamba@upi' : 'Scan the QR code with any UPI app'}
+              </p>
+
+              {!isUpi && (
+                <div className="w-48 h-48 mx-auto mb-4 bg-white rounded-2xl border-2 border-dashed border-secondary-300 flex items-center justify-center">
+                  <QrCode size={120} className="text-primary-600" />
+                </div>
+              )}
+
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <Clock size={20} className="text-indigo-500" />
+                <span className={`text-3xl font-mono font-bold ${countdown <= 60 ? 'text-red-600 animate-pulse' : 'text-indigo-600'}`}>
+                  {formatTime(countdown)}
+                </span>
+              </div>
+
+              <div className="w-full bg-secondary-200 rounded-full h-2 mb-6">
+                <div
+                  className="bg-indigo-600 h-2 rounded-full transition-all duration-1000"
+                  style={{ width: `${((600 - countdown) / 600) * 100}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-center gap-2 text-sm text-secondary-500 mb-4">
+                <Loader2 size={16} className="animate-spin" />
+                <span>Waiting for payment confirmation...</span>
+              </div>
+
+              <p className="text-xs text-secondary-400">Do not close this page while processing payment</p>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (cartWithLivePrices.length === 0) {
     return (

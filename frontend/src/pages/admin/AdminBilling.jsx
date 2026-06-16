@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FileText, Plus, Search, Calendar, DollarSign, Filter, 
-  Trash2, X, PlusCircle, Loader2, CheckCircle, Clock, AlertTriangle 
+  Trash2, X, PlusCircle, Loader2, CheckCircle, Clock, AlertTriangle, Check 
 } from 'lucide-react';
 import { getInvoices, createInvoice, updateInvoiceStatus } from '../../api/invoicesApi';
 import { getUsers } from '../../api/authApi';
 import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
+import { useToast } from '../../contexts/ToastContext';
 
 const statusBadgeColors = {
   'Paid': 'bg-emerald-50 text-emerald-700 border-emerald-100',
@@ -18,6 +19,7 @@ const statusBadgeColors = {
 
 const AdminBilling = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [invoices, setInvoices] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,8 +75,11 @@ const AdminBilling = () => {
       const nextStatus = nextStatusMap[currentStatus] || 'Pending';
       const updated = await updateInvoiceStatus(id, { status: nextStatus });
       setInvoices(invoices.map(inv => inv._id === id ? { ...inv, status: updated.status } : inv));
+      showToast(`Invoice status changed to ${nextStatus}`);
     } catch (err) {
-      setError('Failed to update invoice status.');
+      const msg = 'Failed to update invoice status.';
+      setError(msg);
+      showToast(msg);
     }
   };
 
@@ -117,6 +122,8 @@ const AdminBilling = () => {
 
       await createInvoice(payload);
       
+      showToast('Invoice created successfully!');
+      
       // Reset & Reload
       setModalOpen(false);
       setSelectedUser('');
@@ -128,7 +135,9 @@ const AdminBilling = () => {
       
       await fetchBillingData();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to generate new invoice');
+      const msg = err.response?.data?.message || 'Failed to generate new invoice';
+      setError(msg);
+      showToast(msg);
     } finally {
       setSubmitting(false);
     }

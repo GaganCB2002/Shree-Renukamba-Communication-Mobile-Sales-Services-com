@@ -1,16 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Clock, Package, CheckCircle, AlertCircle, MapPin, ArrowLeft, Calendar, Wrench, Image as ImageIcon, Smartphone, DollarSign, Download } from 'lucide-react';
+import { Clock, Package, CheckCircle, AlertCircle, MapPin, ArrowLeft, Calendar, Wrench, Image as ImageIcon, Smartphone, DollarSign, Download, Tag, ChevronRight, IndianRupee } from 'lucide-react';
 import { trackOrder } from '../../api/ordersApi';
 import { getInvoiceByOrder } from '../../api/invoicesApi';
 import { PageLoading } from '../../components/LoadingSpinner';
+
+const ORDER_STATUS_FLOW = [
+  'Pending',
+  'Processing',
+  'Shipped',
+  'Out for Delivery',
+  'Delivered',
+];
 
 const getStatusStyle = (status) => {
   const map = {
     'Delivered': 'bg-emerald-50 text-emerald-700 border-emerald-200',
     'Repair Completed': 'bg-emerald-50 text-emerald-700 border-emerald-200',
     'Shipped': 'bg-blue-50 text-blue-700 border-blue-200',
-    'Processing': 'bg-amber-50 text-amber-700 border-amber-200',
+    'Out for Delivery': 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    'Processing': 'bg-blue-50 text-blue-700 border-blue-200',
+    'Pending': 'bg-amber-50 text-amber-700 border-amber-200',
     'Under Review': 'bg-blue-50 text-blue-700 border-blue-200',
     'Awaiting Approval': 'bg-amber-50 text-amber-700 border-amber-200',
     'Approved': 'bg-indigo-50 text-indigo-700 border-indigo-200',
@@ -20,6 +30,66 @@ const getStatusStyle = (status) => {
     'Cancelled': 'bg-red-50 text-red-700 border-red-200',
   };
   return map[status] || 'bg-slate-50 text-slate-600 border-slate-200';
+};
+
+const OrderTimeline = ({ currentStatus, isRepair }) => {
+  const flow = isRepair
+    ? ['Received', 'Under Review', 'Diagnosis Complete', 'Awaiting Approval', 'Approved', 'Repair Started', 'Parts Ordered', 'Repair Completed', 'Ready For Pickup', 'Delivered']
+    : ORDER_STATUS_FLOW;
+
+  const currentIdx = flow.indexOf(currentStatus);
+  const isCancelled = currentStatus === 'Cancelled';
+
+  if (isCancelled) {
+    return (
+      <div className="p-4 bg-red-50 rounded-xl border border-red-200 flex items-center gap-3">
+        <AlertCircle size={20} className="text-red-500 shrink-0" />
+        <div>
+          <p className="text-sm font-bold text-red-800">Order Cancelled</p>
+          <p className="text-xs text-red-600">This order has been cancelled.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      {flow.map((status, idx) => {
+        const isCompleted = idx <= currentIdx;
+        const isCurrent = idx === currentIdx;
+        return (
+          <div key={status} className="flex items-start gap-3">
+            <div className="flex flex-col items-center">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+                isCompleted
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-gray-100 text-gray-400'
+              }`}>
+                {isCompleted ? (
+                  <CheckCircle size={14} />
+                ) : (
+                  <div className="w-2 h-2 rounded-full bg-gray-300" />
+                )}
+              </div>
+              {idx < flow.length - 1 && (
+                <div className={`w-0.5 h-6 ${isCompleted && idx < currentIdx ? 'bg-primary-400' : 'bg-gray-200'}`} />
+              )}
+            </div>
+            <div className={`pb-4 ${isCurrent ? 'font-bold' : ''}`}>
+              <span className={`text-sm ${isCompleted ? 'text-primary-900' : 'text-gray-400'}`}>
+                {status}
+              </span>
+              {isCurrent && (
+                <span className="ml-2 text-xs text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
+                  Current
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 const OrderDetail = () => {
@@ -83,7 +153,9 @@ const OrderDetail = () => {
           <div className="p-6 border-b border-slate-200 dark:border-slate-700">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{order.isRepair ? 'Repair ID' : 'Order ID'}</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  {order.isRepair ? 'Repair ID' : 'Order ID'}
+                </span>
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white mt-1 font-mono">{order.orderId}</h1>
               </div>
               <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${getStatusStyle(order.orderStatus)}`}>
@@ -91,6 +163,16 @@ const OrderDetail = () => {
               </span>
             </div>
           </div>
+
+          {/* Order Status Timeline */}
+          {!order.isRepair && (
+            <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                <Clock size={14} /> Order Progress
+              </h3>
+              <OrderTimeline currentStatus={order.orderStatus} />
+            </div>
+          )}
 
           {order.isRepair ? (
             /* Repair Order Details */
@@ -226,7 +308,29 @@ const OrderDetail = () => {
                 </div>
               )}
 
-              <div className="p-4 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl flex items-center justify-between">
+              {/* Coupon Breakdown */}
+              {order.couponCode && (
+                <div className="p-4 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl">
+                  <span className="text-xs font-semibold text-green-700 dark:text-green-400 flex items-center gap-1.5 mb-2">
+                    <Tag size={12} /> Coupon Applied
+                  </span>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between text-green-800 dark:text-green-300">
+                      <span>Code: <strong className="font-mono">{order.couponCode}</strong></span>
+                    </div>
+                    <div className="flex justify-between text-green-700 dark:text-green-400">
+                      <span>Discount</span>
+                      <span className="font-bold">-₹{Number(order.couponDiscount || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-green-800 dark:text-green-300 border-t border-green-200 dark:border-green-500/20 pt-1 mt-1">
+                      <span>Subtotal</span>
+                      <span>₹{Number(order.subtotal || 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className={`p-4 rounded-xl flex items-center justify-between ${order.couponCode ? 'bg-indigo-50 dark:bg-indigo-500/10' : 'bg-indigo-50 dark:bg-indigo-500/10'}`}>
                 <span className="text-sm font-semibold text-indigo-700 dark:text-indigo-400">Total Amount</span>
                 <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">₹{order.totalAmount}</span>
               </div>
@@ -244,6 +348,8 @@ const OrderDetail = () => {
                     <MapPin size={12} /> Shipping To
                   </span>
                   <p className="text-sm text-slate-900 dark:text-white">
+                    {order.shippingAddress.fullName && <><strong>{order.shippingAddress.fullName}</strong><br /></>}
+                    {order.shippingAddress.phone && <>{order.shippingAddress.phone}<br /></>}
                     {order.shippingAddress.address}, {order.shippingAddress.city}, {order.shippingAddress.state} - {order.shippingAddress.pincode}
                   </p>
                 </div>

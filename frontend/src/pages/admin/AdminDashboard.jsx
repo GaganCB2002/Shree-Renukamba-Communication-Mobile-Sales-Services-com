@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Wrench, Package, Users, DollarSign, Clock, Plus,
-  ArrowRight, Download, Bell, CalendarClock
+  ArrowRight, Download, Bell, CalendarClock, ShoppingBag, AlertTriangle, CheckCircle
 } from 'lucide-react';
 import { getAllRepairs } from '../../api/repairsApi';
 import { getProducts } from '../../api/productsApi';
 import { getAllCustomers } from '../../api/customersApi';
+import { getAllOrders } from '../../api/ordersApi';
 import { PageLoading } from '../../components/LoadingSpinner';
 
 const AdminDashboard = () => {
@@ -14,10 +15,8 @@ const AdminDashboard = () => {
   const [repairs, setRepairs] = useState([]);
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-
-
-
 
   useEffect(() => {
     fetchDashboardData();
@@ -26,14 +25,16 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [repairsData, productsData, customersData] = await Promise.all([
+      const [repairsData, productsData, customersData, ordersData] = await Promise.all([
         getAllRepairs(),
         getProducts(),
-        getAllCustomers()
+        getAllCustomers(),
+        getAllOrders(),
       ]);
       setRepairs(repairsData);
       setProducts(productsData);
       setCustomers(customersData);
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
     } finally {
@@ -47,6 +48,10 @@ const AdminDashboard = () => {
     .filter(r => ['Repair Completed', 'Ready For Pickup', 'Delivered'].includes(r.repairStatus))
     .reduce((sum, r) => sum + (r.finalCost || r.estimatedCost || 0), 0);
 
+  const orderRevenue = orders
+    .filter(o => o.orderStatus === 'Delivered')
+    .reduce((sum, o) => sum + (parseFloat(o.totalAmount) || 0), 0);
+
   const activeRepairs = repairs.filter(r =>
     !['Delivered', 'Cancelled'].includes(r.repairStatus)
   );
@@ -58,6 +63,10 @@ const AdminDashboard = () => {
   const pendingApproval = repairs.filter(r =>
     r.repairStatus === 'Waiting For Approval'
   );
+
+  const pendingOrders = orders.filter(o => o.orderStatus === 'Pending');
+  const processingOrders = orders.filter(o => o.orderStatus === 'Processing');
+  const deliveredOrders = orders.filter(o => o.orderStatus === 'Delivered');
 
   const lowStockProducts = products.filter(p => p.stock <= 5);
 
@@ -91,17 +100,24 @@ const AdminDashboard = () => {
       {/* Page title */}
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Overview of your repair shop</p>
+        <p className="text-sm text-gray-500 mt-0.5">Overview of your shop & orders</p>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-xs text-gray-500 mb-1">Total Revenue</p>
+          <p className="text-xs text-gray-500 mb-1">Repair Revenue</p>
           <p className="text-xl font-semibold text-gray-900">
             ₹{(totalRevenue > 0 ? totalRevenue : 124500).toLocaleString('en-IN')}
           </p>
           <p className="text-xs text-green-600 mt-1">+12.5% vs last month</p>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <p className="text-xs text-gray-500 mb-1">E-Commerce Revenue</p>
+          <p className="text-xl font-semibold text-gray-900">
+            ₹{orderRevenue > 0 ? orderRevenue.toLocaleString('en-IN') : '0'}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">{deliveredOrders.length} orders delivered</p>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-xs text-gray-500 mb-1">Active Repairs</p>
@@ -111,16 +127,16 @@ const AdminDashboard = () => {
           <p className="text-xs text-gray-500 mt-1">{pendingApproval.length} pending approval</p>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <p className="text-xs text-gray-500 mb-1">Pending Orders</p>
+          <p className="text-xl font-semibold text-gray-900">{pendingOrders.length}</p>
+          <p className="text-xs text-amber-600 mt-1">{processingOrders.length} in processing</p>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-xs text-gray-500 mb-1">Customers</p>
           <p className="text-xl font-semibold text-gray-900">
             {customers.length > 0 ? customers.length : 48}
           </p>
           <p className="text-xs text-gray-500 mt-1">Registered users</p>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-xs text-gray-500 mb-1">Completed Repairs</p>
-          <p className="text-xl font-semibold text-gray-900">{completedRepairs.length}</p>
-          <p className="text-xs text-gray-500 mt-1">All time</p>
         </div>
       </div>
 
@@ -211,10 +227,39 @@ const AdminDashboard = () => {
                 <DollarSign size={15} className="text-gray-400" />
                 Generate Invoice
               </button>
+              <button
+                onClick={() => navigate('/admin/orders')}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+              >
+                <ShoppingBag size={15} className="text-gray-400" />
+                View Orders
+                {pendingOrders.length > 0 && (
+                  <span className="ml-auto bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {pendingOrders.length} pending
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
-
+          {/* Pending Orders Alert */}
+          {pendingOrders.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle size={16} className="text-amber-600" />
+                <h3 className="text-sm font-semibold text-amber-800">Orders Pending Approval</h3>
+              </div>
+              <p className="text-xs text-amber-700 mb-3">
+                {pendingOrders.length} order(s) need your approval to start processing.
+              </p>
+              <Link
+                to="/admin/orders"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-lg hover:bg-amber-200 transition-colors"
+              >
+                Review Orders <ArrowRight size={12} />
+              </Link>
+            </div>
+          )}
 
           {/* Low stock */}
           <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -270,6 +315,21 @@ const AdminDashboard = () => {
                 <span className="text-sm text-gray-600">Ready for pickup</span>
                 <span className="text-sm font-medium text-gray-900">
                   {repairs.filter(r => r.repairStatus === 'Ready For Pickup').length}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">New Orders Today</span>
+                <span className="text-sm font-medium text-amber-600">
+                  {orders.filter(o => {
+                    const d = new Date(o.createdAt);
+                    return d.toDateString() === new Date().toDateString();
+                  }).length}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Pending Approval</span>
+                <span className="text-sm font-medium text-amber-600">
+                  {pendingOrders.length}
                 </span>
               </div>
             </div>

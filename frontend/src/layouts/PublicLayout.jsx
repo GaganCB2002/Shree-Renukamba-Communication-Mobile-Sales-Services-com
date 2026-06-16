@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { Search, ShoppingBag, Heart, Menu, X, Globe, MapPin, Phone, Mail, ChevronDown, Smartphone, Wrench, Shield, Headphones, Gift, Bluetooth, RotateCcw, Sun, Moon, LogOut, User } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -83,6 +83,7 @@ const staticCategories = [
 const PublicLayout = () => {
   const { t, lang, switchLang } = useLanguage();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { userInfo } = useSelector((state) => state.auth);
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
@@ -292,7 +293,7 @@ const PublicLayout = () => {
                     </div>
                   )}
                 </Link>
-                <button type="button" onClick={() => { dispatch(logout()); dispatch(resetPageData()); }} className="lp-icon-btn" title="Sign Out" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button type="button" onClick={() => { dispatch(logout()); dispatch(resetPageData()); navigate('/'); }} className="lp-icon-btn" title="Sign Out" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <LogOut size={16} />
                 </button>
               </div>
@@ -367,7 +368,7 @@ const PublicLayout = () => {
                   )}
                   {userInfo.fullName || 'Dashboard'}
                 </Link>
-                <button type="button" onClick={() => { dispatch(logout()); dispatch(resetPageData()); setMenuOpen(false); }} className="lp-btn-outline lp-btn-light" style={{ width: '100%' }}>
+                <button type="button" onClick={() => { dispatch(logout()); dispatch(resetPageData()); setMenuOpen(false); navigate('/'); }} className="lp-btn-outline lp-btn-light" style={{ width: '100%' }}>
                   Sign Out
                 </button>
               </div>

@@ -98,9 +98,12 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_id TEXT REFERENCES customers(id),
   products TEXT DEFAULT '[]',
   total_amount REAL DEFAULT 0,
+  subtotal REAL DEFAULT 0,
+  coupon_code TEXT DEFAULT '',
+  coupon_discount REAL DEFAULT 0,
   payment_info TEXT DEFAULT '{}',
   payment_status TEXT DEFAULT 'Pending',
-  order_status TEXT DEFAULT 'Processing',
+  order_status TEXT DEFAULT 'Pending',
   shipping_address TEXT DEFAULT '{}',
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
@@ -119,8 +122,9 @@ CREATE TABLE IF NOT EXISTS inventory (
 CREATE TABLE IF NOT EXISTS invoices (
   id TEXT PRIMARY KEY,
   invoice_id TEXT,
-  customer_id TEXT REFERENCES customers(id),
+  customer_id TEXT REFERENCES users(id),
   repair_order_id TEXT REFERENCES repair_orders(id),
+  order_id TEXT REFERENCES orders(id),
   date TEXT,
   due_date TEXT,
   status TEXT DEFAULT 'Pending',
@@ -131,12 +135,9 @@ CREATE TABLE IF NOT EXISTS invoices (
   service_charge REAL DEFAULT 0,
   total_amount REAL DEFAULT 0,
   payment_instructions TEXT DEFAULT 'System Generated Invoice',
-  order_id TEXT REFERENCES orders(id),
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
-
-ALTER TABLE invoices ADD COLUMN order_id TEXT REFERENCES orders(id);
 
 CREATE TABLE IF NOT EXISTS coupons (
   id TEXT PRIMARY KEY,
