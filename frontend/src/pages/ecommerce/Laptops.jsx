@@ -44,7 +44,7 @@ const Laptops = () => {
     try {
       setLoading(true);
       const data = await getProducts({ categoryName: 'Laptops' });
-      setProducts(data);
+      setProducts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to fetch products:', err);
     } finally {

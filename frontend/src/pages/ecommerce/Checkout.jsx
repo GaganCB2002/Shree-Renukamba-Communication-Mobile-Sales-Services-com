@@ -12,7 +12,7 @@ const Checkout = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { cartItems } = useSelector((state) => state.cart);
+  const cartItems = useSelector((state) => state.cart?.cartItems || []);
   const { userInfo } = useSelector((state) => state.auth);
   const [liveProducts, setLiveProducts] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('');

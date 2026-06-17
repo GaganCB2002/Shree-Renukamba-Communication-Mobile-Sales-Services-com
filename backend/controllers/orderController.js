@@ -240,7 +240,7 @@ const trackOrder = async (req, res) => {
         orderStatus: repair.repairStatus,
         createdAt: repair.createdAt,
         totalAmount: repair.finalCost || repair.estimatedCost || 0,
-        products: repair.device ? [{ title: `${repair.device.brand || ''} ${repair.device.model || ''}`, quantity: 1, price: repair.finalCost || repair.estimatedCost || 0 }] : [],
+        products: repair.device?.brand || repair.device?.model ? [{ title: `${repair.device.brand || ''} ${repair.device.model || ''}`.trim(), quantity: 1, price: repair.finalCost || repair.estimatedCost || 0 }] : [{ title: 'Repair Service', quantity: 1, price: repair.finalCost || repair.estimatedCost || 0 }],
         paymentStatus: repair.repairStatus === 'Delivered' ? 'Paid' : 'Pending',
         isRepair: true,
         issueDescription: repair.issueDescription,

@@ -14,7 +14,7 @@ const sendRepairUpdate = async (to, repair) => {
 };
 
 const handleIncomingMessage = async (from, messageBody) => {
-  console.log(`[LOCAL WHATSAPP] Incoming from ${from}: ${messageBody || body}`);
+  console.log(`[LOCAL WHATSAPP] Incoming from ${from}: ${messageBody || '(no message)'}`);
   return { success: true, from, message: messageBody };
 };
 

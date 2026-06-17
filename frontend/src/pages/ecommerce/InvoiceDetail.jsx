@@ -139,7 +139,7 @@ const InvoiceDetail = () => {
   if (error) return <ErrorMessage message={error} onRetry={fetchInvoice} />;
   if (!invoice) return <ErrorMessage message="Invoice not found" />;
 
-  const items = editMode ? editableItems : invoice.items;
+  const items = editMode ? editableItems : (invoice.items || []);
   const subtotal = items.reduce((s, i) => s + (i.total || Number(i.qty || 0) * Number(i.unitPrice || 0)), 0);
   const calculatedCgst = Math.round(subtotal * (taxRate / 2 / 100) * 100) / 100;
   const calculatedSgst = Math.round(subtotal * (taxRate / 2 / 100) * 100) / 100;
