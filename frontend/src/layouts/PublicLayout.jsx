@@ -337,8 +337,9 @@ const PublicLayout = () => {
             </div>
           </div>
           <div className="lp-footer-bottom">
-            <p>&copy; {new Date().getFullYear()} Shree Renukamba Communication. {t('footer.rights')}</p>
+            <p>&copy; {new Date().getFullYear()} Shree Renukamba Communication. {t('footer.rights')} &mdash; Developed with ❤️ by Gagan CB</p>
             <div className="lp-footer-links">
+              <a href="https://gagancb.netlify.app/" target="_blank" rel="noopener noreferrer">login CV</a>
               <Link to="/privacy">{t('footer.privacy')}</Link>
               <Link to="/terms">{t('footer.terms')}</Link>
               <Link to="/privacy">{t('footer.cookies')}</Link>
