@@ -250,6 +250,27 @@ ALTER TABLE orders ADD COLUMN cancelled_at TEXT;
 
 ALTER TABLE users ADD COLUMN google_id TEXT;
 ALTER TABLE users ADD COLUMN auth_provider TEXT DEFAULT 'email';
+
+CREATE TABLE IF NOT EXISTS visitors (
+  id TEXT PRIMARY KEY,
+  visitor_id TEXT UNIQUE,
+  ip_address TEXT,
+  user_agent TEXT,
+  browser TEXT,
+  os TEXT,
+  device_type TEXT,
+  screen_resolution TEXT,
+  language TEXT,
+  timezone TEXT,
+  referrer TEXT,
+  pages_visited TEXT DEFAULT '[]',
+  consent_given INTEGER DEFAULT 0,
+  visit_count INTEGER DEFAULT 1,
+  first_visit TEXT,
+  last_visit TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
 `;
   return schema;
 }

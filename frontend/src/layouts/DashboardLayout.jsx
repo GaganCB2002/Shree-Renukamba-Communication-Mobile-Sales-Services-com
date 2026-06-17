@@ -15,6 +15,7 @@ import { getUnreadCount, getMyNotifications, markAllAsRead, markAsRead } from '.
 import CustomerAiAssistant from '../components/CustomerAiAssistant';
 import AdminAiAssistant from '../components/AdminAiAssistant';
 import DeliveryReminder from '../components/DeliveryReminder';
+import useVisitorTracking from '../hooks/useVisitorTracking';
 
 const DashboardLayout = () => {
   const location = useLocation();
@@ -22,6 +23,8 @@ const DashboardLayout = () => {
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.auth);
   const { theme, toggleTheme } = useTheme();
+
+  useVisitorTracking();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -144,6 +147,7 @@ const DashboardLayout = () => {
     { path: '/admin/coupons', label: 'Coupons', icon: Gift },
     { path: '/admin/price-list', label: 'Price List', icon: Tags },
     { path: '/admin/billing', label: 'Billing', icon: BarChart2 },
+    { path: '/admin/visitors', label: 'Visitors', icon: Users },
     { path: '/admin/settings', label: 'Settings', icon: Settings },
   ] : [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },

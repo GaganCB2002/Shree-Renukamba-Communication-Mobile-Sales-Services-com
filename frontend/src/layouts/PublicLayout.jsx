@@ -9,6 +9,7 @@ import SearchSuggest from '../components/SearchSuggest';
 import CookieConsent from '../components/CookieConsent';
 import AiChatWidget from '../components/AiChatWidget';
 import DeliveryReminder from '../components/DeliveryReminder';
+import useVisitorTracking from '../hooks/useVisitorTracking';
 import { logout } from '../redux/slices/authSlice';
 import { resetPageData } from '../redux/slices/pageSlice';
 import '../pages/LandingPage.css';
@@ -38,6 +39,8 @@ const PublicLayout = () => {
   const [categories, setCategories] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  useVisitorTracking();
 
   useEffect(() => {
     const handleClickOutside = (event) => {

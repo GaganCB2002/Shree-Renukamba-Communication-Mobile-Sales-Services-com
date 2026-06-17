@@ -1,30 +1,51 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Cookie, Check, X } from 'lucide-react';
+import { VISITOR_ID_KEY, generateVisitorId, getBrowserInfo } from '../hooks/useVisitorTracking';
+import { trackVisitorApi } from '../api/visitorApi';
 
 const CookieConsent = () => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const consented = sessionStorage.getItem('privacyConsent');
-    if (!consented) {
+    const consent = localStorage.getItem('visitorConsent');
+    if (!consent) {
       setTimeout(() => setVisible(true), 500);
     }
   }, []);
 
   const handleAccept = () => {
-    const details = {
-      consented: true,
+    localStorage.setItem('visitorConsent', 'granted');
+    const consentTime = new Date().toISOString();
+    localStorage.setItem('visitorConsentTime', consentTime);
+
+    let visitorId = localStorage.getItem(VISITOR_ID_KEY);
+    if (!visitorId) {
+      visitorId = generateVisitorId();
+      localStorage.setItem(VISITOR_ID_KEY, visitorId);
+    }
+
+    const { browser, os, deviceType } = getBrowserInfo();
+    trackVisitorApi({
+      visitorId,
+      page: window.location.pathname,
       userAgent: navigator.userAgent,
+      browser,
+      os,
+      deviceType,
+      screenResolution: `${window.screen.width}x${window.screen.height}`,
       language: navigator.language,
-      timestamp: new Date().toISOString(),
-    };
-    sessionStorage.setItem('privacyConsent', JSON.stringify(details));
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      referrer: document.referrer || '',
+      consentGiven: true,
+    }).catch(() => {});
+
     setVisible(false);
   };
 
   const handleDecline = () => {
-    sessionStorage.setItem('privacyConsent', JSON.stringify({ consented: false, timestamp: new Date().toISOString() }));
+    localStorage.setItem('visitorConsent', 'declined');
+    localStorage.setItem('visitorConsentTime', new Date().toISOString());
     setVisible(false);
   };
 

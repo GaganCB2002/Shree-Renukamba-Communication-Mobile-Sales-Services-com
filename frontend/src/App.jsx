@@ -35,6 +35,7 @@ import AdminSettings from './pages/admin/AdminSettings';
 import AdminBilling from './pages/admin/AdminBilling';
 import AdminCustomers from './pages/admin/AdminCustomers';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminVisitors from './pages/admin/AdminVisitors';
 
 function App() {
   return (
@@ -81,6 +82,7 @@ function App() {
           <Route path="settings" element={<AdminSettings />} />
           <Route path="billing" element={<AdminBilling />} />
           <Route path="users" element={<AdminUsers />} />
+          <Route path="visitors" element={<AdminVisitors />} />
           <Route path="price-list" element={<AdminPriceList />} />
         </Route>
 

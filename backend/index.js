@@ -102,6 +102,7 @@ function startServer(port) {
   app.use('/api/file-data', require('./routes/fileProductRoutes'));
   app.use('/api/price-list', require('./routes/priceListRoutes'));
   app.use('/api/settings', require('./routes/settingsRoutes'));
+  app.use('/api/visitors', require('./routes/visitorRoutes'));
 
   app.use(notFound);
   app.use(errorHandler);
