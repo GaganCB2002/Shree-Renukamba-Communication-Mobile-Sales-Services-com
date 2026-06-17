@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart, Trash2, ArrowLeft, Package } from 'lucide-react';
+import { Heart, ShoppingCart, Trash2, ArrowLeft } from 'lucide-react';
 import { addToCart } from '../../redux/slices/cartSlice';
 import { toggleWishlist } from '../../redux/slices/wishlistSlice';
 import { useToast } from '../../contexts/ToastContext';

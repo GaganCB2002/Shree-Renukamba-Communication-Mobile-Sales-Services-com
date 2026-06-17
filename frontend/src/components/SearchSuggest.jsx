@@ -63,8 +63,6 @@ const SearchSuggest = ({ isMobile = false, headerScrolled = true }) => {
     const disc = Number(p.discount) || 0;
     return disc > 0 ? (price * (1 - disc / 100)).toFixed(2) : price;
   };
-  const getImg = (p) => (p.images && p.images[0]) || 'https://images.unsplash.com/photo-1550009158-9efff6c0e561?auto=format&fit=crop&q=80&w=100';
-
   const CatIcon = (catName) => catIcons[catName] || Package;
 
   return (

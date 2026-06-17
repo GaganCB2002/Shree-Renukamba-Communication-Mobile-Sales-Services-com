@@ -17,7 +17,7 @@ const Checkout = () => {
   const [liveProducts, setLiveProducts] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [loading, setLoading] = useState(false);
-  const [placing, setPlacing] = useState(false);
+  const [, setPlacing] = useState(false);
   const [showPaymentScreen, setShowPaymentScreen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -44,7 +44,7 @@ const Checkout = () => {
     fetchAvailableCoupons();
   }, []);
 
-  const fetchAvailableCoupons = async () => {
+  async function fetchAvailableCoupons() {
     try {
       const data = await getCoupons();
       setAvailableCoupons(Array.isArray(data) ? data : []);
@@ -76,16 +76,16 @@ const Checkout = () => {
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [showPaymentScreen, paymentDone, navigate]);
+  }, [showPaymentScreen, paymentDone, navigate, countdown]);
 
-  const fetchLivePrices = async () => {
+  async function fetchLivePrices() {
     try {
       const data = await getProducts();
       setLiveProducts(Array.isArray(data) ? data : []);
     } catch {
       // use stale prices
     }
-  };
+  }
 
   const liveProductMap = useMemo(() => {
     const map = {};

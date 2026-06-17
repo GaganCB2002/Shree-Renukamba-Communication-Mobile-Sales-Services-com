@@ -36,11 +36,7 @@ const Laptops = () => {
     { label: 'Above ₹3,000', value: '3000+' },
   ];
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
+  async function fetchProducts() {
     try {
       setLoading(true);
       const data = await getProducts({ categoryName: 'Laptops' });
@@ -50,7 +46,11 @@ const Laptops = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const handleAddToCart = (product) => {
     dispatch(addToCart(product));

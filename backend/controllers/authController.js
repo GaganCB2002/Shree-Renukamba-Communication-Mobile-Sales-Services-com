@@ -20,10 +20,14 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Please provide all 3 security questions and answers' });
     }
 
-    const userExists = await User.findOne({ $or: [{ email }, { phoneNumber }] });
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const userExists = await User.findOne({ email });
 
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'A user with this email already exists' });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -33,7 +37,7 @@ const registerUser = async (req, res) => {
 
     const user = await User.create({
       fullName,
-      phoneNumber,
+      phoneNumber: phoneNumber || '',
       email,
       password,
       role: userRole,
@@ -86,6 +90,9 @@ const registerUser = async (req, res) => {
       res.status(400).json({ message: 'Invalid user data' });
     }
   } catch (error) {
+    if (error.message && error.message.includes('UNIQUE constraint failed')) {
+      return res.status(400).json({ message: 'A user with this email already exists' });
+    }
     res.status(500).json({ message: error.message });
   }
 };
@@ -120,7 +127,7 @@ const loginUser = async (req, res) => {
 
 const googleLogin = async (req, res) => {
   try {
-    const { credential } = req.body;
+    const credential = req.body.credential || req.body.token;
     if (!credential) {
       return res.status(400).json({ message: 'Google credential is required' });
     }

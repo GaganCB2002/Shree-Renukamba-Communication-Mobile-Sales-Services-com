@@ -3,9 +3,8 @@ import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
   Wrench, ShoppingBag, Star, ArrowRight, Calendar,
-  Clock, Eye, CheckCircle, Smartphone, TrendingUp,
-  FileText, AlertCircle, ChevronRight, Package, Heart, Sparkles, Search, Home, Headphones, AlertTriangle,
-  IndianRupee
+  Eye, CheckCircle, Smartphone,
+  FileText, ChevronRight, Package, Heart, Home, Headphones, AlertTriangle
 } from 'lucide-react';
 import { getMyRepairs, acceptRepairCost } from '../../api/repairsApi';
 import { getMyInvoices } from '../../api/invoicesApi';
@@ -13,7 +12,7 @@ import { getMyOrders } from '../../api/ordersApi';
 import { getProducts } from '../../api/productsApi';
 import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
-import EmptyState from '../../components/EmptyState';
+
 
 const statusTimeline = [
   'Under Review', 'Awaiting Approval', 'Approved', 'Repair Started',
@@ -34,7 +33,7 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  async function fetchDashboardData() {
     try {
       setLoading(true);
       setError(null);
@@ -113,15 +112,7 @@ const Dashboard = () => {
     return colors[status] || 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20';
   };
 
-  const totalSpent = repairs
-    .filter(r => r.repairStatus === 'Delivered')
-    .reduce((sum, r) => sum + (r.finalCost || r.estimatedCost || 0), 0);
-
   const completedCount = repairs.filter(r => r.repairStatus === 'Delivered').length;
-
-  const orderTotalSpent = orders
-    .filter(o => o.orderStatus === 'Delivered')
-    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
   const activeOrderCount = orders.filter(o => o.orderStatus !== 'Delivered' && o.orderStatus !== 'Cancelled').length;
 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   Search, Filter, Wrench, CheckCircle, Clock, AlertTriangle,
-  Loader2, Trash2, Edit, Check, X, Eye, Calendar, PauseCircle,
-  Play, CalendarClock, MessageSquare, DollarSign, ThumbsUp,
+  Loader2, Edit, Check, X, Eye, Calendar, PauseCircle,
+  Play, DollarSign,
 } from 'lucide-react';
 import { getAllRepairs, updateRepairStatus, updateRepairDetails, setRepairCost as setRepairCostApi, getRepairById, approveCancelRepair, rejectCancelRepair } from '../../api/repairsApi';
 import { PageLoading } from '../../components/LoadingSpinner';
@@ -39,7 +39,7 @@ const AdminRepairs = () => {
   const [updating, setUpdating] = useState(null);
   const [selectedRepair, setSelectedRepair] = useState(null);
   const [detailModal, setDetailModal] = useState(false);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const [, setDetailLoading] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState('');
   const [deliveryTime, setDeliveryTime] = useState('');
   const [holdReason, setHoldReason] = useState('');
@@ -59,10 +59,6 @@ const AdminRepairs = () => {
   const [costRepair, setCostRepair] = useState(null);
   const [costForm, setCostForm] = useState({ estimatedCost: '', finalCost: '', diagnosisDetails: '', expectedDeliveryDate: '' });
 
-  useEffect(() => {
-    fetchRepairs();
-  }, []);
-
   const fetchRepairs = async () => {
     try {
       setLoading(true);
@@ -76,6 +72,10 @@ const AdminRepairs = () => {
     }
   };
 
+  useEffect(() => {
+    fetchRepairs();
+  }, []);
+
   const handleStatusUpdate = async (id, newStatus) => {
     try {
       setUpdating(id);
@@ -86,10 +86,6 @@ const AdminRepairs = () => {
     } finally {
       setUpdating(null);
     }
-  };
-
-  const handleApprove = async (id) => {
-    await handleStatusUpdate(id, 'Repair Started');
   };
 
   const openCostModal = (repair) => {

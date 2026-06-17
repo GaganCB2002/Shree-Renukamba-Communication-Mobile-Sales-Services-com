@@ -4,9 +4,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   LayoutDashboard, Wrench, ShoppingBag, Package, Settings,
   HelpCircle, Plus, Loader2, BarChart2, Gift,
-  Bell, Search, Sun, Moon, ChevronDown, Users, X, Menu,
+  Bell, Search, Sun, Moon, ChevronDown, Users, Menu,
   User as UserIcon, LogOut as LogOutIcon, ChevronLeft, ChevronRight, MoreHorizontal,
-  Headphones, Tags, MapPin, UserCheck, UserCog
+  Headphones, Tags, MapPin, UserCog
 } from 'lucide-react';
 import { logout } from '../redux/slices/authSlice';
 import { resetPageData } from '../redux/slices/pageSlice';
@@ -35,6 +35,16 @@ const DashboardLayout = () => {
 
   const notificationRef = useRef(null);
   const profileRef = useRef(null);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllAsRead();
+      setUnreadCount(0);
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch (err) {
+      // silent
+    }
+  };
 
   useEffect(() => {
     if (!userInfo) {
@@ -90,16 +100,6 @@ const DashboardLayout = () => {
     try {
       const data = await getUnreadCount();
       setUnreadCount(data.count || 0);
-    } catch (err) {
-      // silent
-    }
-  };
-
-  const handleMarkAllRead = async () => {
-    try {
-      await markAllAsRead();
-      setUnreadCount(0);
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     } catch (err) {
       // silent
     }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { ShoppingCart, Star, Search, ChevronDown, Package, Eye, CheckCircle, Heart, Smartphone, Laptop, Tablet, Headphones } from 'lucide-react';
+import { ShoppingCart, Star, Search, ChevronDown, Eye, CheckCircle, Heart, Smartphone, Laptop, Tablet, Headphones } from 'lucide-react';
 import { getProducts, getCategories } from '../../api/productsApi';
 import { addToCart } from '../../redux/slices/cartSlice';
 import { toggleWishlist } from '../../redux/slices/wishlistSlice';
@@ -25,13 +25,6 @@ const catIcons = {
   Accessories: Headphones,
 };
 
-const catColors = {
-  Phones: 'from-blue-500 to-indigo-600',
-  Laptops: 'from-purple-500 to-indigo-600',
-  Tablets: 'from-green-500 to-teal-600',
-  Accessories: 'from-orange-500 to-red-500',
-};
-
 const Accessories = () => {
   const dispatch = useDispatch();
   const { showToast } = useToast();
@@ -50,11 +43,7 @@ const Accessories = () => {
     { label: 'Above ₹200', value: '200+' },
   ];
 
-  useEffect(() => {
-    fetchData();
-  }, [selectedCategory]);
-
-  const fetchData = async () => {
+  async function fetchData() {
     try {
       setLoading(true);
       const [productsData, categoriesData] = await Promise.all([
@@ -68,7 +57,11 @@ const Accessories = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchData();
+  }, [selectedCategory, fetchData]);
 
   const handleAddToCart = (product) => {
     dispatch(addToCart(product));

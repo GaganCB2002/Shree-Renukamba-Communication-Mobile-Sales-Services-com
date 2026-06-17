@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Star, Shield, Truck, RotateCcw, Package, ShoppingCart, Sparkles, Clock, Wrench, Smartphone, Battery, Droplets, Cpu, Heart, ArrowRight, Search, Loader2, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
+import { ChevronRight, Star, Shield, Truck, RotateCcw, Package, ShoppingCart, Sparkles, Clock, Wrench, Smartphone, Battery, Droplets, Cpu, Heart, ArrowRight, Search, Loader2, AlertCircle, Calendar } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getProducts, getCategories } from '../api/productsApi';
@@ -10,7 +10,7 @@ import { toggleWishlist } from '../redux/slices/wishlistSlice';
 import { useToast } from '../contexts/ToastContext';
 import CategoryBadge from '../components/CategoryBadge';
 
-const placeholder = (text, bg = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)') =>
+const placeholder = (text, _bg = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)') =>
   `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='900'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea'/%3E%3Cstop offset='100%25' style='stop-color:%23764ba2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1600' height='900' fill='url(%23g)'/%3E%3Ctext x='800' y='450' text-anchor='middle' dominant-baseline='middle' font-family='Arial' font-size='48' fill='white'%3E${encodeURIComponent(text)}%3C/text%3E%3C/svg%3E`;
 
 const heroImages = [
@@ -37,8 +37,6 @@ const repairServices = [
   { icon: Droplets, title: 'Water Damage Repair', desc: 'Dropped your device in water? Our ultrasonic cleaning and component repair can save it.', color: 'from-cyan-500 to-cyan-600' },
   { icon: Cpu, title: 'Hardware & Software', desc: 'From charging ports to motherboard repairs and software issues - we fix it all.', color: 'from-purple-500 to-purple-600' },
 ];
-
-const accPlaceholder = (text) => placeholder(text, 'linear-gradient(135deg, #a8edea, #fed6e3)');
 
 const slidingAccessories = [
   { title: 'Premium iPhone 14 Screen Guard', price: '₹499', image: 'https://images.unsplash.com/photo-1581090700227-1e37b190418e?auto=format&fit=crop&q=80&w=400' },
@@ -81,8 +79,6 @@ export default function LandingPage() {
   const [trackResult, setTrackResult] = useState(null);
   const [trackLoading, setTrackLoading] = useState(false);
   const [trackError, setTrackError] = useState('');
-  const [trackSearched, setTrackSearched] = useState(false);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -123,7 +119,6 @@ export default function LandingPage() {
     setTrackLoading(true);
     setTrackError('');
     setTrackResult(null);
-    setTrackSearched(true);
     try {
       const data = await trackOrder(trackId.trim());
       setTrackResult(data);
@@ -438,7 +433,7 @@ export default function LandingPage() {
             </div>
           ) : newStocks.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
-              {newStocks.map((product, i) => (
+              {newStocks.map((product, _i) => (
                 <div key={product._id} className="reveal" onClick={() => navigate(`/products/${product._id}`)} style={{ borderRadius: 16, overflow: 'hidden', background: 'var(--clr-white)', border: '1px solid var(--clr-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', cursor: 'pointer' }}>
                     <div style={{ height: 200, background: 'var(--clr-icon-bg)', position: 'relative', overflow: 'hidden' }}>
                       {product.images && product.images[0] ? (
@@ -540,7 +535,7 @@ export default function LandingPage() {
             </div>
           ) : bestSellers.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
-              {bestSellers.map((product, i) => (
+              {bestSellers.map((product, _i) => (
                 <div key={product._id} className="reveal" onClick={() => navigate(`/products/${product._id}`)} style={{ borderRadius: 16, overflow: 'hidden', background: 'var(--clr-white)', border: '1px solid var(--clr-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', cursor: 'pointer' }}>
                     <div style={{ height: 220, background: 'var(--clr-icon-bg)', position: 'relative', overflow: 'hidden' }}>
                       {product.images && product.images[0] ? (
@@ -646,7 +641,7 @@ export default function LandingPage() {
               <input
                 type="text"
                 value={trackId}
-                onChange={e => { setTrackId(e.target.value); setTrackSearched(false); }}
+                onChange={e => { setTrackId(e.target.value); }}
                 placeholder="Enter Order ID (e.g. ORD-749123)"
                 style={{ flex: 1, padding: '16px 20px', border: 'none', outline: 'none', fontSize: '0.85rem', background: 'transparent' }}
               />

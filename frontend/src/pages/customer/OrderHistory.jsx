@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { Package, Clock, MapPin, Eye, ChevronRight, RefreshCw, Loader2, IndianRupee, AlertCircle, CheckCircle, Search, Download, Tag, Check } from 'lucide-react';
+import { Package, Clock, MapPin, Eye, RefreshCw, IndianRupee, Search, Download, Tag, Check } from 'lucide-react';
 import { getMyOrders } from '../../api/ordersApi';
 import { getMyInvoices } from '../../api/invoicesApi';
 import { PageLoading } from '../../components/LoadingSpinner';
@@ -20,7 +19,6 @@ const getOrderStatusColor = (status) => {
 };
 
 const OrderHistory = () => {
-  const { userInfo } = useSelector((state) => state.auth);
   const location = useLocation();
   const [orders, setOrders] = useState([]);
   const [invoices, setInvoices] = useState([]);

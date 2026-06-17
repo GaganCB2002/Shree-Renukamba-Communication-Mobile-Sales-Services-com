@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  FileText, Plus, Search, Calendar, DollarSign, Filter, 
-  Trash2, X, PlusCircle, Loader2, CheckCircle, Clock, AlertTriangle, Check 
+  FileText, Plus, Search, DollarSign, 
+  Trash2, X, PlusCircle, Loader2, Clock, AlertTriangle 
 } from 'lucide-react';
 import { getInvoices, createInvoice, updateInvoiceStatus } from '../../api/invoicesApi';
 import { getUsers } from '../../api/authApi';
@@ -43,6 +43,25 @@ const AdminBilling = () => {
   const [paymentInstructions, setPaymentInstructions] = useState('');
   const [linkOrderId, setLinkOrderId] = useState('');
 
+  const handleStatusToggle = async (id, currentStatus) => {
+    try {
+      const nextStatusMap = {
+        'Pending': 'Paid',
+        'Paid': 'Overdue',
+        'Overdue': 'Pending',
+        'Draft': 'Pending'
+      };
+      const nextStatus = nextStatusMap[currentStatus] || 'Pending';
+      const updated = await updateInvoiceStatus(id, { status: nextStatus });
+      setInvoices(invoices.map(inv => inv._id === id ? { ...inv, status: updated.status } : inv));
+      showToast(`Invoice status changed to ${nextStatus}`);
+    } catch (err) {
+      const msg = 'Failed to update invoice status.';
+      setError(msg);
+      showToast(msg);
+    }
+  };
+
   useEffect(() => {
     fetchBillingData();
   }, []);
@@ -61,25 +80,6 @@ const AdminBilling = () => {
       setError(err.response?.data?.message || 'Failed to load billing records');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleStatusToggle = async (id, currentStatus) => {
-    try {
-      const nextStatusMap = {
-        'Pending': 'Paid',
-        'Paid': 'Overdue',
-        'Overdue': 'Pending',
-        'Draft': 'Pending'
-      };
-      const nextStatus = nextStatusMap[currentStatus] || 'Pending';
-      const updated = await updateInvoiceStatus(id, { status: nextStatus });
-      setInvoices(invoices.map(inv => inv._id === id ? { ...inv, status: updated.status } : inv));
-      showToast(`Invoice status changed to ${nextStatus}`);
-    } catch (err) {
-      const msg = 'Failed to update invoice status.';
-      setError(msg);
-      showToast(msg);
     }
   };
 

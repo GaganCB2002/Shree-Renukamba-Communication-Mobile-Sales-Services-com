@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShoppingCart, Heart, User, LogOut, Menu, X, Wrench } from 'lucide-react';
+import { ShoppingCart, Heart, LogOut, Menu, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLanguage } from '../contexts/LanguageContext';

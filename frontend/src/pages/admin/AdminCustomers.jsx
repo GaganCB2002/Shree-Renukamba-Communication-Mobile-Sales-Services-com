@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import {
-  Search, Users, Phone, Mail, MapPin, Calendar,
-  Smartphone, Wrench, Star, ChevronDown, MoreHorizontal,
-  MessageSquare, RefreshCw
+  Search, Users, Phone, Mail,
+  Smartphone, Wrench, Star,
+  RefreshCw
 } from 'lucide-react';
 import { getAllCustomers } from '../../api/customersApi';
 import { PageLoading } from '../../components/LoadingSpinner';
@@ -17,10 +16,6 @@ const AdminCustomers = () => {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('newest');
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
   const fetchCustomers = async () => {
     try {
       setLoading(true);
@@ -33,6 +28,10 @@ const AdminCustomers = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
 
   if (loading) return <PageLoading />;
   if (error) return <ErrorMessage message={error} onRetry={fetchCustomers} />;

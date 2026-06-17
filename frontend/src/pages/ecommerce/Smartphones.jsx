@@ -36,11 +36,7 @@ const Smartphones = () => {
     { label: 'Above ₹2,000', value: '2000+' },
   ];
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
+  async function fetchProducts() {
     try {
       setLoading(true);
       const data = await getProducts({ categoryName: 'Phones' });
@@ -50,7 +46,11 @@ const Smartphones = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const handleAddToCart = (product) => {
     dispatch(addToCart(product));

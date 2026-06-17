@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Plus, Search, Gift, Trash2, Edit, Check, X, Loader2,
+  Plus, Search, Trash2, Edit, X, Loader2,
   Tag, Clock, Percent, IndianRupee, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 import { getAllCoupons, createCoupon, updateCoupon, deleteCoupon } from '../../api/couponsApi';
@@ -31,6 +31,12 @@ const AdminCoupons = () => {
   const [form, setForm] = useState(defaultForm);
   const [saving, setSaving] = useState(false);
 
+  const openCreate = () => {
+    setEditing(null);
+    setForm(defaultForm);
+    setShowModal(true);
+  };
+
   useEffect(() => {
     fetchCoupons();
   }, []);
@@ -46,12 +52,6 @@ const AdminCoupons = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const openCreate = () => {
-    setEditing(null);
-    setForm(defaultForm);
-    setShowModal(true);
   };
 
   const openEdit = (coupon) => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageCircle, X } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 
 const WHATSAPP_NUMBER = '+919876543210';
 const WHATSAPP_MESSAGE = 'Hi! I need help with SR Communication';

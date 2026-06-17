@@ -25,7 +25,7 @@ export default function useInView(options = {}) {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [options.highlight, options.once, options.threshold]);
 
   const resetHighlight = useCallback(() => setHighlight(false), []);
 

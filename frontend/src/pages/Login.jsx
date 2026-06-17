@@ -157,7 +157,8 @@ const Login = () => {
         setLocalError('Please answer all 3 security questions');
         return;
       }
-      const { confirmPassword, ...registerData } = formData;
+      const registerData = { ...formData };
+      delete registerData.confirmPassword;
       dispatch(register({ ...registerData, securityQuestions: sq }));
     }
   };

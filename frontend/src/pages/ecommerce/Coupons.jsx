@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Gift, Tag, Clock, CheckCircle, ChevronRight, Loader2, IndianRupee, Percent, ShoppingBag } from 'lucide-react';
+import { Gift, Tag, Clock, CheckCircle, ChevronRight, Loader2, IndianRupee, Percent } from 'lucide-react';
 import { getCoupons } from '../../api/couponsApi';
 
 const fallbackCoupons = [
@@ -23,11 +23,7 @@ export default function Coupons() {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchCoupons();
-  }, []);
-
-  const fetchCoupons = async () => {
+  async function fetchCoupons() {
     try {
       const data = await getCoupons();
       if (data && data.length > 0) {
@@ -40,7 +36,11 @@ export default function Coupons() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchCoupons();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Phone, MapPin, MessageCircle, Send, CheckCircle, Loader2, ChevronRight } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle, Loader2, ChevronRight } from 'lucide-react';
 
 const faqs = [
   { q: 'How long does a repair take?', a: 'Most repairs are completed within 2-5 business days depending on parts availability.' },

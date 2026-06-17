@@ -27,9 +27,9 @@ const ProductDetail = () => {
 
   useEffect(() => {
     fetchProduct();
-  }, [id]);
+  }, [id, fetchProduct]);
 
-  const fetchProduct = async () => {
+  async function fetchProduct() {
     try {
       setLoading(true);
       setError(null);
@@ -289,7 +289,7 @@ const ProductDetail = () => {
           <section className="mt-16">
             <h2 className="text-2xl font-bold text-primary-950 mb-8">Related Products</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedProducts.map((rp, idx) => {
+              {relatedProducts.map((rp, _idx) => {
                 const imgSrc = rp.images && rp.images[0]
                   ? rp.images[0]
                   : 'https://images.unsplash.com/photo-1550009158-9efff6c0e561?auto=format&fit=crop&q=80&w=600';

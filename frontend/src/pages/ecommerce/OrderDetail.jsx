@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Clock, Package, CheckCircle, AlertCircle, MapPin, ArrowLeft, Calendar, Wrench, Image as ImageIcon, Smartphone, DollarSign, Download, Tag, IndianRupee, Truck, ShieldCheck, Sparkles, Gift, BadgeCheck } from 'lucide-react';
+import { Clock, Package, AlertCircle, MapPin, ArrowLeft, Calendar, Wrench, Image as ImageIcon, Smartphone, DollarSign, Download, Tag, IndianRupee, Truck, ShieldCheck, Sparkles, Gift, BadgeCheck } from 'lucide-react';
 import { trackOrder } from '../../api/ordersApi';
 import { getInvoiceByOrder } from '../../api/invoicesApi';
 

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ShoppingBag, Search, Wrench, Eye, Calendar, IndianRupee, User, Download, CheckCircle, XCircle, Clock, AlertTriangle, ChevronDown, EyeIcon, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ShoppingBag, Search, Wrench, Eye, Calendar, IndianRupee, User, CheckCircle, AlertTriangle, ChevronDown, EyeIcon, X } from 'lucide-react';
 import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import EmptyState from '../../components/EmptyState';
@@ -41,6 +41,20 @@ const AdminOrders = () => {
   const [updatingId, setUpdatingId] = useState(null);
   const [viewOrder, setViewOrder] = useState(null);
 
+  const handleStatusUpdate = async (orderId, newStatus) => {
+    try {
+      setUpdatingId(orderId);
+      await updateOrderStatus(orderId, newStatus);
+      showToast(`Order status updated to ${newStatus}`);
+      setStatusDropdown(null);
+      fetchOrders();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to update status');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -58,20 +72,6 @@ const AdminOrders = () => {
       setError(err.response?.data?.message || 'Failed to load orders');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleStatusUpdate = async (orderId, newStatus) => {
-    try {
-      setUpdatingId(orderId);
-      await updateOrderStatus(orderId, newStatus);
-      showToast(`Order status updated to ${newStatus}`);
-      setStatusDropdown(null);
-      fetchOrders();
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to update status');
-    } finally {
-      setUpdatingId(null);
     }
   };
 

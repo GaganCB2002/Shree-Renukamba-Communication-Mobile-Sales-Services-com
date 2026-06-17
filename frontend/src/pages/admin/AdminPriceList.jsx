@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Save, RefreshCw, Percent, IndianRupee, Package, Loader2, CheckCircle, Tags } from 'lucide-react';
+import { Search, Save, RefreshCw, Percent, Package, Loader2, CheckCircle, Tags } from 'lucide-react';
 import { getPriceList, bulkUpdatePrices } from '../../api/priceListApi';
 import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
@@ -20,6 +19,13 @@ const AdminPriceList = () => {
   const [bulkPriceVal, setBulkPriceVal] = useState('');
   const [bulkDiscount, setBulkDiscount] = useState('');
 
+  const handleEdit = (id, field, value) => {
+    setEdits(prev => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value, _changed: true }
+    }));
+  };
+
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -35,13 +41,6 @@ const AdminPriceList = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleEdit = (id, field, value) => {
-    setEdits(prev => ({
-      ...prev,
-      [id]: { ...prev[id], [field]: value, _changed: true }
-    }));
   };
 
   const handleSelectAll = () => {

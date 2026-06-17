@@ -4,7 +4,6 @@ import { getMyNotifications, markAsRead } from '../api/notificationsApi';
 import { updateRepairStatus } from '../api/repairsApi';
 
 const CHECK_INTERVAL = 30 * 60 * 1000;
-const SOUND_INTERVAL = 500;
 
 const DeliveryReminder = () => {
   const [reminders, setReminders] = useState([]);
@@ -68,7 +67,7 @@ const DeliveryReminder = () => {
     fetchReminders();
     const interval = setInterval(fetchReminders, CHECK_INTERVAL);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchReminders]);
 
   const handleDismiss = async (notificationId) => {
     try {

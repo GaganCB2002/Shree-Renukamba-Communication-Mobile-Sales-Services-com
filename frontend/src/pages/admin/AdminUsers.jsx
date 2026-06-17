@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
-  Search, Users, Plus, X, Loader2, Shield, UserCog, User,
-  Mail, Phone, Calendar, MoreVertical, Trash2, Edit, RefreshCw,
-  ShieldAlert, CheckCircle, AlertTriangle
+  Search, Users, Plus, X, Loader2, UserCog, User,
+  Mail, Phone, Trash2, Edit, RefreshCw,
+  ShieldAlert
 } from 'lucide-react';
 import { getUsers, createUser, updateUser, deleteUser } from '../../api/authApi';
 import { PageLoading } from '../../components/LoadingSpinner';
@@ -32,8 +32,6 @@ const AdminUsers = () => {
     fullName: '', email: '', phoneNumber: '', password: '', role: 'customer', address: '{}'
   });
 
-  useEffect(() => { fetchUsers(); }, []);
-
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -46,6 +44,8 @@ const AdminUsers = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => { fetchUsers(); }, []);
 
   const openCreateModal = () => {
     setEditUser(null);

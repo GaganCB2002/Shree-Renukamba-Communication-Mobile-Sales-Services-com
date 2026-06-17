@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Printer, CheckCircle, FileText, Landmark, Edit, Share2, Save, RotateCcw, Download } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle, Edit, Share2, Save, Download } from 'lucide-react';
 import { getInvoiceById, updateInvoiceStatus } from '../../api/invoicesApi';
-import api from '../../api/axios';
 import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 
@@ -44,9 +42,9 @@ const InvoiceDetail = () => {
 
   useEffect(() => {
     fetchInvoice();
-  }, [id]);
+  }, [id, fetchInvoice]);
 
-  const fetchInvoice = async () => {
+  async function fetchInvoice() {
     try {
       setLoading(true);
       setError(null);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Wrench, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { register, clearError } from '../redux/slices/authSlice';
 
 const Register = () => {
@@ -43,7 +43,8 @@ const Register = () => {
       setLocalError('Password must be at least 6 characters');
       return;
     }
-    const { confirmPassword, ...registerData } = formData;
+    const registerData = { ...formData };
+    delete registerData.confirmPassword;
     dispatch(register(registerData));
   };
 

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { MapPin, Smartphone, Wrench, CheckCircle, Clock, Calendar, Package, ChevronRight, RefreshCw, Loader2, AlertCircle, ThumbsUp, DollarSign, Image as ImageIcon, X, ShoppingBag, IndianRupee, Truck } from 'lucide-react';
+import { MapPin, Smartphone, Wrench, CheckCircle, Clock, Calendar, Package, ChevronRight, RefreshCw, AlertCircle, ThumbsUp, Image as ImageIcon, X, ShoppingBag, Truck } from 'lucide-react';
 import { getMyRepairs, acceptRepairCost } from '../../api/repairsApi';
 import { getMyOrders } from '../../api/ordersApi';
 import { PageLoading } from '../../components/LoadingSpinner';
@@ -55,7 +54,6 @@ const getStatusColor = (status) => {
 
 const LiveTracking = () => {
   const navigate = useNavigate();
-  const { userInfo } = useSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState('repairs');
   const [repairs, setRepairs] = useState([]);
   const [orders, setOrders] = useState([]);

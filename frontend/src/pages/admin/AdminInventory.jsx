@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   Package, Plus, Edit, Trash2, Search, X, Loader2, 
-  Image, Grid, Check, AlertTriangle, ArrowRight, Download, BarChart2, Upload
+  Image, Grid, Download, Upload
 } from 'lucide-react';
 import { 
   getProducts, getCategories, 
@@ -48,6 +48,21 @@ const AdminInventory = () => {
   const fileInputRef = useRef(null);
   const [uploadingIndex, setUploadingIndex] = useState(null);
 
+  const openAddProduct = () => {
+    setEditingItem(null);
+    setProdSku('');
+    setProdTitle('');
+    setProdCategory(categories[0]?._id || '');
+    setProdPrice('');
+    setProdDiscount('0');
+    setProdStock('10');
+    setProdDesc('');
+    setProdModel3d('');
+    setProdImages(['']);
+    setProdSpecs([{ key: '', value: '' }]);
+    setProductModalOpen(true);
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -70,21 +85,6 @@ const AdminInventory = () => {
   };
 
   // --- PRODUCT FORM ACTIONS ---
-  const openAddProduct = () => {
-    setEditingItem(null);
-    setProdSku('');
-    setProdTitle('');
-    setProdCategory(categories[0]?._id || '');
-    setProdPrice('');
-    setProdDiscount('0');
-    setProdStock('10');
-    setProdDesc('');
-    setProdModel3d('');
-    setProdImages(['']);
-    setProdSpecs([{ key: '', value: '' }]);
-    setProductModalOpen(true);
-  };
-
   const openEditProduct = (product) => {
     setEditingItem(product);
     setProdSku(product.productId || '');

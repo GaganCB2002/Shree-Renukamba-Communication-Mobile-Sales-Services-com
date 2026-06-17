@@ -17,7 +17,7 @@ const Cart = () => {
     fetchLivePrices();
   }, []);
 
-  const fetchLivePrices = async () => {
+  async function fetchLivePrices() {
     try {
       const data = await getProducts();
       setLiveProducts(Array.isArray(data) ? data : []);

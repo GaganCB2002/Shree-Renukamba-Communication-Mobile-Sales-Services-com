@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Heart, ShoppingCart, ChevronDown, CheckCircle2, Sparkles, Search, X } from 'lucide-react';
+import { Heart, ShoppingCart, ChevronDown, CheckCircle2, Search } from 'lucide-react';
 import { getProducts, getCategories } from '../../api/productsApi';
 import { addToCart } from '../../redux/slices/cartSlice';
 import { toggleWishlist } from '../../redux/slices/wishlistSlice';
@@ -15,7 +15,6 @@ const Products = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { userInfo } = useSelector((state) => state.auth);
   const wishlistItems = useSelector((state) => state.wishlist?.items || []);
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
@@ -58,9 +57,9 @@ const Products = () => {
 
   useEffect(() => {
     fetchData();
-  }, [selectedCategory, searchTerm]);
+  }, [selectedCategory, searchTerm, fetchData]);
 
-  const fetchData = async () => {
+  async function fetchData() {
     try {
       setLoading(true);
       setError(null);

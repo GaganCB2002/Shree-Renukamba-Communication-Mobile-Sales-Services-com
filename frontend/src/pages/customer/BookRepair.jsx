@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Smartphone, Tablet, Laptop, Watch, Monitor, HelpCircle, ArrowRight, ArrowLeft, Check, Loader2, Upload, Camera, Search, PartyPopper } from 'lucide-react';
+import { Smartphone, Tablet, Laptop, Watch, Monitor, HelpCircle, ArrowRight, ArrowLeft, Check, Loader2, PartyPopper } from 'lucide-react';
 import { bookRepair } from '../../api/repairsApi';
 import { useSelector } from 'react-redux';
 
@@ -41,7 +41,6 @@ const BookRepair = () => {
   const [success, setSuccess] = useState(null);
   const [submitStatus, setSubmitStatus] = useState('idle');
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (submitStatus === 'success') {

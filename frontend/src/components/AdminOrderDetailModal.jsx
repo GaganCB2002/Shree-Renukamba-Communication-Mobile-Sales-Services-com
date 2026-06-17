@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { X, Package, User, MapPin, IndianRupee, Calendar, Clock, Tag, Printer, QrCode, CheckCircle, Phone, Mail, Hash, Download, ChevronDown, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { X, Package, User, MapPin, IndianRupee, Clock, Tag, Printer, QrCode, CheckCircle, Phone, Mail, Hash, Download, ChevronDown, RotateCcw } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useToast } from '../contexts/ToastContext';
 import { updateOrderStatus, updatePaymentStatus } from '../api/ordersApi';
@@ -34,7 +34,7 @@ const AdminOrderDetailModal = ({ order, onClose, onStatusUpdate }) => {
   const isCancelled = localOrder?.orderStatus === 'Cancelled';
 
   // Build a unique, scannable QR payload with full order details
-  const buildQrPayload = () => {
+  const buildQrPayload = useCallback(() => {
     if (!localOrder) return '';
     const products = (localOrder.products || []).map(p => ({
       n: p.name || p.title || 'Item',
@@ -60,7 +60,7 @@ const AdminOrderDetailModal = ({ order, onClose, onStatusUpdate }) => {
       st: localOrder.orderStatus || 'Pending',
     };
     return JSON.stringify(payload);
-  };
+  }, [localOrder, isCod]);
 
   useEffect(() => {
     if (localOrder) {

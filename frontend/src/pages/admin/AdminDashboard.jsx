@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Wrench, Package, Users, DollarSign, Clock, Plus,
-  ArrowRight, Download, Bell, CalendarClock, ShoppingBag, AlertTriangle, CheckCircle
+  Package, DollarSign, Plus,
+  ArrowRight, Bell, ShoppingBag, AlertTriangle
 } from 'lucide-react';
 import { getAllRepairs } from '../../api/repairsApi';
 import { getProducts } from '../../api/productsApi';
@@ -17,10 +17,6 @@ const AdminDashboard = () => {
   const [customers, setCustomers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
 
   const fetchDashboardData = async () => {
     try {
@@ -42,6 +38,10 @@ const AdminDashboard = () => {
     }
   };
 
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
   if (loading) return <PageLoading />;
 
   const totalRevenue = repairs
@@ -54,10 +54,6 @@ const AdminDashboard = () => {
 
   const activeRepairs = repairs.filter(r =>
     !['Delivered', 'Cancelled'].includes(r.repairStatus)
-  );
-
-  const completedRepairs = repairs.filter(r =>
-    r.repairStatus === 'Delivered'
   );
 
   const pendingApproval = repairs.filter(r =>

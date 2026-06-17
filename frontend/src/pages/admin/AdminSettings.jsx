@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
   User as UserIcon, MapPin, History, Shield, Save, 
-  Trash2, Edit, Plus, CheckCircle, Clock, Settings as SettingsIcon,
+  CheckCircle, Clock,
   Timer
 } from 'lucide-react';
 import { updateUserProfileApi, changePasswordApi } from '../../api/authApi';
@@ -22,12 +22,6 @@ const AdminSettings = () => {
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState('');
 
-  useEffect(() => {
-    if (userInfo?.role === 'admin') {
-      loadSettings();
-    }
-  }, []);
-
   const loadSettings = async () => {
     try {
       const data = await getSettings();
@@ -37,6 +31,12 @@ const AdminSettings = () => {
       console.error('Failed to load settings');
     }
   };
+
+  useEffect(() => {
+    if (userInfo?.role === 'admin') {
+      loadSettings();
+    }
+    }, [userInfo?.role]);
 
   const handleSaveSettings = async () => {
     try {
