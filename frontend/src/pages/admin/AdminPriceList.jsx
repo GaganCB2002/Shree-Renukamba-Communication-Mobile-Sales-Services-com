@@ -198,7 +198,7 @@ const AdminPriceList = () => {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-sm overflow-hidden">
-                          {p.images?.[0] ? <img src={p.images[0]} alt="" className="w-full h-full object-cover" /> : <Package size={14} className="text-slate-400" />}
+                          {p.images?.[0] ? <img src={p.images[0]} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<svg class=\"w-[14px] h-[14px] text-slate-400\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4\"/></svg>'; }} /> : <Package size={14} className="text-slate-400" />}
                         </div>
                         <span className="font-semibold text-slate-900">{p.title}</span>
                       </div>

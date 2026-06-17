@@ -361,7 +361,7 @@ export default function LandingPage() {
             {/* Banner 1 */}
             <Link to="/shop" style={{ textDecoration: 'none' }} className="promo-card">
               <div className="promo-card-img-wrap">
-                <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=600" alt="Mobiles Offer" />
+                <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=600" alt="Mobiles Offer" onError={e => { e.target.style.display = 'none'; }} />
               </div>
               <div className="promo-card-content">
                 <div>
@@ -378,7 +378,7 @@ export default function LandingPage() {
             {/* Banner 2 */}
             <Link to="/shop" style={{ textDecoration: 'none' }} className="promo-card">
               <div className="promo-card-img-wrap">
-                <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=600" alt="Laptops Offer" />
+                <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=600" alt="Laptops Offer" onError={e => { e.target.style.display = 'none'; }} />
               </div>
               <div className="promo-card-content">
                 <div>
@@ -395,7 +395,7 @@ export default function LandingPage() {
             {/* Banner 3 */}
             <Link to="/shop" style={{ textDecoration: 'none' }} className="promo-card">
               <div className="promo-card-img-wrap">
-                <img src="https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&q=80&w=600" alt="Accessories Offer" />
+                <img src="https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&q=80&w=600" alt="Accessories Offer" onError={e => { e.target.style.display = 'none'; }} />
               </div>
               <div className="promo-card-content">
                 <div>

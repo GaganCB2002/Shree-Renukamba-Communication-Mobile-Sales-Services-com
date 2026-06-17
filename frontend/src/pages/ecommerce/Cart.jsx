@@ -109,7 +109,7 @@ const Cart = () => {
               <div key={item._id || item.id} className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-border">
                 <div className="w-20 h-20 bg-secondary-100 rounded-xl flex items-center justify-center text-3xl flex-shrink-0 overflow-hidden">
                   {item.images && item.images[0] ? (
-                    <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
+                    <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '📱'; }} />
                   ) : (
                     '📱'
                   )}

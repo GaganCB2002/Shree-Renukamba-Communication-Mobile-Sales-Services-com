@@ -59,7 +59,7 @@ const Wishlist = () => {
               <div key={product._id || product.id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-border group hover:shadow-soft transition-all">
                 <Link to={`/products/${product._id || product.id}`}>
                   <div className="h-48 bg-secondary-100 overflow-hidden relative">
-                    <img src={imgSrc} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={imgSrc} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span class=\"text-5xl\">📱</span>'; }} />
                     {product.discount > 0 && (
                       <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
                         -{product.discount}%

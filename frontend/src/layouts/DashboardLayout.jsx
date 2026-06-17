@@ -185,6 +185,7 @@ const DashboardLayout = () => {
               src="/logo.png" 
               alt="SR Logo" 
               className="w-8 h-8 rounded-full object-cover shrink-0 bg-white"
+              onError={e => { e.target.style.display = 'none'; }}
             />
             {(!isCollapsed || sidebarOpen) && (
               <div className="leading-tight shrink-0 transition-opacity duration-300">

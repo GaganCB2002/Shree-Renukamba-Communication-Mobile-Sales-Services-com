@@ -474,7 +474,7 @@ const Checkout = () => {
                     <div key={item._id || item.id} className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-secondary-100 rounded-lg flex items-center justify-center text-lg flex-shrink-0 overflow-hidden">
                         {item.images?.[0] ? (
-                          <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
+                          <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '📱'; }} />
                         ) : '📱'}
                       </div>
                       <div className="flex-1 min-w-0">

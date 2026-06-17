@@ -211,7 +211,7 @@ const InvoiceDetail = () => {
             <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <img src="/logo.png" alt="SR Logo" className="w-12 h-12 rounded-xl object-cover border border-slate-200 invoice-logo" />
+                  <img src="/logo.png" alt="SR Logo" className="w-12 h-12 rounded-xl object-cover border border-slate-200 invoice-logo" onError={e => { e.target.style.display = 'none'; }} />
                   <span className="text-xl font-extrabold text-slate-900 tracking-tight">{shopName}</span>
                 </div>
                 <div className="text-xs text-slate-500 font-medium leading-relaxed">

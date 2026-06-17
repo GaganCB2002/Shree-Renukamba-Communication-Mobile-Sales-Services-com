@@ -303,7 +303,7 @@ const Login = () => {
         }
       `}</style>
       <div className="absolute inset-0 animate-hue">
-        <img src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&q=80&w=1920" alt="" className="w-full h-full object-cover" />
+        <img src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&q=80&w=1920" alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
       </div>
       <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(15,23,42,0.75) 50%, rgba(0,0,0,0.7) 100%)' }}></div>
 
