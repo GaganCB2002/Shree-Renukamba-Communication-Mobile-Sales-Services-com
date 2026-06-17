@@ -16,12 +16,14 @@ const {
   updateUser,
   deleteUser,
   getAllCustomers,
+  getGoogleClientId,
 } = require('../controllers/authController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/register').post(registerUser);
 router.route('/login').post(loginUser);
 router.route('/google').post(googleLogin);
+router.route('/google-client-id').get(getGoogleClientId);
 router.route('/forgot-password').post(forgotPassword);
 router.route('/get-security-questions').post(getSecurityQuestions);
 router.route('/resend-otp').post(resendOtp);

@@ -65,3 +65,8 @@ export const deleteUser = async (id) => {
   return response.data;
 };
 
+export const fetchGoogleClientId = async () => {
+  const response = await api.get('/auth/google-client-id');
+  return response.data.clientId;
+};
+

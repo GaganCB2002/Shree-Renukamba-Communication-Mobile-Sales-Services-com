@@ -8,6 +8,10 @@ const { sendEmailNodemailer } = require('../services/nodemailerService');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const getGoogleClientId = (req, res) => {
+  res.json({ clientId: process.env.GOOGLE_CLIENT_ID || '' });
+};
+
 const registerUser = async (req, res) => {
   try {
     const { fullName, phoneNumber, email, password, role, securityQuestions } = req.body;
