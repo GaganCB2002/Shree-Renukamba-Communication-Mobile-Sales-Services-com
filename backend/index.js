@@ -46,8 +46,12 @@ function startServer(port) {
 
   app.use(helmet());
 
+  const allowedOrigins = process.env.NODE_ENV === 'development'
+    ? ['http://localhost:5173']
+    : (process.env.FRONTEND_URL || 'https://shree-renukamba.vercel.app').split(',');
+
   app.use(cors({
-    origin: process.env.NODE_ENV === 'development' ? 'http://localhost:5173' : '*',
+    origin: allowedOrigins,
     credentials: true,
   }));
 

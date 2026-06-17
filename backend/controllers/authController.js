@@ -6,10 +6,10 @@ const generateToken = require('../utils/generateToken');
 const { sendEmail } = require('../services/emailService');
 const { sendEmailNodemailer } = require('../services/nodemailerService');
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client();
 
 const getGoogleClientId = (req, res) => {
-  res.json({ clientId: process.env.GOOGLE_CLIENT_ID || '' });
+  res.json({ clientId: process.env.VITE_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '' });
 };
 
 const registerUser = async (req, res) => {
@@ -132,9 +132,14 @@ const googleLogin = async (req, res) => {
       return res.status(400).json({ message: 'Google credential is required' });
     }
 
+    const audiences = [
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.VITE_GOOGLE_CLIENT_ID,
+    ].filter(Boolean);
+
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: audiences,
     });
 
     const payload = ticket.getPayload();

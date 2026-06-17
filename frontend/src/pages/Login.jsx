@@ -385,6 +385,7 @@ const Login = () => {
                 text="signin_with"
                 shape="rectangular"
                 width="100%"
+                prompt="select_account"
               />
             </div>
 
