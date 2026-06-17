@@ -126,7 +126,7 @@ const Cart = () => {
                     <span className="px-4 py-1.5 text-sm font-medium min-w-[2rem] text-center">{item.quantity}</span>
                     <button onClick={() => handleQuantity(item, 1)} className="px-3 py-1.5 bg-secondary-50 hover:bg-secondary-100 text-secondary-700 font-bold text-sm transition-colors">+</button>
                   </div>
-                  <div className="text-right min-w-[5rem]">
+                  <div className="text-right min-w-[4rem] sm:min-w-[5rem]">
                     <div className="font-bold text-primary-950">₹{(price * item.quantity).toFixed(2)}</div>
                   </div>
                   <button onClick={() => dispatch(removeFromCart(item._id || item.id))} className="p-2 text-secondary-400 hover:text-red-500 transition-colors">

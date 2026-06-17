@@ -240,7 +240,120 @@
   display: none !important;
 }
 * {
-  -ms-overflow-style: none !important;  /* IE and Edge */
-  scrollbar-width: none !important;  /* Firefox */
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* ═══════════════════════════════════════════
+   GLOBAL RESPONSIVE RULES
+   ═══════════════════════════════════════════ */
+
+/* ── Responsive Images & Media ── */
+img, video, iframe, canvas, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── Responsive Tables ── */
+table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+table thead, table tbody {
+  width: 100%;
+}
+
+/* ── Responsive Forms ── */
+input, select, textarea, button {
+  max-width: 100%;
+}
+
+/* ── Prevent Overflow ── */
+* {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ── Mobile-first container padding ── */
+@media (max-width: 480px) {
+  .container, .max-w-7xl, [class*="max-w-"]:not([class*="max-w-\["]):not([class*="max-w-screen"]) {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  h1 { font-size: 1.5rem !important; }
+  h2 { font-size: 1.25rem !important; }
+  h3 { font-size: 1.1rem !important; }
+
+  .text-sm { font-size: 0.75rem !important; }
+  .text-xs { font-size: 0.65rem !important; }
+  .text-lg { font-size: 0.95rem !important; }
+  .text-xl { font-size: 1.1rem !important; }
+  .text-2xl { font-size: 1.25rem !important; }
+  .text-3xl { font-size: 1.4rem !important; }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  h1 { font-size: 1.75rem !important; }
+  h2 { font-size: 1.4rem !important; }
+}
+
+/* ── Stack grids on mobile ── */
+@media (max-width: 640px) {
+  [class*="grid-cols-"]:not([class*="grid-cols-1"]):not([class*="grid-cols-2"]) {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .grid-cols-4, .grid-cols-5, .grid-cols-6,
+  .grid-cols-7, .grid-cols-8, .grid-cols-9, .grid-cols-10,
+  .grid-cols-11, .grid-cols-12 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .gap-4 { gap: 0.75rem !important; }
+  .gap-6 { gap: 1rem !important; }
+  .gap-8 { gap: 1rem !important; }
+  .p-4 { padding: 0.75rem !important; }
+  .p-6 { padding: 1rem !important; }
+  .p-8 { padding: 1rem !important; }
+  .px-4 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+  .px-6 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .px-8 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .py-4 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+  .py-6 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+  .py-8 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+}
+
+@media (max-width: 480px) {
+  [class*="grid-cols-"]:not([class*="grid-cols-1"]) {
+    grid-template-columns: 1fr !important;
+  }
+
+  .flex-wrap {
+    flex-direction: column !important;
+  }
+
+  .hidden-mobile {
+    display: none !important;
+  }
+}
+
+/* ── Modal/Dialog mobile fix ── */
+@media (max-width: 640px) {
+  [class*="fixed"][class*="inset-0"] [class*="rounded-2xl"],
+  [class*="fixed"][class*="inset-0"] [class*="rounded-xl"],
+  [class*="fixed"][class*="z-50"] > div > div {
+    max-width: 95vw !important;
+    margin: 0 auto !important;
+  }
+}
+
+/* ── Sidebar/Menu mobile adjustments ── */
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    display: block !important;
+  }
 }
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ShoppingBag, Search, Wrench, Eye, Calendar, IndianRupee, User, Download, CheckCircle, XCircle, Clock, AlertTriangle, ChevronDown, EyeIcon } from 'lucide-react';
+import { ShoppingBag, Search, Wrench, Eye, Calendar, IndianRupee, User, Download, CheckCircle, XCircle, Clock, AlertTriangle, ChevronDown, EyeIcon, X } from 'lucide-react';
 import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import EmptyState from '../../components/EmptyState';
@@ -131,7 +131,7 @@ const AdminOrders = () => {
         {isOpen && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setStatusDropdown(null)} />
-            <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-xl shadow-lg z-20 py-1 min-w-[170px]">
+            <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-xl shadow-lg z-20 py-1 min-w-[170px] whitespace-nowrap">
               {ORDER_STATUS_FLOW.map((status, idx) => {
                 const isDisabled = idx < currentIndex && status !== 'Cancelled';
                 const isCurrent = status === order.orderStatus;

@@ -173,7 +173,7 @@ const BookRepair = () => {
           <div className="absolute top-5 left-[15%] right-[15%] sm:left-10 sm:right-10 h-0.5 bg-secondary-100 -z-10"></div>
           <div className="absolute top-5 left-[15%] sm:left-10 h-0.5 bg-primary-600 -z-10 transition-all duration-500" style={{ width: `calc(${(step - 1) * 33.33}% - ${(step - 1) * 15}%)` }}></div>
 
-          <div className="flex justify-between relative min-w-[320px] sm:min-w-0 px-2 sm:px-0">
+          <div className="flex justify-between relative min-w-[280px] sm:min-w-0 px-1 sm:px-0">
             {['Device', 'Issue', 'Details', 'Confirm'].map((label, idx) => {
               const num = idx + 1;
               const isActive = step === num;

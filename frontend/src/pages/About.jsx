@@ -29,7 +29,7 @@ const About = () => {
             </div>
           </div>
           <div className="bg-gray-50 rounded-3xl p-8 md:p-10 border border-gray-100">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="text-center p-4">
                 <div className="text-4xl font-bold text-indigo-600 mb-1">10K+</div>
                 <p className="text-sm text-gray-500">{t('about.happyCustomers')}</p>

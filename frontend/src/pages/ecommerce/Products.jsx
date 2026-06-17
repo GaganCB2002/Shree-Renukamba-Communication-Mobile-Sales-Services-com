@@ -382,7 +382,7 @@ const Products = () => {
               {sortOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)}></div>
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-xl shadow-lg z-20 py-1 min-w-[170px]">
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-xl shadow-lg z-20 py-1 min-w-[170px] whitespace-nowrap">
                     {[
                       { label: 'Recommended', value: 'recommended' },
                       { label: 'Price: Low to High', value: 'price-asc' },

@@ -141,7 +141,7 @@ const AdminAiAssistant = () => {
             <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-2 font-medium flex items-center gap-1">
               <Zap size={10} /> Quick insights:
             </p>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               {insights.map((insight, i) => (
                 <button
                   key={i}

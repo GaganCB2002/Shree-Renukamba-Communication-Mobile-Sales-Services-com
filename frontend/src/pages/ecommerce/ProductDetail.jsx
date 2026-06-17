@@ -266,7 +266,7 @@ const ProductDetail = () => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-border">
                 {[
                   { icon: Shield, label: 'Certified Quality', desc: '45-point inspection' },
                   { icon: Truck, label: 'Free Shipping', desc: 'On all orders' },
@@ -324,7 +324,8 @@ const ProductDetail = () => {
             </div>
             <div className="p-8 md:p-10">
               {specs.length > 0 ? (
-                <table className="w-full text-sm border-collapse">
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <table className="w-full text-sm border-collapse min-w-[500px] sm:min-w-0">
                   <tbody>
                     {specs.map(([key, val], i) => (
                       <tr key={key} className={i % 2 === 0 ? 'bg-secondary-50/50' : 'bg-white'}>
@@ -348,6 +349,7 @@ const ProductDetail = () => {
                     </tr>
                   </tbody>
                 </table>
+                </div>
               ) : (
                 <div className="text-center py-12">
                   <Package size={40} className="mx-auto text-slate-300 mb-3" />

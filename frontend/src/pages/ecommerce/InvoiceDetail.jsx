@@ -276,8 +276,8 @@ const InvoiceDetail = () => {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-slate-100 mb-6">
-              <table className="w-full text-left border-collapse text-sm">
+            <div className="overflow-x-auto rounded-xl border border-slate-100 mb-6">
+              <table className="w-full text-left border-collapse text-sm min-w-[500px]">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
                     <th className="px-4 py-3">#</th>
