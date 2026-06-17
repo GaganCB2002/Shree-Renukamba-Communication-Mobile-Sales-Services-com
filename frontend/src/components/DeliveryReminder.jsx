@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { AlertTriangle, X, Check, Bell, Clock, Loader2 } from 'lucide-react';
+import { X, Check, Bell, Clock, Loader2 } from 'lucide-react';
 import { getMyNotifications, markAsRead } from '../api/notificationsApi';
 import { updateRepairStatus } from '../api/repairsApi';
 

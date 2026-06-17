@@ -19,7 +19,8 @@ api.interceptors.request.use(
           config.headers.Authorization = `Bearer ${parsed.token}`;
         }
       }
-    } catch {
+    } catch (e) {
+      // ignore
     }
     return config;
   },

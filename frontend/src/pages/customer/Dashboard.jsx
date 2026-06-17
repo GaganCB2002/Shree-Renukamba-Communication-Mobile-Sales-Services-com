@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import {
   Wrench, ShoppingBag, Star, ArrowRight, Calendar,
   Clock, Eye, CheckCircle, Smartphone, TrendingUp,
-  FileText, AlertCircle, ChevronRight, Package, Heart, Sparkles, Search, Home, Headphones,
+  FileText, AlertCircle, ChevronRight, Package, Heart, Sparkles, Search, Home, Headphones, AlertTriangle,
   IndianRupee
 } from 'lucide-react';
 import { getMyRepairs, acceptRepairCost } from '../../api/repairsApi';

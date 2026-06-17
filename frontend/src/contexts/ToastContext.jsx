@@ -16,7 +16,7 @@ const playSuccessSound = () => {
     osc.start();
     osc.stop(ctx.currentTime + 0.35);
     setTimeout(() => ctx.close(), 500);
-  } catch {}
+  } catch { /* audio not critical */ }
 };
 
 export const ToastProvider = ({ children }) => {

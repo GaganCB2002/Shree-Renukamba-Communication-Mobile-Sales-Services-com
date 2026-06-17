@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ShoppingCart, Star, Search, ChevronDown, Package, Eye, CheckCircle, Heart, Smartphone, Laptop, Tablet, Headphones } from 'lucide-react';
-import { getProducts } from '../../api/productsApi';
+import { getProducts, getCategories } from '../../api/productsApi';
 import { addToCart } from '../../redux/slices/cartSlice';
 import { toggleWishlist } from '../../redux/slices/wishlistSlice';
 import { useToast } from '../../contexts/ToastContext';

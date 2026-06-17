@@ -67,7 +67,7 @@ const ProductDetail = () => {
     if (navigator.share) {
       try {
         await navigator.share({ title: product?.title || 'Check this product', url });
-      } catch {}
+      } catch { /* share may fail */ }
     } else {
       await navigator.clipboard.writeText(url);
       showToast('Link copied to clipboard!');

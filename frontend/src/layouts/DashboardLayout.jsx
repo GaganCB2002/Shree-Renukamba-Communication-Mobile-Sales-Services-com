@@ -343,7 +343,7 @@ const DashboardLayout = () => {
                                 await markAsRead(n._id);
                                 setNotifications(prev => prev.map(x => x._id === n._id ? { ...x, isRead: true } : x));
                                 setUnreadCount(prev => Math.max(0, prev - 1));
-                              } catch {}
+                              } catch { /* ignore */ }
                             }
                             if (refId) navigate(`/order/${refId}`);
                             setShowNotifications(false);

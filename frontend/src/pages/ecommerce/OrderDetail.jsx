@@ -147,7 +147,7 @@ const OrderDetail = () => {
           try {
             const inv = await getInvoiceByOrder(orderId);
             setInvoice(inv);
-          } catch {}
+          } catch { /* invoice optional */ }
         }
       } catch (err) {
         setError(err.response?.data?.message || 'Order not found');

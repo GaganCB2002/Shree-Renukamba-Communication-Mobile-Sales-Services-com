@@ -11,11 +11,16 @@ export default defineConfig([
     extends: [
       js.configs.recommended,
       reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
+      { ...reactRefresh.configs.vite, rules: { 'react-refresh/only-export-components': ['warn', { allowConstantExport: true }] } },
     ],
     languageOptions: {
-      globals: globals.browser,
+      globals: { ...globals.browser, ...globals.node },
       parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+    rules: {
+      'no-unused-vars': ['warn', { caughtErrors: 'none', argsIgnorePattern: '^_' }],
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/immutability': 'warn',
     },
   },
 ])

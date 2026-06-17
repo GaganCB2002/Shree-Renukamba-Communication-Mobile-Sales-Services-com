@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Package, User, MapPin, IndianRupee, Calendar, Clock, CreditCard, Tag, Truck, Printer, QrCode, Copy, CheckCircle, ShoppingBag, Phone, Mail, Hash, Download, ChevronDown, ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
+import { X, Package, User, MapPin, IndianRupee, Calendar, Clock, Tag, Printer, QrCode, CheckCircle, Phone, Mail, Hash, Download, ChevronDown, RotateCcw } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useToast } from '../contexts/ToastContext';
 import { updateOrderStatus, updatePaymentStatus } from '../api/ordersApi';
@@ -21,13 +21,12 @@ const SHOP_ADDRESS = {
 
 const AdminOrderDetailModal = ({ order, onClose, onStatusUpdate }) => {
   const { showToast } = useToast();
-  const printRef = useRef(null);
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [statusDropdown, setStatusDropdown] = useState(false);
   const [localOrder, setLocalOrder] = useState(order);
 
-  useEffect(() => { setLocalOrder(order); }, [order]);
+  useEffect(() => { setLocalOrder(order); }, [order, setLocalOrder]);
 
   const isCod = localOrder?.paymentInfo?.method === 'cod' || !localOrder?.paymentInfo?.method;
   const totalQty = localOrder?.products?.reduce((s, p) => s + (p.quantity || 1), 0) || 0;
@@ -74,7 +73,7 @@ const AdminOrderDetailModal = ({ order, onClose, onStatusUpdate }) => {
         .then(url => setQrDataUrl(url))
         .catch(() => {});
     }
-  }, [localOrder, isCod]);
+  }, [localOrder, isCod, buildQrPayload]);
 
   useEffect(() => {
     const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
@@ -105,7 +104,7 @@ const AdminOrderDetailModal = ({ order, onClose, onStatusUpdate }) => {
       await updatePaymentStatus(localOrder._id, newStatus);
       setLocalOrder(prev => ({ ...prev, paymentStatus: newStatus }));
       showToast(`Payment status changed to ${newStatus}`);
-    } catch (err) {
+    } catch {
       showToast('Failed to update payment status');
     }
   };

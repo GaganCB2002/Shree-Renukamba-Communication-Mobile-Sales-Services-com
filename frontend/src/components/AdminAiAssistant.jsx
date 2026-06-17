@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bot, X, Send, User, TrendingUp, BarChart3, Lightbulb, AlertCircle, Zap, RefreshCw } from 'lucide-react';
+import { Bot, X, Send, User, TrendingUp, BarChart3, Lightbulb, AlertCircle, Zap } from 'lucide-react';
 import { chatWithAdminAI } from '../api/aiApi';
 
 const insights = [
