@@ -12,7 +12,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     try {
-      const userInfo = localStorage.getItem('userInfo');
+      const userInfo = sessionStorage.getItem('userInfo');
       if (userInfo) {
         const parsed = JSON.parse(userInfo);
         if (parsed.token) {
@@ -33,7 +33,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const isPrivatePath = window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/dashboard');
       if (isPrivatePath) {
-        localStorage.removeItem('userInfo');
+        sessionStorage.removeItem('userInfo');
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }

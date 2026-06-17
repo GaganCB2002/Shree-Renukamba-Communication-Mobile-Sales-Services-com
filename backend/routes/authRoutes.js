@@ -4,6 +4,7 @@ const {
   registerUser,
   loginUser,
   googleLogin,
+  logoutUser,
   getUserProfile,
   updateUserProfile,
   changePassword,
@@ -25,6 +26,7 @@ router.route('/register').post(loginRateLimiter, registerUser);
 router.route('/login').post(loginRateLimiter, loginUser);
 router.route('/google').post(loginRateLimiter, googleLogin);
 router.route('/google-client-id').get(getGoogleClientId);
+router.route('/logout').post(protect, logoutUser);
 router.route('/forgot-password').post(forgotPassword);
 router.route('/get-security-questions').post(getSecurityQuestions);
 router.route('/resend-otp').post(resendOtp);

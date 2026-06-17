@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 
 const { connectDB } = require('./config/db');
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
+const { csrfProtection } = require('./middleware/security');
 
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION — keeping process alive:', err.message);
@@ -44,7 +45,15 @@ function startServer(port) {
 (async () => {
   await connectDB();
 
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    frameguard: { action: 'deny' },
+    noSniff: true,
+    hidePoweredBy: true,
+  }));
 
   const allowedOrigins = process.env.NODE_ENV === 'development'
     ? ['http://localhost:5173']
@@ -68,11 +77,16 @@ function startServer(port) {
   });
   app.use('/api/auth/login', authLimiter);
   app.use('/api/auth/register', authLimiter);
+  app.use('/api/auth/google', authLimiter);
+  app.use('/api/auth/forgot-password', authLimiter);
+  app.use('/api/auth/get-security-questions', authLimiter);
+  app.use('/api/auth/resend-otp', authLimiter);
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
   app.use(xss());
+  app.use(csrfProtection);
 
   app.use('/uploads', express.static(require('path').join(__dirname, 'uploads')));
 
@@ -109,6 +123,15 @@ function startServer(port) {
 
   const { startReminderService } = require('./services/reminderService');
   startReminderService();
+
+  const { pool } = require('./config/db');
+  setInterval(async () => {
+    try {
+      await pool.query(`DELETE FROM sessions WHERE expires_at < datetime('now')`);
+    } catch (e) {
+      // silent
+    }
+  }, 60 * 60 * 1000);
 
   startServer(PORT);
 })();

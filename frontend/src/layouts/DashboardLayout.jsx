@@ -9,6 +9,7 @@ import {
   Headphones, Tags, MapPin, UserCog
 } from 'lucide-react';
 import { logout } from '../redux/slices/authSlice';
+import { logoutUser as logoutApi } from '../api/authApi';
 import { resetPageData } from '../redux/slices/pageSlice';
 import { useTheme } from '../contexts/ThemeContext';
 import { getUnreadCount, getMyNotifications, markAllAsRead, markAsRead } from '../api/notificationsApi';
@@ -123,7 +124,12 @@ const DashboardLayout = () => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logoutApi();
+    } catch (e) {
+      // ignore backend errors, still logout locally
+    }
     dispatch(logout());
     dispatch(resetPageData());
     navigate('/');

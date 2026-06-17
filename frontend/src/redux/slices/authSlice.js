@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { loginUser as loginApi, registerUser as registerApi, googleLoginApi } from '../../api/authApi';
+import { loginUser as loginApi, registerUser as registerApi, googleLoginApi, logoutUser as logoutApi } from '../../api/authApi';
 
 export const login = createAsyncThunk('auth/login', async (data, { rejectWithValue }) => {
   try {
@@ -28,9 +28,17 @@ export const googleLogin = createAsyncThunk('auth/googleLogin', async (credentia
   }
 });
 
+export const logoutThunk = createAsyncThunk('auth/logoutThunk', async (_, { rejectWithValue }) => {
+  try {
+    await logoutApi();
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Logout failed');
+  }
+});
+
 function loadUserInfo() {
   try {
-    const data = localStorage.getItem('userInfo');
+    const data = sessionStorage.getItem('userInfo');
     return data ? JSON.parse(data) : null;
   } catch {
     return null;
@@ -51,13 +59,13 @@ const authSlice = createSlice({
       state.userInfo = action.payload;
       state.loading = false;
       state.error = null;
-      localStorage.setItem('userInfo', JSON.stringify(action.payload));
+      sessionStorage.setItem('userInfo', JSON.stringify(action.payload));
     },
     logout: (state) => {
       state.userInfo = null;
       state.loading = false;
       state.error = null;
-      localStorage.removeItem('userInfo');
+      sessionStorage.removeItem('userInfo');
     },
     clearError: (state) => {
       state.error = null;
@@ -72,7 +80,7 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.userInfo = action.payload;
-        localStorage.setItem('userInfo', JSON.stringify(action.payload));
+        sessionStorage.setItem('userInfo', JSON.stringify(action.payload));
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
@@ -85,7 +93,7 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.loading = false;
         state.userInfo = action.payload;
-        localStorage.setItem('userInfo', JSON.stringify(action.payload));
+        sessionStorage.setItem('userInfo', JSON.stringify(action.payload));
       })
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
@@ -98,7 +106,7 @@ const authSlice = createSlice({
       .addCase(googleLogin.fulfilled, (state, action) => {
         state.loading = false;
         state.userInfo = action.payload;
-        localStorage.setItem('userInfo', JSON.stringify(action.payload));
+        sessionStorage.setItem('userInfo', JSON.stringify(action.payload));
       })
       .addCase(googleLogin.rejected, (state, action) => {
         state.loading = false;
@@ -108,4 +116,7 @@ const authSlice = createSlice({
 });
 
 export const { setCredentials, logout, clearError } = authSlice.actions;
+export const clearAuthStorage = () => {
+  sessionStorage.removeItem('userInfo');
+};
 export default authSlice.reducer;

@@ -251,6 +251,21 @@ ALTER TABLE orders ADD COLUMN cancelled_at TEXT;
 ALTER TABLE users ADD COLUMN google_id TEXT;
 ALTER TABLE users ADD COLUMN auth_provider TEXT DEFAULT 'email';
 
+CREATE TABLE IF NOT EXISTS sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT REFERENCES users(id),
+  token TEXT NOT NULL,
+  ip_address TEXT,
+  user_agent TEXT,
+  is_valid INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now')),
+  expires_at TEXT,
+  last_activity TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
+
 CREATE TABLE IF NOT EXISTS visitors (
   id TEXT PRIMARY KEY,
   visitor_id TEXT UNIQUE,

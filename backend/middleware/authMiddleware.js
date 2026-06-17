@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { pool } = require('../config/db');
 
 const protect = async (req, res, next) => {
   let token;
@@ -13,7 +14,23 @@ const protect = async (req, res, next) => {
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
 
+      const session = await pool.query(
+        `SELECT is_valid FROM sessions WHERE token = $1 AND expires_at > datetime('now') AND is_valid = 1`,
+        [token]
+      );
+
+      if (session.rows && session.rows.length === 0) {
+        return res.status(401).json({ message: 'Session expired, please login again' });
+      }
+
       req.user = await User.findById(decoded.id).select('-password');
+
+      if (session.rows && session.rows.length > 0) {
+        await pool.query(
+          `UPDATE sessions SET last_activity = datetime('now') WHERE token = $1`,
+          [token]
+        );
+      }
 
       next();
     } catch (error) {

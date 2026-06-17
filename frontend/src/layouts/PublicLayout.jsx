@@ -11,6 +11,7 @@ import AiChatWidget from '../components/AiChatWidget';
 import DeliveryReminder from '../components/DeliveryReminder';
 import useVisitorTracking from '../hooks/useVisitorTracking';
 import { logout } from '../redux/slices/authSlice';
+import { logoutUser as logoutApi } from '../api/authApi';
 import { resetPageData } from '../redux/slices/pageSlice';
 import '../pages/LandingPage.css';
 
@@ -172,7 +173,7 @@ const PublicLayout = () => {
                     </div>
                   )}
                 </Link>
-                <button type="button" onClick={() => { dispatch(logout()); dispatch(resetPageData()); navigate('/'); }} className="lp-icon-btn" title="Sign Out" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button type="button" onClick={async () => { try { await logoutApi(); } catch (e) { /* silent */ } dispatch(logout()); dispatch(resetPageData()); navigate('/'); }} className="lp-icon-btn" title="Sign Out" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <LogOut size={16} />
                 </button>
               </div>
@@ -244,7 +245,7 @@ const PublicLayout = () => {
           {userInfo ? (
             <>
               <Link to={userInfo.role === 'admin' ? '/admin' : '/dashboard'} className="lp-sidebar-link" onClick={() => setSidebarOpen(false)}>{t('nav.dashboard')}</Link>
-              <button onClick={() => { dispatch(logout()); dispatch(resetPageData()); navigate('/'); setSidebarOpen(false); }} className="lp-sidebar-link" style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', color: '#ef4444' }}>
+              <button onClick={async () => { try { await logoutApi(); } catch (e) { /* silent */ } dispatch(logout()); dispatch(resetPageData()); navigate('/'); setSidebarOpen(false); }} className="lp-sidebar-link" style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', color: '#ef4444' }}>
                 {t('nav.logout')}
               </button>
             </>

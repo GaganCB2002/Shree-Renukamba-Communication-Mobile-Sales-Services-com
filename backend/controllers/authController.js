@@ -79,13 +79,24 @@ const registerUser = async (req, res) => {
         } catch (e2) {}
       }
 
+      const regToken = generateToken(user._id);
+      const regSessionId = require('crypto').randomUUID();
+      const regExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      try {
+        await pool.query(
+          `INSERT INTO sessions (id, user_id, token, ip_address, user_agent, expires_at)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [regSessionId, user._id, regToken, req.ip || '', req.headers['user-agent'] || '', regExpiresAt]
+        );
+      } catch (e) {
+        // session logging is non-critical
+      }
       res.status(201).json({
         _id: user._id,
         fullName: user.fullName,
         email: user.email,
         role: user.role,
-        token: generateToken(user._id),
-        otp,
+        token: regToken,
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
@@ -110,6 +121,18 @@ const loginUser = async (req, res) => {
 
     if (await user.matchPassword(password)) {
       resetLoginAttempts(req);
+      const token = generateToken(user._id);
+      const sessionId = require('crypto').randomUUID();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      try {
+        await pool.query(
+          `INSERT INTO sessions (id, user_id, token, ip_address, user_agent, expires_at)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [sessionId, user._id, token, req.ip || '', req.headers['user-agent'] || '', expiresAt]
+        );
+      } catch (e) {
+        // session logging is non-critical
+      }
       res.json({
         _id: user._id,
         fullName: user.fullName,
@@ -117,7 +140,7 @@ const loginUser = async (req, res) => {
         phoneNumber: user.phoneNumber,
         role: user.role,
         address: user.address,
-        token: generateToken(user._id),
+        token,
       });
     } else {
       return res.status(401).json({ message: 'Invalid email or password' });
@@ -182,6 +205,18 @@ const googleLogin = async (req, res) => {
     }
 
     resetLoginAttempts(req);
+    const token = generateToken(user._id);
+    const sessionId = require('crypto').randomUUID();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    try {
+      await pool.query(
+        `INSERT INTO sessions (id, user_id, token, ip_address, user_agent, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [sessionId, user._id, token, req.ip || '', req.headers['user-agent'] || '', expiresAt]
+      );
+    } catch (e) {
+      // session logging is non-critical
+    }
     res.json({
       _id: user._id,
       fullName: user.fullName,
@@ -190,7 +225,7 @@ const googleLogin = async (req, res) => {
       role: user.role,
       address: user.address,
       profileImage: user.profileImage,
-      token: generateToken(user._id),
+      token,
     });
   } catch (error) {
     console.error('[GoogleLogin] Error:', error.message);
@@ -411,8 +446,8 @@ const getSecurityQuestions = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find({}).select('fullName email phoneNumber role address createdAt');
-    res.json(users);
+    const users = await User.find({});
+    res.json(users.map(sanitizeUser));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -427,7 +462,19 @@ const getUserById = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.json(user);
+    res.json({
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      address: user.address,
+      profileImage: user.profileImage,
+      googleId: user.googleId ? '***' : '',
+      authProvider: user.authProvider,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -454,7 +501,7 @@ const createUser = async (req, res) => {
       role: role || 'customer',
       address: address || {},
     });
-    res.status(201).json(user);
+    res.status(201).json(sanitizeUser(user));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -477,7 +524,7 @@ const updateUser = async (req, res) => {
     if (role !== undefined) user.role = role;
     if (address !== undefined) user.address = address;
     const updated = await user.save();
-    res.json(updated);
+    res.json(sanitizeUser(updated));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -503,6 +550,40 @@ const deleteUser = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+const logoutUser = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.startsWith('Bearer')
+      ? req.headers.authorization.split(' ')[1]
+      : null;
+
+    if (token) {
+      await pool.query(
+        `UPDATE sessions SET is_valid = 0 WHERE token = $1 AND is_valid = 1`,
+        [token]
+      );
+    }
+
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const sanitizeUser = (user) => {
+  if (!user) return null;
+  return {
+    _id: user._id,
+    fullName: user.fullName,
+    email: user.email,
+    phoneNumber: user.phoneNumber,
+    role: user.role,
+    address: user.address || {},
+    profileImage: user.profileImage || '',
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
 };
 
 const getAllCustomers = async (req, res) => {
@@ -538,6 +619,7 @@ module.exports = {
   registerUser,
   loginUser,
   googleLogin,
+  logoutUser,
   getGoogleClientId,
   getUserProfile,
   updateUserProfile,
