@@ -42,7 +42,27 @@ class CategoryInstance {
 
 class Category {
   static async find(query = {}) {
-    const res = await pool.query('SELECT * FROM categories ORDER BY category_name ASC');
+    let sql = 'SELECT * FROM categories';
+    let vals = [];
+    let conditions = [];
+    if (query._id || query.id) {
+      conditions.push(`id = $${vals.length + 1}`);
+      vals.push(query._id || query.id);
+    }
+    if (query.categoryName) {
+      if (typeof query.categoryName === 'object' && query.categoryName.$regex) {
+        conditions.push(`category_name ILIKE $${vals.length + 1}`);
+        vals.push(`%${query.categoryName.$regex}%`);
+      } else {
+        conditions.push(`category_name = $${vals.length + 1}`);
+        vals.push(query.categoryName);
+      }
+    }
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+    sql += ' ORDER BY category_name ASC';
+    const res = await pool.query(sql, vals);
     return res.rows.map(r => new CategoryInstance(r));
   }
 

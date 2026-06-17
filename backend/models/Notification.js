@@ -26,8 +26,8 @@ class NotificationInstance {
 
   async save() {
     await pool.query(
-      'UPDATE notifications SET is_read = $1 WHERE id = $2',
-      [this.isRead, this.id]
+      'UPDATE notifications SET is_read = $1, title = $2, message = $3, type = $4 WHERE id = $5',
+      [this.isRead ? 1 : 0, this.title, this.message, this.type || 'general', this.id]
     );
     return this;
   }
@@ -44,7 +44,7 @@ class Notification {
       `;
       const vals = [
         id,
-        data.user || data.userId,
+        data.user?.id || data.user?._id || data.user || data.userId,
         data.title,
         data.message,
         data.type || 'general',
@@ -57,11 +57,15 @@ class Notification {
   }
 
   static find(query = {}) {
-    return new CustomQuery(async ({ sort, limit }) => {
+    return new CustomQuery(async ({ selects, sort, limit }) => {
       let sql = 'SELECT * FROM notifications';
       let vals = [];
       let conditions = [];
 
+      if (query._id || query.id) {
+        conditions.push(`id = $${vals.length + 1}`);
+        vals.push(query._id || query.id);
+      }
       if (query.user) {
         conditions.push(`user_id = $${vals.length + 1}`);
         vals.push(query.user);
@@ -70,13 +74,25 @@ class Notification {
         conditions.push(`user_id = $${vals.length + 1}`);
         vals.push(query.userId);
       }
+      if (query.type) {
+        conditions.push(`type = $${vals.length + 1}`);
+        vals.push(query.type);
+      }
+      if (query.isRead !== undefined) {
+        conditions.push(`is_read = $${vals.length + 1}`);
+        vals.push(query.isRead ? 1 : 0);
+      }
 
       if (conditions.length > 0) {
         sql += ' WHERE ' + conditions.join(' AND ');
       }
 
       if (sort) {
-        sql += ' ORDER BY created_at DESC';
+        if (typeof sort === 'object' && sort.createdAt) {
+          sql += ` ORDER BY created_at ${sort.createdAt === 1 ? 'ASC' : 'DESC'}`;
+        } else {
+          sql += ` ORDER BY created_at ${String(sort).startsWith('-') ? 'DESC' : 'ASC'}`;
+        }
       } else {
         sql += ' ORDER BY created_at DESC';
       }
@@ -99,7 +115,7 @@ class Notification {
   }
 
   static async countDocuments(query = {}) {
-    let sql = 'SELECT COUNT(*) FROM notifications';
+    let sql = 'SELECT COUNT(*) as count FROM notifications';
     let vals = [];
     let conditions = [];
 
@@ -132,8 +148,10 @@ class Notification {
 
     if (update.isRead !== undefined) {
       sets.push(`is_read = $${vals.length + 1}`);
-      vals.push(update.isRead);
+      vals.push(update.isRead ? 1 : 0);
     }
+
+    if (sets.length === 0) return false;
 
     if (query.user) {
       conditions.push(`user_id = $${vals.length + 1}`);
@@ -145,7 +163,7 @@ class Notification {
     }
     if (query.isRead !== undefined) {
       conditions.push(`is_read = $${vals.length + 1}`);
-      vals.push(query.isRead);
+      vals.push(query.isRead ? 1 : 0);
     }
 
     sql += ' SET ' + sets.join(', ');
@@ -155,6 +173,28 @@ class Notification {
 
     await pool.query(sql, vals);
     return true;
+  }
+
+  static findOne(query = {}) {
+    return new CustomQuery(async () => {
+      let sql = 'SELECT * FROM notifications';
+      let vals = [];
+      let conditions = [];
+      if (query._id || query.id) {
+        conditions.push(`id = $${vals.length + 1}`);
+        vals.push(query._id || query.id);
+      }
+      if (query.user) {
+        conditions.push(`user_id = $${vals.length + 1}`);
+        vals.push(query.user);
+      }
+      if (conditions.length > 0) {
+        sql += ' WHERE ' + conditions.join(' AND ');
+      }
+      const res = await pool.query(sql, vals);
+      if (res.rows.length === 0) return null;
+      return new NotificationInstance(res.rows[0]);
+    });
   }
 
   static async deleteMany() {

@@ -4,6 +4,7 @@ const Customer = require('../models/Customer');
 const Coupon = require('../models/Coupon');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const Settings = require('../models/Settings');
 
 const ORDER_STATUS_FLOW = [
   'Pending',
@@ -269,6 +270,158 @@ const getOrdersByStatus = async (req, res) => {
   }
 };
 
+const cancelOrder = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    const customer = await Customer.findOne({ userId: req.user._id });
+    const isOwner = customer && String(order.customerId || order.customer) === String(customer._id);
+    const isStaff = req.user.role === 'admin' || req.user.role === 'technician';
+
+    if (!isOwner && !isStaff) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    if (isStaff) {
+      order.orderStatus = 'Cancelled';
+      order.cancelRequested = 1;
+      order.cancelReason = reason || 'Cancelled by staff';
+      order.cancelApproved = 1;
+      order.cancelledAt = new Date().toISOString();
+      await order.save();
+
+      try {
+        const customerUser = await Customer.findById(order.customerId);
+        if (customerUser) {
+          await Notification.create({
+            userId: customerUser.userId,
+            title: 'Order Cancelled',
+            message: `Your order ${order.orderId} has been cancelled by staff.`,
+            type: 'order',
+          });
+        }
+      } catch (e) {}
+
+      const updated = await Order.findById(order._id).populate('customer');
+      return res.json(updated);
+    }
+
+    const cancelHours = await Settings.getCancelHours('order');
+    const createdAt = new Date(order.createdAt);
+    const now = new Date();
+    const hoursElapsed = (now - createdAt) / (1000 * 60 * 60);
+
+    if (hoursElapsed > cancelHours) {
+      return res.status(400).json({
+        message: `Cancellation window has expired. You can only cancel within ${cancelHours} hours of placing the order.`
+      });
+    }
+
+    if (order.orderStatus === 'Cancelled' || order.orderStatus === 'Delivered') {
+      return res.status(400).json({ message: 'Cannot cancel a completed or already cancelled order.' });
+    }
+
+    order.cancelRequested = 1;
+    order.cancelReason = reason || 'No reason provided';
+    order.cancelApproved = 0;
+    await order.save();
+
+    try {
+      await Notification.create({
+        user: req.user._id,
+        title: 'Cancellation Requested',
+        message: `Your cancellation request for order ${order.orderId} has been submitted and is pending admin approval.`,
+        type: 'order',
+      });
+    } catch (e) {}
+
+    try {
+      const admins = await User.find({ role: 'admin' });
+      for (const admin of admins) {
+        await Notification.create({
+          userId: admin._id,
+          title: 'Order Cancellation Requested',
+          message: `Customer requested cancellation for order ${order.orderId}. Reason: ${reason || 'N/A'}`,
+          type: 'order',
+        });
+      }
+    } catch (e) {}
+
+    const updated = await Order.findById(order._id).populate('customer');
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const approveCancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (!order.cancelRequested) {
+      return res.status(400).json({ message: 'No cancellation request found for this order.' });
+    }
+
+    order.orderStatus = 'Cancelled';
+    order.cancelApproved = 1;
+    order.cancelledAt = new Date().toISOString();
+    await order.save();
+
+    try {
+      const customerUser = await Customer.findById(order.customerId);
+      if (customerUser) {
+        await Notification.create({
+          userId: customerUser.userId,
+          title: 'Cancellation Approved',
+          message: `Your cancellation request for order ${order.orderId} has been approved. The order has been cancelled.`,
+          type: 'order',
+        });
+      }
+    } catch (e) {}
+
+    const updated = await Order.findById(order._id).populate('customer');
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const rejectCancelOrder = async (req, res) => {
+  try {
+    const { reason: rejectReason } = req.body;
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (!order.cancelRequested) {
+      return res.status(400).json({ message: 'No cancellation request found for this order.' });
+    }
+
+    order.cancelRequested = 0;
+    order.cancelReason = '';
+    await order.save();
+
+    try {
+      const customerUser = await Customer.findById(order.customerId);
+      if (customerUser) {
+        await Notification.create({
+          userId: customerUser.userId,
+          title: 'Cancellation Rejected',
+          message: `Your cancellation request for order ${order.orderId} was rejected. ${rejectReason ? 'Reason: ' + rejectReason : 'Please contact support.'}`,
+          type: 'order',
+        });
+      }
+    } catch (e) {}
+
+    const updated = await Order.findById(order._id).populate('customer');
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   addOrderItems,
   getOrderById,
@@ -278,4 +431,7 @@ module.exports = {
   updateOrderStatus,
   updatePaymentStatus,
   getOrdersByStatus,
+  cancelOrder,
+  approveCancelOrder,
+  rejectCancelOrder,
 };

@@ -31,15 +31,52 @@ class SearchQuery {
       id,
       data.user || null,
       data.query,
-      data.timestamp || new Date()
+      data.timestamp || new Date().toISOString()
     ];
     const res = await pool.query(sql, vals);
     return new SearchQueryInstance(res.rows[0]);
   }
 
   static async find(query = {}) {
-    const res = await pool.query('SELECT * FROM search_queries ORDER BY timestamp DESC');
+    let sql = 'SELECT * FROM search_queries';
+    let vals = [];
+    let conditions = [];
+    if (query.user) {
+      conditions.push(`user_id = $${vals.length + 1}`);
+      vals.push(query.user);
+    }
+    if (query.query) {
+      conditions.push(`query ILIKE $${vals.length + 1}`);
+      vals.push(`%${query.query}%`);
+    }
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+    sql += ' ORDER BY timestamp DESC';
+    const res = await pool.query(sql, vals);
     return res.rows.map(r => new SearchQueryInstance(r));
+  }
+
+  static async findOne(query = {}) {
+    let sql = 'SELECT * FROM search_queries';
+    let vals = [];
+    let conditions = [];
+    if (query._id || query.id) {
+      conditions.push(`id = $${vals.length + 1}`);
+      vals.push(query._id || query.id);
+    }
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+    const res = await pool.query(sql, vals);
+    if (res.rows.length === 0) return null;
+    return new SearchQueryInstance(res.rows[0]);
+  }
+
+  static async findById(id) {
+    const res = await pool.query('SELECT * FROM search_queries WHERE id = $1', [id]);
+    if (res.rows.length === 0) return null;
+    return new SearchQueryInstance(res.rows[0]);
   }
 
   static async deleteMany() {

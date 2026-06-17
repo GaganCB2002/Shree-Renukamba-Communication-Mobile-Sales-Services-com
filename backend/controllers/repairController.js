@@ -3,6 +3,7 @@ const Device = require('../models/Device');
 const Customer = require('../models/Customer');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const Settings = require('../models/Settings');
 const { sendEmail } = require('../services/emailService');
 const { sendEmailNodemailer } = require('../services/nodemailerService');
 
@@ -414,34 +415,125 @@ const customerAcceptCost = async (req, res) => {
 
 const cancelRepair = async (req, res) => {
   try {
+    const { reason } = req.body;
     const repair = await RepairOrder.findById(req.params.id);
     if (!repair) return res.status(404).json({ message: 'Repair not found' });
 
     const customer = await Customer.findOne({ userId: req.user._id });
-    const isOwner = customer && repair.customer.toString() === customer._id.toString();
+    const isOwner = customer && String(repair.customerId || repair.customer) === String(customer._id);
     const isStaff = req.user.role === 'admin' || req.user.role === 'technician';
 
     if (!isOwner && !isStaff) {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    repair.repairStatus = 'Cancelled';
+    if (isStaff) {
+      repair.repairStatus = 'Cancelled';
+      repair.cancelRequested = 1;
+      repair.cancelReason = reason || 'Cancelled by staff';
+      repair.cancelApproved = 1;
+      repair.cancelledAt = new Date().toISOString();
+      const updated = await repair.save();
+
+      await Notification.create({
+        user: repair.customerId,
+        title: 'Repair Cancelled',
+        message: `Your repair ${repair.repairId} has been cancelled by staff.`,
+        type: 'RepairUpdate',
+      });
+
+      return res.json(updated);
+    }
+
+    const cancelHours = await Settings.getCancelHours('repair');
+    const createdAt = new Date(repair.createdAt);
+    const now = new Date();
+    const hoursElapsed = (now - createdAt) / (1000 * 60 * 60);
+
+    if (hoursElapsed > cancelHours) {
+      return res.status(400).json({
+        message: `Cancellation window has expired. You can only cancel within ${cancelHours} hours of booking.`
+      });
+    }
+
+    const terminalStatuses = ['Cancelled', 'Delivered', 'Repair Completed', 'Ready For Pickup'];
+    if (terminalStatuses.includes(repair.repairStatus)) {
+      return res.status(400).json({ message: 'Cannot cancel a completed or already cancelled repair.' });
+    }
+
+    repair.repairStatus = 'Cancellation Requested';
+    repair.cancelRequested = 1;
+    repair.cancelReason = reason || 'No reason provided';
+    repair.cancelApproved = 0;
     const updated = await repair.save();
 
     await Notification.create({
       user: req.user._id,
-      title: 'Repair Cancelled',
-      message: `Repair ${repair.repairId} has been cancelled.`,
+      title: 'Cancellation Requested',
+      message: `Your cancellation request for ${repair.repairId} has been submitted and is pending admin approval.`,
       type: 'RepairUpdate',
     });
 
-    if (isOwner) {
-      await notifyAllAdmins(
-        'Repair Cancelled by Customer',
-        `Repair ${repair.repairId} has been cancelled by the customer.`,
-        'RepairUpdate'
-      );
+    await notifyAllAdmins(
+      'Cancellation Requested',
+      `Customer requested cancellation for repair ${repair.repairId}. Reason: ${reason || 'N/A'}`,
+      'RepairUpdate'
+    );
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const approveCancelRepair = async (req, res) => {
+  try {
+    const repair = await RepairOrder.findById(req.params.id);
+    if (!repair) return res.status(404).json({ message: 'Repair not found' });
+
+    if (!repair.cancelRequested) {
+      return res.status(400).json({ message: 'No cancellation request found for this repair.' });
     }
+
+    repair.repairStatus = 'Cancelled';
+    repair.cancelApproved = 1;
+    repair.cancelledAt = new Date().toISOString();
+    const updated = await repair.save();
+
+    await Notification.create({
+      user: repair.customerId,
+      title: 'Cancellation Approved',
+      message: `Your cancellation request for ${repair.repairId} has been approved. The repair has been cancelled.`,
+      type: 'RepairUpdate',
+    });
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const rejectCancelRepair = async (req, res) => {
+  try {
+    const { reason: rejectReason } = req.body;
+    const repair = await RepairOrder.findById(req.params.id);
+    if (!repair) return res.status(404).json({ message: 'Repair not found' });
+
+    if (!repair.cancelRequested) {
+      return res.status(400).json({ message: 'No cancellation request found for this repair.' });
+    }
+
+    repair.cancelRequested = 0;
+    repair.cancelReason = '';
+    repair.repairStatus = repair.repairStatus === 'Cancellation Requested' ? 'Under Review' : repair.repairStatus;
+    const updated = await repair.save();
+
+    await Notification.create({
+      user: repair.customerId,
+      title: 'Cancellation Rejected',
+      message: `Your cancellation request for ${repair.repairId} was rejected. ${rejectReason ? 'Reason: ' + rejectReason : 'Please contact support.'}`,
+      type: 'RepairUpdate',
+    });
 
     res.json(updated);
   } catch (error) {
@@ -459,4 +551,6 @@ module.exports = {
   setRepairCost,
   customerAcceptCost,
   cancelRepair,
+  approveCancelRepair,
+  rejectCancelRepair,
 };

@@ -1,18 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
   User as UserIcon, MapPin, History, Shield, Save, 
-  Trash2, Edit, Plus, CheckCircle, Clock 
+  Trash2, Edit, Plus, CheckCircle, Clock, Settings as SettingsIcon,
+  Timer
 } from 'lucide-react';
 import { updateUserProfileApi, changePasswordApi } from '../../api/authApi';
+import { getSettings, updateSetting } from '../../api/settingsApi';
 import { setCredentials } from '../../redux/slices/authSlice';
 
 const AdminSettings = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   
-  // Tabs: 'personal', 'addresses', 'repairs', 'security'
+  // Tabs: 'personal', 'addresses', 'repairs', 'security', 'cancellation'
   const [activeTab, setActiveTab] = useState('personal');
+
+  // Cancellation settings state
+  const [cancelRepairHours, setCancelRepairHours] = useState('24');
+  const [cancelOrderHours, setCancelOrderHours] = useState('24');
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsMessage, setSettingsMessage] = useState('');
+
+  useEffect(() => {
+    if (userInfo?.role === 'admin') {
+      loadSettings();
+    }
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const data = await getSettings();
+      if (data.cancel_repair_hours) setCancelRepairHours(data.cancel_repair_hours);
+      if (data.cancel_order_hours) setCancelOrderHours(data.cancel_order_hours);
+    } catch (e) {
+      console.error('Failed to load settings');
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      setSettingsLoading(true);
+      setSettingsMessage('');
+      await updateSetting('cancel_repair_hours', cancelRepairHours);
+      await updateSetting('cancel_order_hours', cancelOrderHours);
+      setSettingsMessage('Cancellation settings saved successfully!');
+    } catch (err) {
+      setSettingsMessage(err.response?.data?.message || 'Failed to save settings');
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
 
   // Personal Info Form State
   const fullNameParts = userInfo?.fullName?.split(' ') || ['', ''];
@@ -192,6 +230,20 @@ const AdminSettings = () => {
             <Shield size={16} />
             <span>Security</span>
           </button>
+
+          {userInfo?.role === 'admin' && (
+            <button
+              onClick={() => setActiveTab('cancellation')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left ${
+                activeTab === 'cancellation'
+                  ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+              }`}
+            >
+              <Timer size={16} />
+              <span>Cancellation Policy</span>
+            </button>
+          )}
         </div>
 
         {/* Right Side Panel Content */}
@@ -382,6 +434,82 @@ const AdminSettings = () => {
                     </span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* CANCELLATION POLICY TAB */}
+          {activeTab === 'cancellation' && userInfo?.role === 'admin' && (
+            <div className="space-y-6 animate-fade-in">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Cancellation Policy</h3>
+                <p className="text-xs text-slate-400">Set the cancellation window for repairs and orders.</p>
+              </div>
+
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  Customers can cancel within the specified time window after booking. Cancellations require admin approval.
+                </p>
+              </div>
+
+              {settingsMessage && (
+                <div className={`px-4 py-3 rounded-xl text-sm font-medium ${
+                  settingsMessage.includes('success')
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-red-50 text-red-700 border border-red-200'
+                }`}>
+                  {settingsMessage}
+                </div>
+              )}
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                    Repair Cancellation Window (hours)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Timer size={18} className="text-slate-400" />
+                    <input
+                      type="number"
+                      min="1"
+                      max="720"
+                      value={cancelRepairHours}
+                      onChange={(e) => setCancelRepairHours(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white transition-all outline-none"
+                    />
+                    <span className="text-xs text-slate-400 font-medium">hours</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">Default: 24 hours. Max: 720 (30 days).</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                    Order Cancellation Window (hours)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Timer size={18} className="text-slate-400" />
+                    <input
+                      type="number"
+                      min="1"
+                      max="720"
+                      value={cancelOrderHours}
+                      onChange={(e) => setCancelOrderHours(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white transition-all outline-none"
+                    />
+                    <span className="text-xs text-slate-400 font-medium">hours</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">Default: 24 hours. Max: 720 (30 days).</p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2">
+                <button
+                  onClick={handleSaveSettings}
+                  disabled={settingsLoading}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-indigo-100 dark:shadow-none transition-colors"
+                >
+                  <Save size={14} />
+                  <span>{settingsLoading ? 'Saving...' : 'Save Settings'}</span>
+                </button>
               </div>
             </div>
           )}

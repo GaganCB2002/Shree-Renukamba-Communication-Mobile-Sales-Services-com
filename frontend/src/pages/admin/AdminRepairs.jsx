@@ -4,7 +4,7 @@ import {
   Loader2, Trash2, Edit, Check, X, Eye, Calendar, PauseCircle,
   Play, CalendarClock, MessageSquare, DollarSign, ThumbsUp,
 } from 'lucide-react';
-import { getAllRepairs, updateRepairStatus, updateRepairDetails, setRepairCost as setRepairCostApi, getRepairById } from '../../api/repairsApi';
+import { getAllRepairs, updateRepairStatus, updateRepairDetails, setRepairCost as setRepairCostApi, getRepairById, approveCancelRepair, rejectCancelRepair } from '../../api/repairsApi';
 import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import EmptyState from '../../components/EmptyState';
@@ -21,6 +21,7 @@ const statusColors = {
   'Ready For Pickup': 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
   'Delivered': 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-500/10 dark:text-gray-400 dark:border-gray-500/20',
   'Cancelled': 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20',
+  'Cancellation Requested': 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',
 };
 
 const statusSteps = [
@@ -155,6 +156,31 @@ const AdminRepairs = () => {
       setDeliveryTime('');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to set delivery date');
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleApproveCancel = async (id) => {
+    try {
+      setUpdating(id);
+      await approveCancelRepair(id);
+      fetchRepairs();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to approve cancellation');
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleRejectCancel = async (id) => {
+    const reason = window.prompt('Enter reason for rejection (optional):');
+    try {
+      setUpdating(id);
+      await rejectCancelRepair(id, reason || '');
+      fetchRepairs();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to reject cancellation');
     } finally {
       setUpdating(null);
     }
@@ -366,40 +392,63 @@ const AdminRepairs = () => {
                     </td>
                     <td className="px-6 py-5 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openDetail(repair._id)}
-                          className="p-2 border border-slate-200 hover:border-indigo-300 text-slate-400 hover:text-indigo-600 rounded-lg transition-colors"
-                          title="View Details"
-                        >
-                          <Eye size={14} />
-                        </button>
-                        {repair.onHold ? (
-                          <button
-                            onClick={() => handleUnhold(repair._id)}
-                            disabled={updating === repair._id}
-                            className="p-2 border border-amber-200 hover:border-emerald-300 text-amber-500 hover:text-emerald-600 rounded-lg transition-colors"
-                            title="Resume Repair"
-                          >
-                            <Play size={14} />
-                          </button>
+                        {repair.repairStatus === 'Cancellation Requested' ? (
+                          <>
+                            <button
+                              onClick={() => handleApproveCancel(repair._id)}
+                              disabled={updating === repair._id}
+                              className="p-2 border border-green-200 hover:border-green-300 text-green-500 hover:text-green-600 rounded-lg transition-colors"
+                              title="Approve Cancellation"
+                            >
+                              {updating === repair._id ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                            </button>
+                            <button
+                              onClick={() => handleRejectCancel(repair._id)}
+                              disabled={updating === repair._id}
+                              className="p-2 border border-red-200 hover:border-red-300 text-red-500 hover:text-red-600 rounded-lg transition-colors"
+                              title="Reject Cancellation"
+                            >
+                              <X size={14} />
+                            </button>
+                          </>
                         ) : (
-                          <button
-                            onClick={() => { setShowHoldInput(true); setSelectedRepair(repair); }}
-                            className="p-2 border border-slate-200 hover:border-amber-300 text-slate-400 hover:text-amber-600 rounded-lg transition-colors"
-                            title="Hold Repair"
-                          >
-                            <PauseCircle size={14} />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => openDetail(repair._id)}
+                              className="p-2 border border-slate-200 hover:border-indigo-300 text-slate-400 hover:text-indigo-600 rounded-lg transition-colors"
+                              title="View Details"
+                            >
+                              <Eye size={14} />
+                            </button>
+                            {repair.onHold ? (
+                              <button
+                                onClick={() => handleUnhold(repair._id)}
+                                disabled={updating === repair._id}
+                                className="p-2 border border-amber-200 hover:border-emerald-300 text-amber-500 hover:text-emerald-600 rounded-lg transition-colors"
+                                title="Resume Repair"
+                              >
+                                <Play size={14} />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => { setShowHoldInput(true); setSelectedRepair(repair); }}
+                                className="p-2 border border-slate-200 hover:border-amber-300 text-slate-400 hover:text-amber-600 rounded-lg transition-colors"
+                                title="Hold Repair"
+                              >
+                                <PauseCircle size={14} />
+                              </button>
+                            )}
+                            {repair.repairStatus === 'Under Review' || repair.repairStatus === 'Received' ? (
+                              <button
+                                onClick={() => openCostModal(repair)}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1"
+                              >
+                                <DollarSign size={14} />
+                                <span>Set Cost</span>
+                              </button>
+                            ) : null}
+                          </>
                         )}
-                        {repair.repairStatus === 'Under Review' || repair.repairStatus === 'Received' ? (
-                          <button
-                            onClick={() => openCostModal(repair)}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1"
-                          >
-                            <DollarSign size={14} />
-                            <span>Set Cost</span>
-                          </button>
-                        ) : null}
                       </div>
                     </td>
                   </tr>

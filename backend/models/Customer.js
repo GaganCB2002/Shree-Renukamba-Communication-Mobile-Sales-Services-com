@@ -18,15 +18,21 @@ class CustomerInstance {
     this.loyaltyPoints = row.loyalty_points || 0;
     this.createdAt = row.created_at;
     this.updatedAt = row.updated_at;
-    this.devices = [];
-    this.repairHistory = [];
-    this.orderHistory = [];
+    this.devices = typeof row.devices === 'string' ? JSON.parse(row.devices) : (row.devices || []);
+    this.repairHistory = typeof row.repair_history === 'string' ? JSON.parse(row.repair_history) : (row.repair_history || []);
+    this.orderHistory = typeof row.order_history === 'string' ? JSON.parse(row.order_history) : (row.order_history || []);
   }
 
   async save() {
     await pool.query(
-      `UPDATE customers SET loyalty_points = $1 WHERE id = $2`,
-      [this.loyaltyPoints, this.id]
+      `UPDATE customers SET loyalty_points = $1, devices = $2, repair_history = $3, order_history = $4 WHERE id = $5`,
+      [
+        this.loyaltyPoints,
+        JSON.stringify(this.devices || []),
+        JSON.stringify(this.repairHistory || []),
+        JSON.stringify(this.orderHistory || []),
+        this.id
+      ]
     );
     return this;
   }
@@ -148,8 +154,15 @@ class Customer {
 
   static async create(data) {
     const id = generateId();
-    const sql = `INSERT INTO customers (id, user_id, loyalty_points) VALUES ($1, $2, $3) RETURNING *`;
-    const res = await pool.query(sql, [id, data.userId, data.loyaltyPoints || 0]);
+    const sql = `INSERT INTO customers (id, user_id, loyalty_points, devices, repair_history, order_history) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
+    const res = await pool.query(sql, [
+      id,
+      data.userId,
+      data.loyaltyPoints || 0,
+      JSON.stringify(data.devices || []),
+      JSON.stringify(data.repairHistory || []),
+      JSON.stringify(data.orderHistory || [])
+    ]);
     return new CustomerInstance(res.rows[0]);
   }
 

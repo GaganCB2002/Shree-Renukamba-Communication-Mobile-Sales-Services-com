@@ -66,8 +66,9 @@ class ProductInstance {
     const sql = `
       UPDATE products
       SET title = $1, price = $2, discount = $3, stock = $4,
-          description = $5, specifications = $6
-      WHERE id = $7
+          description = $5, specifications = $6, category_id = $7,
+          images = $8, model_3d = $9, product_id = $10
+      WHERE id = $11
       RETURNING *
     `;
     const vals = [
@@ -77,6 +78,10 @@ class ProductInstance {
       this.stock,
       this.description || '',
       JSON.stringify(this.specifications || {}),
+      this.category?.id || this.category?._id || this.category || this.categoryId,
+      JSON.stringify(this.images || []),
+      this.model3d || '',
+      this.productId || '',
       this.id
     ];
     await pool.query(sql, vals);
@@ -85,26 +90,24 @@ class ProductInstance {
 }
 
 class Product {
-  static find(query = {}) {
-    return new CustomQuery(async ({ populates }) => {
+  static find(query = {}, projection) {
+    return new CustomQuery(async ({ populates, selects, sort, limit }) => {
       let sql = 'SELECT * FROM products';
       let vals = [];
       let conditions = [];
 
-      // Parse category
       if (query.category) {
+        const catVal = query.category?.id || query.category?._id || query.category;
         conditions.push(`category_id = $${vals.length + 1}`);
-        vals.push(query.category);
+        vals.push(catVal);
       }
 
-      // Parse id / _id
       const idVal = query.id || query._id;
       if (idVal) {
         conditions.push(`id = $${vals.length + 1}`);
         vals.push(idVal);
       }
 
-      // Parse title regex/like
       if (query.title) {
         if (typeof query.title === 'object' && query.title.$regex) {
           conditions.push(`title ILIKE $${vals.length + 1}`);
@@ -115,7 +118,6 @@ class Product {
         }
       }
 
-      // Parse stock comparison (e.g. { stock: { $gt: 0 } })
       if (query.stock) {
         if (typeof query.stock === 'object') {
           if (query.stock.$gt !== undefined) {
@@ -132,14 +134,48 @@ class Product {
         }
       }
 
+      if (query.price) {
+        if (typeof query.price === 'object') {
+          if (query.price.$gte !== undefined) {
+            conditions.push(`price >= $${vals.length + 1}`);
+            vals.push(query.price.$gte);
+          }
+          if (query.price.$lte !== undefined) {
+            conditions.push(`price <= $${vals.length + 1}`);
+            vals.push(query.price.$lte);
+          }
+          if (query.price.$gt !== undefined) {
+            conditions.push(`price > $${vals.length + 1}`);
+            vals.push(query.price.$gt);
+          }
+          if (query.price.$lt !== undefined) {
+            conditions.push(`price < $${vals.length + 1}`);
+            vals.push(query.price.$lt);
+          }
+        } else {
+          conditions.push(`price = $${vals.length + 1}`);
+          vals.push(query.price);
+        }
+      }
+
       if (conditions.length > 0) {
         sql += ' WHERE ' + conditions.join(' AND ');
       }
 
-      const res = await pool.query(sql, vals);
-      const products = res.rows.map(r => new ProductInstance(r));
+      if (sort) {
+        const sortField = { created_at: 'created_at', createdAt: 'created_at', price: 'price', title: 'title', discount: 'discount' }[sort] || 'created_at';
+        sql += ` ORDER BY ${sortField} DESC`;
+      } else {
+        sql += ' ORDER BY created_at DESC';
+      }
 
-      // Handle populates
+      if (limit) {
+        sql += ` LIMIT ${Number(limit)}`;
+      }
+
+      const res = await pool.query(sql, vals);
+      let products = res.rows.map(r => new ProductInstance(r));
+
       if (populates.includes('category')) {
         for (const p of products) {
           const catRes = await pool.query('SELECT * FROM categories WHERE id = $1', [p.categoryId]);
@@ -192,7 +228,7 @@ class Product {
       data.productId,
       data.title,
       data.description,
-      data.category,
+      data.category?.id || data.category?._id || data.category,
       data.stock || 0,
       data.price,
       data.discount || 0,

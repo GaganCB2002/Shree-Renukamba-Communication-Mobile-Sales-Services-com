@@ -40,8 +40,18 @@ export const acceptRepairCost = async (id) => {
   return response.data;
 };
 
-export const cancelRepair = async (id) => {
-  const response = await api.put(`/repairs/${id}/cancel`);
+export const cancelRepair = async (id, reason = '') => {
+  const response = await api.put(`/repairs/${id}/cancel`, { reason });
+  return response.data;
+};
+
+export const approveCancelRepair = async (id) => {
+  const response = await api.put(`/repairs/${id}/approve-cancel`);
+  return response.data;
+};
+
+export const rejectCancelRepair = async (id, reason = '') => {
+  const response = await api.put(`/repairs/${id}/reject-cancel`, { reason });
   return response.data;
 };
 

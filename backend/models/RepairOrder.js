@@ -34,6 +34,11 @@ class RepairOrderInstance {
     this.holdReason = row.hold_reason || '';
     this.diagnosisDetails = row.diagnosis_details || '';
     this.customerNotes = row.customer_notes || '';
+    this.cancelRequested = row.cancel_requested || 0;
+    this.cancelReason = row.cancel_reason || '';
+    this.cancelApproved = row.cancel_approved || 0;
+    this.cancelledAt = row.cancelled_at;
+    this.customerApprovedCost = row.customer_approved_cost;
     this.createdAt = row.created_at;
     this.updatedAt = row.updated_at;
   }
@@ -44,21 +49,37 @@ class RepairOrderInstance {
       SET repair_status = $1, technician_notes = $2, final_cost = $3, 
           expected_delivery_date = $4, on_hold = $5, hold_reason = $6, 
           diagnosis_details = $7, customer_notes = $8, estimated_cost = $9,
-          assigned_technician_id = $10
-      WHERE id = $11
+          assigned_technician_id = $10, cancel_requested = $11, cancel_reason = $12,
+          cancel_approved = $13, cancelled_at = $14, device_id = $15,
+          issue_description = $16, selected_issues = $17, repair_images = $18,
+          warranty_expires_at = $19, repair_id = $20, customer_id = $21,
+          customer_approved_cost = $22
+      WHERE id = $23
       RETURNING *
     `;
     const vals = [
       this.repairStatus,
       this.technicianNotes,
       this.finalCost,
-      this.expectedDeliveryDate,
-      this.onHold,
+      this.expectedDeliveryDate instanceof Date ? this.expectedDeliveryDate.toISOString() : this.expectedDeliveryDate,
+      this.onHold ? 1 : 0,
       this.holdReason,
       this.diagnosisDetails,
       this.customerNotes,
       this.estimatedCost,
       this.assignedTechnicianId,
+      this.cancelRequested ? 1 : 0,
+      this.cancelReason || '',
+      this.cancelApproved ? 1 : 0,
+      this.cancelledAt || null,
+      this.deviceId,
+      this.issueDescription,
+      JSON.stringify(this.selectedIssues || []),
+      JSON.stringify(this.repairImages || []),
+      this.warrantyExpiresAt instanceof Date ? this.warrantyExpiresAt.toISOString() : this.warrantyExpiresAt,
+      this.repairId,
+      this.customerId,
+      this.customerApprovedCost !== undefined ? this.customerApprovedCost : null,
       this.id
     ];
     await pool.query(sql, vals);
@@ -82,7 +103,7 @@ async function populateRepairOrder(r, populates) {
         model: devRes.rows[0].model,
         imei: devRes.rows[0].imei,
         condition: devRes.rows[0].condition,
-        images: devRes.rows[0].images || []
+        images: typeof devRes.rows[0].images === 'string' ? JSON.parse(devRes.rows[0].images) : (devRes.rows[0].images || [])
       };
     }
   }
@@ -98,7 +119,7 @@ async function populateRepairOrder(r, populates) {
       };
       
       const custPopOption = populates.find(p => p && p.path === 'customer');
-      const shouldPopulateUser = !custPopOption || (custPopOption.populate && (custPopOption.populate.path === 'userId' || custPopOption.populate === 'userId')) || true;
+      const shouldPopulateUser = !custPopOption || (custPopOption.populate && (custPopOption.populate.path === 'userId' || custPopOption.populate === 'userId'));
       
       if (shouldPopulateUser && custRes.rows[0].user_id) {
         const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [custRes.rows[0].user_id]);
@@ -141,16 +162,17 @@ class RepairOrder {
           id, repair_id, customer_id, device_id, issue_description, selected_issues,
           estimated_cost, final_cost, technician_notes, repair_status, 
           repair_images, assigned_technician_id, warranty_expires_at, 
-          expected_delivery_date, on_hold, hold_reason, diagnosis_details, customer_notes
+          expected_delivery_date, on_hold, hold_reason, diagnosis_details, customer_notes,
+          cancel_requested, cancel_reason, cancel_approved, cancelled_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
         RETURNING *
       `;
       const vals = [
         id,
         data.repairId,
-        data.customer || data.customerId,
-        data.device || data.deviceId,
+        data.customer?.id || data.customer?._id || data.customer || data.customerId,
+        data.device?.id || data.device?._id || data.device || data.deviceId,
         data.issueDescription,
         JSON.stringify(data.selectedIssues || []),
         data.estimatedCost || null,
@@ -158,13 +180,17 @@ class RepairOrder {
         data.technicianNotes || '',
         data.repairStatus || 'Received',
         JSON.stringify(data.repairImages || []),
-        data.assignedTechnician || data.assignedTechnicianId || null,
-        data.warrantyExpiresAt || null,
-        data.expectedDeliveryDate || null,
-        data.onHold || false,
+        data.assignedTechnician?.id || data.assignedTechnician?._id || data.assignedTechnician || data.assignedTechnicianId || null,
+        data.warrantyExpiresAt instanceof Date ? data.warrantyExpiresAt.toISOString() : (data.warrantyExpiresAt || null),
+        data.expectedDeliveryDate instanceof Date ? data.expectedDeliveryDate.toISOString() : (data.expectedDeliveryDate || null),
+        data.onHold ? 1 : 0,
         data.holdReason || '',
         data.diagnosisDetails || '',
-        data.customerNotes || ''
+        data.customerNotes || '',
+        data.cancelRequested ? 1 : 0,
+        data.cancelReason || '',
+        data.cancelApproved ? 1 : 0,
+        data.cancelledAt || null
       ];
 
       const res = await pool.query(sql, vals);
@@ -178,13 +204,10 @@ class RepairOrder {
       let vals = [];
       let conditions = [];
 
-      if (query.customer) {
+      const customerVal = query.customer || query.customerId;
+      if (customerVal) {
         conditions.push(`customer_id = $${vals.length + 1}`);
-        vals.push(query.customer);
-      }
-      if (query.customerId) {
-        conditions.push(`customer_id = $${vals.length + 1}`);
-        vals.push(query.customerId);
+        vals.push(customerVal);
       }
       if (query._id || query.id) {
         conditions.push(`id = $${vals.length + 1}`);

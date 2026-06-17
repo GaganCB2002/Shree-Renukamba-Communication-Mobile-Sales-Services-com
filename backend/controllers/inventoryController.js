@@ -12,9 +12,8 @@ const getInventory = async (req, res) => {
 
 const getLowStockItems = async (req, res) => {
   try {
-    const items = await Inventory.find({
-      $expr: { $lte: ['$stockAvailable', '$lowStockLimit'] }
-    }).populate('product', 'title price stock');
+    const items = await Inventory.getLowStock();
+    await items.populate('product');
     res.json(items);
   } catch (error) {
     res.status(500).json({ message: error.message });

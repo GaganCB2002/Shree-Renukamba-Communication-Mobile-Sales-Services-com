@@ -17,7 +17,7 @@ const markAsRead = async (req, res) => {
     if (!notification) {
       return res.status(404).json({ message: 'Notification not found' });
     }
-    if (notification.user.toString() !== req.user._id.toString()) {
+    if (!notification.user || notification.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized' });
     }
     notification.isRead = true;

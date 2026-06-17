@@ -26,13 +26,32 @@ class OrderInstance {
     this.paymentStatus = row.payment_status;
     this.orderStatus = row.order_status;
     this.shippingAddress = typeof row.shipping_address === 'string' ? JSON.parse(row.shipping_address) : (row.shipping_address || {});
+    this.cancelRequested = row.cancel_requested || 0;
+    this.cancelReason = row.cancel_reason || '';
+    this.cancelApproved = row.cancel_approved || 0;
+    this.cancelledAt = row.cancelled_at;
     this.createdAt = row.created_at;
     this.updatedAt = row.updated_at;
   }
 
   async save() {
-    const sql = `UPDATE orders SET order_status = $1, payment_status = $2, updated_at = datetime('now') WHERE id = $3`;
-    await pool.query(sql, [this.orderStatus, this.paymentStatus, this.id]);
+    const sql = `UPDATE orders SET order_status = $1, payment_status = $2, cancel_requested = $3, cancel_reason = $4, cancel_approved = $5, cancelled_at = $6, products = $7, total_amount = $8, subtotal = $9, coupon_code = $10, coupon_discount = $11, payment_info = $12, shipping_address = $13, updated_at = datetime('now') WHERE id = $14`;
+    await pool.query(sql, [
+      this.orderStatus,
+      this.paymentStatus,
+      this.cancelRequested ? 1 : 0,
+      this.cancelReason || '',
+      this.cancelApproved ? 1 : 0,
+      this.cancelledAt || null,
+      JSON.stringify(this.products || []),
+      this.totalAmount,
+      this.subtotal,
+      this.couponCode || '',
+      this.couponDiscount || 0,
+      JSON.stringify(this.paymentInfo || {}),
+      JSON.stringify(this.shippingAddress || {}),
+      this.id
+    ]);
     return this;
   }
 }
@@ -63,14 +82,14 @@ class Order {
     return new CustomQuery(async () => {
       const id = generateId();
       const sql = `
-        INSERT INTO orders (id, order_id, customer_id, products, total_amount, subtotal, coupon_code, coupon_discount, payment_info, payment_status, order_status, shipping_address)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        INSERT INTO orders (id, order_id, customer_id, products, total_amount, subtotal, coupon_code, coupon_discount, payment_info, payment_status, order_status, shipping_address, cancel_requested, cancel_reason, cancel_approved, cancelled_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         RETURNING *
       `;
       const vals = [
         id,
         data.orderId,
-        data.customer || data.customerId,
+        data.customer?.id || data.customer?._id || data.customer || data.customerId,
         JSON.stringify(data.products || []),
         data.totalAmount || 0,
         data.subtotal || 0,
@@ -79,7 +98,11 @@ class Order {
         JSON.stringify(data.paymentInfo || {}),
         data.paymentStatus || 'Pending',
         data.orderStatus || 'Pending',
-        JSON.stringify(data.shippingAddress || {})
+        JSON.stringify(data.shippingAddress || {}),
+        data.cancelRequested ? 1 : 0,
+        data.cancelReason || '',
+        data.cancelApproved ? 1 : 0,
+        data.cancelledAt || null
       ];
 
       const res = await pool.query(sql, vals);
@@ -93,13 +116,10 @@ class Order {
       let vals = [];
       let conditions = [];
 
-      if (query.customer) {
+      const custVal = query.customer || query.customerId;
+      if (custVal) {
         conditions.push(`customer_id = $${vals.length + 1}`);
-        vals.push(query.customer);
-      }
-      if (query.customerId) {
-        conditions.push(`customer_id = $${vals.length + 1}`);
-        vals.push(query.customerId);
+        vals.push(custVal);
       }
       if (query._id || query.id) {
         conditions.push(`id = $${vals.length + 1}`);
@@ -108,6 +128,14 @@ class Order {
       if (query.orderStatus) {
         conditions.push(`order_status = $${vals.length + 1}`);
         vals.push(query.orderStatus);
+      }
+      if (query.orderId) {
+        conditions.push(`order_id = $${vals.length + 1}`);
+        vals.push(query.orderId);
+      }
+      if (query.paymentStatus) {
+        conditions.push(`payment_status = $${vals.length + 1}`);
+        vals.push(query.paymentStatus);
       }
 
       if (conditions.length > 0) {
@@ -148,6 +176,11 @@ class Order {
         conditions.push(`id = $${vals.length + 1}`);
         vals.push(query._id || query.id);
       }
+      const custVal = query.customer || query.customerId;
+      if (custVal) {
+        conditions.push(`customer_id = $${vals.length + 1}`);
+        vals.push(custVal);
+      }
 
       if (conditions.length > 0) {
         sql += ' WHERE ' + conditions.join(' AND ');
@@ -167,7 +200,12 @@ class Order {
       [status, id]
     );
     if (res.rows.length === 0) return null;
-    return new OrderInstance(res.rows[0]);
+    const inst = new OrderInstance(res.rows[0]);
+    inst.cancelRequested = res.rows[0].cancel_requested || 0;
+    inst.cancelReason = res.rows[0].cancel_reason || '';
+    inst.cancelApproved = res.rows[0].cancel_approved || 0;
+    inst.cancelledAt = res.rows[0].cancelled_at;
+    return inst;
   }
 
   static async updatePaymentStatus(id, status) {
@@ -176,7 +214,12 @@ class Order {
       [status, id]
     );
     if (res.rows.length === 0) return null;
-    return new OrderInstance(res.rows[0]);
+    const inst = new OrderInstance(res.rows[0]);
+    inst.cancelRequested = res.rows[0].cancel_requested || 0;
+    inst.cancelReason = res.rows[0].cancel_reason || '';
+    inst.cancelApproved = res.rows[0].cancel_approved || 0;
+    inst.cancelledAt = res.rows[0].cancelled_at;
+    return inst;
   }
 
   static async deleteMany() {

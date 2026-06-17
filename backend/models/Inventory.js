@@ -43,14 +43,15 @@ class InventoryInstance {
   async save() {
     const sql = `
       UPDATE inventory 
-      SET stock_available = $1, low_stock_limit = $2, supplier_details = $3
-      WHERE id = $4
+      SET stock_available = $1, low_stock_limit = $2, supplier_details = $3, product_id = $4
+      WHERE id = $5
       RETURNING *
     `;
     const vals = [
       this.stockAvailable,
       this.lowStockLimit,
       JSON.stringify(this.supplierDetails),
+      this.product || this.productId,
       this.id
     ];
     await pool.query(sql, vals);
@@ -68,9 +69,9 @@ class Inventory {
     `;
     const vals = [
       id,
-      data.product,
-      data.stockAvailable || 0,
-      data.lowStockLimit || 5,
+      data.product?.id || data.product?._id || data.product || '',
+      data.stockAvailable !== undefined ? data.stockAvailable : 0,
+      data.lowStockLimit !== undefined ? data.lowStockLimit : 5,
       JSON.stringify(data.supplierDetails || {})
     ];
 
@@ -84,22 +85,33 @@ class Inventory {
     if (query.product) {
       sql += ' WHERE product_id = $1';
       vals.push(query.product);
-    } else if (query._id) {
-      sql += ' WHERE id = $1';
-      vals.push(query._id);
+    }
+    if (query._id || query.id) {
+      const paramIdx = vals.length + 1;
+      sql += `${vals.length > 0 ? ' AND' : ' WHERE'} id = $${paramIdx}`;
+      vals.push(query._id || query.id);
     }
 
     const res = await pool.query(sql, vals);
-    if (res.rows.length === 0) {
-      return {
-        populate: () => null
-      };
-    }
+    if (res.rows.length === 0) return null;
     return new InventoryInstance(res.rows[0]);
   }
 
   static async find(query = {}) {
-    const res = await pool.query('SELECT * FROM inventory ORDER BY created_at DESC');
+    let sql = 'SELECT * FROM inventory';
+    let vals = [];
+
+    if (query.product) {
+      sql += ` WHERE product_id = $${vals.length + 1}`;
+      vals.push(query.product);
+    }
+    if (query._id || query.id) {
+      sql += `${vals.length > 0 ? ' AND' : ' WHERE'} id = $${vals.length + 1}`;
+      vals.push(query._id || query.id);
+    }
+
+    sql += ' ORDER BY created_at DESC';
+    const res = await pool.query(sql, vals);
     const items = res.rows.map(r => new InventoryInstance(r));
 
     items.populate = async (opt) => {
@@ -109,6 +121,24 @@ class Inventory {
       return items;
     };
 
+    return items;
+  }
+
+  static async findById(id) {
+    const res = await pool.query('SELECT * FROM inventory WHERE id = $1', [id]);
+    if (res.rows.length === 0) return null;
+    return new InventoryInstance(res.rows[0]);
+  }
+
+  static async getLowStock() {
+    const res = await pool.query('SELECT * FROM inventory WHERE stock_available <= low_stock_limit ORDER BY created_at DESC');
+    const items = res.rows.map(r => new InventoryInstance(r));
+    items.populate = async (opt) => {
+      for (const item of items) {
+        await item.populate(opt);
+      }
+      return items;
+    };
     return items;
   }
 

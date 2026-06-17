@@ -12,7 +12,7 @@ const repairTimeline = [
   'Ready For Pickup', 'Delivered',
 ];
 
-const orderTimeline = ['Processing', 'Shipped', 'Delivered'];
+const orderTimeline = ['Pending', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered'];
 
 const repairStatusIcons = {
   'Under Review': Clock,
@@ -26,8 +26,10 @@ const repairStatusIcons = {
 };
 
 const orderStatusIcons = {
+  'Pending': Clock,
   'Processing': Clock,
   'Shipped': Truck,
+  'Out for Delivery': Truck,
   'Delivered': CheckCircle,
   'Cancelled': AlertCircle,
 };
@@ -44,7 +46,9 @@ const getStatusColor = (status) => {
     'Delivered': 'text-slate-600 bg-slate-50 dark:text-slate-400 dark:bg-slate-500/10 border-slate-200',
     'Cancelled': 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-500/10 border-red-200',
     'Processing': 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-500/10 border-blue-200',
+    'Pending': 'text-slate-600 bg-slate-50 dark:text-slate-400 dark:bg-slate-500/10 border-slate-200',
     'Shipped': 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-500/10 border-purple-200',
+    'Out for Delivery': 'text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-500/10 border-orange-200',
   };
   return colors[status] || 'text-slate-600 bg-slate-50 border-slate-200';
 };
@@ -105,6 +109,7 @@ const LiveTracking = () => {
   const displayOrder = selectedOrder || activeOrders[0];
 
   const getStepIndex = (status, timeline) => {
+    if (!status) return -1;
     const idx = timeline.indexOf(status);
     return idx >= 0 ? idx : -1;
   };
@@ -273,15 +278,15 @@ const LiveTracking = () => {
                   </div>
                 )}
 
-                {displayRepair.repairStatus !== 'Cancelled' && (
+                {displayRepair.repairStatus !== 'Cancelled' && displayRepair.repairStatus !== 'Cancellation Requested' && (
                   <div className="mb-6">
                     <div className="flex justify-between text-xs text-slate-400 mb-1.5">
                       <span>Progress</span>
-                      <span>{displayRepair.repairStatus === 'Delivered' ? '100%' : `${Math.round((getStepIndex(displayRepair.repairStatus, repairTimeline) / (repairTimeline.length - 1)) * 100)}%`}</span>
+                      <span>{displayRepair.repairStatus === 'Delivered' ? '100%' : `${Math.max(0, Math.round((getStepIndex(displayRepair.repairStatus, repairTimeline) / (repairTimeline.length - 1)) * 100))}%`}</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div className={`h-full rounded-full transition-all duration-1000 ${displayRepair.repairStatus === 'Delivered' ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{
-                        width: displayRepair.repairStatus === 'Delivered' ? '100%' : `${(getStepIndex(displayRepair.repairStatus, repairTimeline) / (repairTimeline.length - 1)) * 100}%`
+                        width: displayRepair.repairStatus === 'Delivered' ? '100%' : `${Math.max(0, (getStepIndex(displayRepair.repairStatus, repairTimeline) / (repairTimeline.length - 1)) * 100)}%`
                       }} />
                     </div>
                   </div>
@@ -451,11 +456,11 @@ const LiveTracking = () => {
                   <div className="mb-6">
                     <div className="flex justify-between text-xs text-slate-400 mb-1.5">
                       <span>Progress</span>
-                      <span>{displayOrder.orderStatus === 'Delivered' ? '100%' : `${Math.round((getStepIndex(displayOrder.orderStatus || 'Processing', orderTimeline) / (orderTimeline.length - 1)) * 100)}%`}</span>
+                      <span>{displayOrder.orderStatus === 'Delivered' ? '100%' : `${Math.max(0, Math.round((getStepIndex(displayOrder.orderStatus || 'Pending', orderTimeline) / (orderTimeline.length - 1)) * 100))}%`}</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div className={`h-full rounded-full transition-all duration-1000 ${displayOrder.orderStatus === 'Delivered' ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{
-                        width: displayOrder.orderStatus === 'Delivered' ? '100%' : `${(getStepIndex(displayOrder.orderStatus || 'Processing', orderTimeline) / (orderTimeline.length - 1)) * 100}%`
+                        width: displayOrder.orderStatus === 'Delivered' ? '100%' : `${Math.max(0, (getStepIndex(displayOrder.orderStatus || 'Pending', orderTimeline) / (orderTimeline.length - 1)) * 100)}%`
                       }} />
                     </div>
                   </div>
@@ -466,7 +471,7 @@ const LiveTracking = () => {
                   <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-700" />
                   <div className="space-y-0">
                     {orderTimeline.map((status, idx) => {
-                      const stepIdx = getStepIndex(displayOrder.orderStatus || 'Processing', orderTimeline);
+                      const stepIdx = getStepIndex(displayOrder.orderStatus || 'Pending', orderTimeline);
                       const isPast = idx < stepIdx;
                       const isCurrent = idx === stepIdx;
                       const isFuture = idx > stepIdx;

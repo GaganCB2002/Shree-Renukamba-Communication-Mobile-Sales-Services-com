@@ -25,12 +25,16 @@ const getAllCoupons = async (req, res) => {
 
 const createCoupon = async (req, res) => {
   try {
+    if (!req.body.code) {
+      return res.status(400).json({ message: 'Coupon code is required' });
+    }
+    const existing = await Coupon.findOne({ code: req.body.code.toUpperCase() });
+    if (existing) {
+      return res.status(400).json({ message: 'Coupon code already exists' });
+    }
     const coupon = await Coupon.create(req.body);
     res.status(201).json(coupon);
   } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({ message: 'Coupon code already exists' });
-    }
     res.status(500).json({ message: error.message });
   }
 };

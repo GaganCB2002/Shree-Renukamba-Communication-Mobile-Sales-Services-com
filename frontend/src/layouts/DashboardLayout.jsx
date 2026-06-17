@@ -6,7 +6,7 @@ import {
   HelpCircle, Plus, Loader2, BarChart2, Gift,
   Bell, Search, Sun, Moon, ChevronDown, Users, X, Menu,
   User as UserIcon, LogOut as LogOutIcon, ChevronLeft, ChevronRight, MoreHorizontal,
-  Headphones, Tags, MapPin
+  Headphones, Tags, MapPin, UserCheck, UserCog
 } from 'lucide-react';
 import { logout } from '../redux/slices/authSlice';
 import { resetPageData } from '../redux/slices/pageSlice';
@@ -137,6 +137,7 @@ const DashboardLayout = () => {
   const sidebarLinks = isAdmin ? [
     { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/repairs', label: 'Repairs', icon: Wrench },
+    { path: '/admin/users', label: 'Users', icon: UserCog },
     { path: '/admin/customers', label: 'Customers', icon: Users },
     { path: '/admin/orders', label: 'Orders', icon: ShoppingBag },
     { path: '/admin/inventory', label: 'Inventory', icon: Package },

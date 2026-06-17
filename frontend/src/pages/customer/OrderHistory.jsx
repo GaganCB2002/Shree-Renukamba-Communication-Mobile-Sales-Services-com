@@ -185,9 +185,17 @@ const OrderHistory = () => {
                 {/* Order Header */}
                 <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-700">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center shrink-0">
-                      <Package size={20} className="text-indigo-600 dark:text-indigo-400" />
-                    </div>
+                    {order.products?.[0]?.image ? (
+                      <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-slate-600">
+                        <img src={order.products[0].image} alt={order.products[0].name || 'Product'}
+                          className="w-full h-full object-cover"
+                          onError={e => { e.target.style.display = 'none'; e.target.parentElement.className = 'w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center shrink-0'; }} />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center shrink-0">
+                        <Package size={20} className="text-indigo-600 dark:text-indigo-400" />
+                      </div>
+                    )}
                     <div>
                       <p className="text-xs text-slate-500 dark:text-slate-400">Order</p>
                       <p className="font-mono font-bold text-slate-900 dark:text-white text-sm">{order.orderId}</p>
@@ -203,6 +211,25 @@ const OrderHistory = () => {
                     >
                       <Eye size={14} /> View
                     </Link>
+                    {order.orderStatus !== 'Cancelled' && order.orderStatus !== 'Delivered' && order.orderStatus !== 'Cancellation Requested' && (
+                      <button
+                        onClick={async () => {
+                          const reason = window.prompt('Please enter the reason for cancellation:');
+                          if (reason === null) return;
+                          try {
+                            const { cancelOrder } = await import('../../api/ordersApi');
+                            await cancelOrder(order._id, reason);
+                            alert('Cancellation request submitted. Awaiting admin approval.');
+                            fetchOrders();
+                          } catch (err) {
+                            alert(err.response?.data?.message || 'Failed to request cancellation');
+                          }
+                        }}
+                        className="text-xs font-bold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 rounded-lg transition-all"
+                      >
+                        Cancel
+                      </button>
+                    )}
                     {inv && (
                       <a href={`/api/invoices/${inv._id}/pdf`} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700"
@@ -212,8 +239,8 @@ const OrderHistory = () => {
                     )}
                   </div>
                 </div>
-                {/* Order Content */}
-                <div className="p-4 sm:p-5">
+                {/* Order Products */}
+                <div className="p-4 sm:p-5 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-sm">
                     <div className="flex items-center gap-2 text-slate-500">
                       <IndianRupee size={14} />
@@ -233,8 +260,24 @@ const OrderHistory = () => {
                       <span>{order.products?.length || 0} item(s)</span>
                     </div>
                   </div>
+                  {/* Product List */}
+                  {Array.isArray(order.products) && order.products.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {order.products.map((p, i) => (
+                        <div key={i} className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700/30 rounded-lg px-2.5 py-1.5 border border-slate-100 dark:border-slate-600">
+                          {p.image ? (
+                            <img src={p.image} alt={p.name || p.title || 'Product'}
+                              className="w-7 h-7 rounded-md object-cover shrink-0"
+                              onError={e => { e.target.style.display = 'none'; }} />
+                          ) : null}
+                          <span className="text-xs text-slate-700 dark:text-slate-300 font-medium truncate max-w-[120px]">{p.name || p.title || `Item ${i + 1}`}</span>
+                          <span className="text-xs text-slate-500">x{p.quantity || 1}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {order.shippingAddress && (
-                    <div className="flex items-start gap-2 mt-3 text-xs text-slate-400">
+                    <div className="flex items-start gap-2 mt-2 text-xs text-slate-400">
                       <MapPin size={12} className="mt-0.5 shrink-0" />
                       <span>
                         {order.shippingAddress.address && <>{order.shippingAddress.address}, </>}

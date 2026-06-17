@@ -28,17 +28,20 @@ class ChatSessionInstance {
   async save() {
     const sql = `
       UPDATE chat_sessions 
-      SET messages = $1, context = $2, is_resolved = $3, metadata = $4, user_id = $5, phone_number = $6
-      WHERE id = $7
+      SET messages = $1, context = $2, is_resolved = $3, metadata = $4, user_id = $5, phone_number = $6,
+          session_id = $7, source = $8
+      WHERE id = $9
       RETURNING *
     `;
     const vals = [
       JSON.stringify(this.messages),
       JSON.stringify(this.context),
-      this.isResolved,
+      this.isResolved !== undefined ? (this.isResolved ? 1 : 0) : 0,
       JSON.stringify(this.metadata),
       this.userId || null,
       this.phoneNumber || null,
+      this.sessionId,
+      this.source || 'web',
       this.id
     ];
     await pool.query(sql, vals);
@@ -87,7 +90,38 @@ class ChatSession {
   }
 
   static async find(query = {}) {
-    const res = await pool.query('SELECT * FROM chat_sessions ORDER BY created_at DESC');
+    let sql = 'SELECT * FROM chat_sessions';
+    let vals = [];
+    let conditions = [];
+    if (query.sessionId) {
+      conditions.push(`session_id = $${vals.length + 1}`);
+      vals.push(query.sessionId);
+    }
+    if (query.userId) {
+      conditions.push(`user_id = $${vals.length + 1}`);
+      vals.push(query.userId);
+    }
+    if (query.phoneNumber) {
+      conditions.push(`phone_number = $${vals.length + 1}`);
+      vals.push(query.phoneNumber);
+    }
+    if (query.source) {
+      conditions.push(`source = $${vals.length + 1}`);
+      vals.push(query.source);
+    }
+    if (query.isResolved !== undefined) {
+      conditions.push(`is_resolved = $${vals.length + 1}`);
+      vals.push(query.isResolved ? 1 : 0);
+    }
+    if (query._id) {
+      conditions.push(`id = $${vals.length + 1}`);
+      vals.push(query._id);
+    }
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+    sql += ' ORDER BY created_at DESC';
+    const res = await pool.query(sql, vals);
     return res.rows.map(r => new ChatSessionInstance(r));
   }
 

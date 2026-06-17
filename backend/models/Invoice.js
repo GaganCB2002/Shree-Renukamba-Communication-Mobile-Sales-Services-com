@@ -106,11 +106,11 @@ class Invoice {
       const vals = [
         id,
         data.invoiceId,
-        data.customer || data.customerId,
-        data.repairOrder || data.repairOrderId || null,
-        data.order || data.orderId || null,
-        data.date || new Date(),
-        data.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        data.customer?.id || data.customer?._id || data.customer || data.customerId,
+        data.repairOrder?.id || data.repairOrder?._id || data.repairOrder || data.repairOrderId || null,
+        data.order?.id || data.order?._id || data.order || data.orderId || null,
+        data.date ? (data.date instanceof Date ? data.date.toISOString() : data.date) : new Date().toISOString(),
+        data.dueDate ? (data.dueDate instanceof Date ? data.dueDate.toISOString() : data.dueDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         data.status || 'Pending',
         JSON.stringify(data.items || []),
         data.subtotal,
@@ -132,13 +132,10 @@ class Invoice {
       let vals = [];
       let conditions = [];
 
-      if (query.customer) {
+      const customerVal = query.customer || query.customerId;
+      if (customerVal) {
         conditions.push(`customer_id = $${vals.length + 1}`);
-        vals.push(query.customer);
-      }
-      if (query.customerId) {
-        conditions.push(`customer_id = $${vals.length + 1}`);
-        vals.push(query.customerId);
+        vals.push(customerVal);
       }
       if (query._id || query.id) {
         conditions.push(`id = $${vals.length + 1}`);
@@ -147,6 +144,10 @@ class Invoice {
       if (query.order || query.orderId) {
         conditions.push(`order_id = $${vals.length + 1}`);
         vals.push(query.order || query.orderId);
+      }
+      if (query.invoiceId) {
+        conditions.push(`invoice_id = $${vals.length + 1}`);
+        vals.push(query.invoiceId);
       }
 
       if (conditions.length > 0) {
@@ -190,6 +191,11 @@ class Invoice {
       if (query.order || query.orderId) {
         conditions.push(`order_id = $${vals.length + 1}`);
         vals.push(query.order || query.orderId);
+      }
+      const custVal = query.customer || query.customerId;
+      if (custVal) {
+        conditions.push(`customer_id = $${vals.length + 1}`);
+        vals.push(custVal);
       }
 
       if (conditions.length > 0) {

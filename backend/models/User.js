@@ -78,7 +78,7 @@ class UserInstance {
       JSON.stringify(this.securityQuestions),
       this.profileImage,
       this.otp,
-      this.otpExpires,
+      this.otpExpires instanceof Date ? this.otpExpires.toISOString() : this.otpExpires,
       JSON.stringify(this.passwordHistory),
       this.id
     ];
@@ -134,18 +134,33 @@ class User {
   static findOne(query) {
     let sql = 'SELECT * FROM users';
     let vals = [];
+    let conditions = [];
 
+    if (query._id || query.id) {
+      conditions.push(`id = $${vals.length + 1}`);
+      vals.push(query._id || query.id);
+    }
     if (query.email) {
-      sql += ' WHERE email = $1';
+      conditions.push(`email = $${vals.length + 1}`);
       vals.push(query.email);
-    } else if (query.phoneNumber) {
-      sql += ' WHERE phone_number = $1';
+    }
+    if (query.phoneNumber) {
+      conditions.push(`phone_number = $${vals.length + 1}`);
       vals.push(query.phoneNumber);
-    } else if (query.$or) {
+    }
+    if (query.$or) {
       const emailVal = query.$or.find(o => o.email)?.email;
       const phoneVal = query.$or.find(o => o.phoneNumber)?.phoneNumber;
-      sql += ' WHERE email = $1 OR phone_number = $2';
-      vals.push(emailVal, phoneVal);
+      if (emailVal || phoneVal) {
+        const parts = [];
+        if (emailVal) { parts.push(`email = $${vals.length + 1}`); vals.push(emailVal); }
+        if (phoneVal) { parts.push(`phone_number = $${vals.length + 1}`); vals.push(phoneVal); }
+        conditions.push('(' + parts.join(' OR ') + ')');
+      }
+    }
+
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
     }
 
     return this._buildQuery(sql, vals, true);
@@ -156,7 +171,24 @@ class User {
   }
 
   static find(query = {}) {
-    return this._buildQuery('SELECT * FROM users ORDER BY created_at DESC', [], false);
+    let sql = 'SELECT * FROM users';
+    let vals = [];
+    let conditions = [];
+
+    if (query.role) {
+      conditions.push(`role = $${vals.length + 1}`);
+      vals.push(query.role);
+    }
+    if (query.phoneNumber) {
+      conditions.push(`phone_number = $${vals.length + 1}`);
+      vals.push(query.phoneNumber);
+    }
+
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+    sql += ' ORDER BY created_at DESC';
+    return this._buildQuery(sql, vals, false);
   }
 
   static async create(data) {
@@ -193,7 +225,7 @@ class User {
       JSON.stringify(sqs),
       data.profileImage || '',
       data.otp,
-      data.otpExpires,
+      data.otpExpires instanceof Date ? data.otpExpires.toISOString() : data.otpExpires,
       JSON.stringify(data.passwordHistory || [password])
     ];
 

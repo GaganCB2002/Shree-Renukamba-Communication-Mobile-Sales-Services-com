@@ -75,6 +75,7 @@ app.use('/api/upload/github', require('./routes/githubUploadRoutes'));
 app.use('/api/activity-logs', require('./routes/activityLogRoutes'));
 app.use('/api/file-data', require('./routes/fileProductRoutes'));
 app.use('/api/price-list', require('./routes/priceListRoutes'));
+app.use('/api/settings', require('./routes/settingsRoutes'));
 
 app.use(notFound);
 app.use(errorHandler);

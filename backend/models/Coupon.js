@@ -34,18 +34,26 @@ class CouponInstance {
   async save() {
     const sql = `
       UPDATE coupons 
-      SET is_active = $1, used_count = $2, usage_limit = $3, min_purchase = $4, max_discount = $5, description = $6, valid_until = $7
-      WHERE id = $8
+      SET code = $1, discount_type = $2, discount_value = $3, min_purchase = $4, max_discount = $5,
+          description = $6, valid_from = $7, valid_until = $8, is_active = $9, usage_limit = $10,
+          used_count = $11, applicable_products = $12, applicable_categories = $13
+      WHERE id = $14
       RETURNING *
     `;
     const vals = [
-      this.isActive,
-      this.usedCount,
-      this.usageLimit,
+      this.code,
+      this.discountType,
+      this.discountValue,
       this.minPurchase,
       this.maxDiscount,
-      this.description,
-      this.validUntil,
+      this.description || '',
+      this.validFrom instanceof Date ? this.validFrom.toISOString() : this.validFrom,
+      this.validUntil instanceof Date ? this.validUntil.toISOString() : this.validUntil,
+      this.isActive,
+      this.usageLimit,
+      this.usedCount,
+      JSON.stringify(this.applicableProducts || []),
+      JSON.stringify(this.applicableCategories || []),
       this.id
     ];
     await pool.query(sql, vals);
@@ -67,14 +75,14 @@ class Coupon {
       `;
       const vals = [
         id,
-        data.code.toUpperCase(),
+        typeof data.code === 'string' ? data.code.toUpperCase() : data.code,
         data.discountType,
         data.discountValue,
         data.minPurchase || 0,
         data.maxDiscount || 0,
         data.description || '',
-        data.validFrom || new Date(),
-        data.validUntil,
+        data.validFrom ? (data.validFrom instanceof Date ? data.validFrom.toISOString() : data.validFrom) : new Date().toISOString(),
+        data.validUntil instanceof Date ? data.validUntil.toISOString() : data.validUntil,
         data.isActive !== undefined ? data.isActive : true,
         data.usageLimit || 0,
         data.usedCount || 0,
@@ -94,11 +102,23 @@ class Coupon {
       let conditions = [];
       if (query.code) {
         conditions.push(`code = $${vals.length + 1}`);
-        vals.push(query.code.toUpperCase());
+        vals.push(typeof query.code === 'string' ? query.code.toUpperCase() : query.code);
       }
       if (query._id || query.id) {
         conditions.push(`id = $${vals.length + 1}`);
         vals.push(query._id || query.id);
+      }
+      if (query.isActive !== undefined) {
+        conditions.push(`is_active = $${vals.length + 1}`);
+        vals.push(query.isActive ? 1 : 0);
+      }
+      if (query.validFrom && query.validFrom.$lte) {
+        conditions.push(`valid_from <= $${vals.length + 1}`);
+        vals.push(query.validFrom.$lte instanceof Date ? query.validFrom.$lte.toISOString() : query.validFrom.$lte);
+      }
+      if (query.validUntil && query.validUntil.$gte) {
+        conditions.push(`valid_until >= $${vals.length + 1}`);
+        vals.push(query.validUntil.$gte instanceof Date ? query.validUntil.$gte.toISOString() : query.validUntil.$gte);
       }
 
       if (conditions.length > 0) {
@@ -117,6 +137,21 @@ class Coupon {
       let vals = [];
       let conditions = [];
 
+      if (query.code) {
+        conditions.push(`code = $${vals.length + 1}`);
+        vals.push(typeof query.code === 'string' ? query.code.toUpperCase() : query.code);
+      }
+
+      if (query._id || query.id) {
+        conditions.push(`id = $${vals.length + 1}`);
+        vals.push(query._id || query.id);
+      }
+
+      if (query.discountType) {
+        conditions.push(`discount_type = $${vals.length + 1}`);
+        vals.push(query.discountType);
+      }
+
       if (query.isActive !== undefined) {
         conditions.push(`is_active = $${vals.length + 1}`);
         vals.push(query.isActive ? 1 : 0);
@@ -124,12 +159,12 @@ class Coupon {
 
       if (query.validFrom && query.validFrom.$lte) {
         conditions.push(`valid_from <= $${vals.length + 1}`);
-        vals.push(query.validFrom.$lte.toISOString());
+        vals.push(query.validFrom.$lte instanceof Date ? query.validFrom.$lte.toISOString() : query.validFrom.$lte);
       }
 
       if (query.validUntil && query.validUntil.$gte) {
         conditions.push(`valid_until >= $${vals.length + 1}`);
-        vals.push(query.validUntil.$gte.toISOString());
+        vals.push(query.validUntil.$gte instanceof Date ? query.validUntil.$gte.toISOString() : query.validUntil.$gte);
       }
 
       if (conditions.length > 0) {
@@ -147,23 +182,30 @@ class Coupon {
   }
 
   static async findByIdAndUpdate(id, updateData, options = {}) {
-    // Find coupon by ID and update
     const res = await pool.query('SELECT * FROM coupons WHERE id = $1', [id]);
     if (res.rows.length === 0) return null;
     const coupon = new CouponInstance(res.rows[0]);
-    if (updateData.isActive !== undefined) coupon.isActive = updateData.isActive;
-    if (updateData.usedCount !== undefined) coupon.usedCount = updateData.usedCount;
+    if (updateData.code !== undefined) coupon.code = updateData.code;
+    if (updateData.discountType !== undefined) coupon.discountType = updateData.discountType;
+    if (updateData.discountValue !== undefined) coupon.discountValue = updateData.discountValue;
     if (updateData.minPurchase !== undefined) coupon.minPurchase = updateData.minPurchase;
     if (updateData.maxDiscount !== undefined) coupon.maxDiscount = updateData.maxDiscount;
     if (updateData.description !== undefined) coupon.description = updateData.description;
+    if (updateData.validFrom !== undefined) coupon.validFrom = updateData.validFrom;
     if (updateData.validUntil !== undefined) coupon.validUntil = updateData.validUntil;
+    if (updateData.isActive !== undefined) coupon.isActive = updateData.isActive;
+    if (updateData.usageLimit !== undefined) coupon.usageLimit = updateData.usageLimit;
+    if (updateData.usedCount !== undefined) coupon.usedCount = updateData.usedCount;
+    if (updateData.applicableProducts !== undefined) coupon.applicableProducts = updateData.applicableProducts;
+    if (updateData.applicableCategories !== undefined) coupon.applicableCategories = updateData.applicableCategories;
     await coupon.save();
     return coupon;
   }
 
   static async findByIdAndDelete(id) {
-    await pool.query('DELETE FROM coupons WHERE id = $1', [id]);
-    return true;
+    const res = await pool.query('DELETE FROM coupons WHERE id = $1 RETURNING *', [id]);
+    if (res.rows.length === 0) return null;
+    return new CouponInstance(res.rows[0]);
   }
 
   static async deleteMany() {

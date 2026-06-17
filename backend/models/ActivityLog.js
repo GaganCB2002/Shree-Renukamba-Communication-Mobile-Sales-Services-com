@@ -43,10 +43,35 @@ class ActivityLog {
     }
     sql += ' ORDER BY created_at DESC';
     if (query.limit) {
-      sql += ` LIMIT ${parseInt(query.limit)}`;
+      const limitNum = parseInt(query.limit, 10);
+      if (!isNaN(limitNum) && limitNum > 0) {
+        sql += ` LIMIT ${limitNum}`;
+      }
     }
     const res = await pool.query(sql, vals);
     return res.rows;
+  }
+
+  static async findOne(query = {}) {
+    let sql = 'SELECT * FROM activity_logs';
+    let vals = [];
+    let conditions = [];
+    if (query._id || query.id) {
+      conditions.push(`id = $${vals.length + 1}`);
+      vals.push(query._id || query.id);
+    }
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+    const res = await pool.query(sql, vals);
+    if (res.rows.length === 0) return null;
+    return res.rows[0];
+  }
+
+  static async findById(id) {
+    const res = await pool.query('SELECT * FROM activity_logs WHERE id = $1', [id]);
+    if (res.rows.length === 0) return null;
+    return res.rows[0];
   }
 
   static async deleteMany() {

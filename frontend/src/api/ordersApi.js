@@ -39,3 +39,18 @@ export const getOrdersByStatus = async (status) => {
   const response = await api.get(`/orders/status/${status}`);
   return response.data;
 };
+
+export const cancelOrder = async (id, reason = '') => {
+  const response = await api.put(`/orders/${id}/cancel`, { reason });
+  return response.data;
+};
+
+export const approveCancelOrder = async (id) => {
+  const response = await api.put(`/orders/${id}/approve-cancel`);
+  return response.data;
+};
+
+export const rejectCancelOrder = async (id, reason = '') => {
+  const response = await api.put(`/orders/${id}/reject-cancel`, { reason });
+  return response.data;
+};

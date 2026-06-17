@@ -35,6 +35,7 @@ import AdminInventory from './pages/admin/AdminInventory';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminBilling from './pages/admin/AdminBilling';
 import AdminCustomers from './pages/admin/AdminCustomers';
+import AdminUsers from './pages/admin/AdminUsers';
 
 function App() {
   return (
@@ -80,6 +81,7 @@ function App() {
           <Route path="inventory" element={<AdminInventory />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="billing" element={<AdminBilling />} />
+          <Route path="users" element={<AdminUsers />} />
           <Route path="price-list" element={<AdminPriceList />} />
         </Route>
 

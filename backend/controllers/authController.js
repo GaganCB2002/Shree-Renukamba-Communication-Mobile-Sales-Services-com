@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Customer = require('../models/Customer');
+const { pool } = require('../config/db');
 const generateToken = require('../utils/generateToken');
 const { sendEmail } = require('../services/emailService');
 const { sendEmailNodemailer } = require('../services/nodemailerService');
@@ -330,6 +331,93 @@ const getUsers = async (req, res) => {
   }
 };
 
+// @desc    Get single user by ID
+// @route   GET /api/auth/users/:id
+// @access  Private (Admin)
+const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Create a new user (admin)
+// @route   POST /api/auth/users
+// @access  Private (Admin)
+const createUser = async (req, res) => {
+  try {
+    const { fullName, email, phoneNumber, password, role, address } = req.body;
+    if (!fullName || !email || !password) {
+      return res.status(400).json({ message: 'Full name, email, and password are required' });
+    }
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'A user with this email already exists' });
+    }
+    const user = await User.create({
+      fullName,
+      email,
+      phoneNumber: phoneNumber || '',
+      password,
+      role: role || 'customer',
+      address: address || {},
+    });
+    res.status(201).json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update any user (admin)
+// @route   PUT /api/auth/users/:id
+// @access  Private (Admin)
+const updateUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const { fullName, email, phoneNumber, password, role, address } = req.body;
+    if (fullName !== undefined) user.fullName = fullName;
+    if (email !== undefined) user.email = email;
+    if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
+    if (password) user.password = password;
+    if (role !== undefined) user.role = role;
+    if (address !== undefined) user.address = address;
+    const updated = await user.save();
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete a user (admin)
+// @route   DELETE /api/auth/users/:id
+// @access  Private (Admin)
+const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (user.role === 'admin') {
+      const adminCount = (await User.find({ role: 'admin' })).length;
+      if (adminCount <= 1) {
+        return res.status(400).json({ message: 'Cannot delete the last admin user' });
+      }
+    }
+    await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
+    res.json({ message: 'User removed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const getAllCustomers = async (req, res) => {
   try {
     const customers = await Customer.find({})
@@ -369,5 +457,9 @@ module.exports = {
   forgotPassword,
   getSecurityQuestions,
   getUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  deleteUser,
   getAllCustomers,
 };

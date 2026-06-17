@@ -226,6 +226,25 @@ CREATE INDEX IF NOT EXISTS idx_inventory_product ON inventory(product_id);
 ALTER TABLE orders ADD COLUMN subtotal REAL DEFAULT 0;
 ALTER TABLE orders ADD COLUMN coupon_code TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN coupon_discount REAL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+INSERT OR IGNORE INTO settings (key, value) VALUES ('cancel_repair_hours', '24');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('cancel_order_hours', '24');
+
+ALTER TABLE repair_orders ADD COLUMN cancel_requested INTEGER DEFAULT 0;
+ALTER TABLE repair_orders ADD COLUMN cancel_reason TEXT DEFAULT '';
+ALTER TABLE repair_orders ADD COLUMN cancel_approved INTEGER DEFAULT 0;
+ALTER TABLE repair_orders ADD COLUMN cancelled_at TEXT;
+
+ALTER TABLE orders ADD COLUMN cancel_requested INTEGER DEFAULT 0;
+ALTER TABLE orders ADD COLUMN cancel_reason TEXT DEFAULT '';
+ALTER TABLE orders ADD COLUMN cancel_approved INTEGER DEFAULT 0;
+ALTER TABLE orders ADD COLUMN cancelled_at TEXT;
 `;
   return schema;
 }
@@ -243,6 +262,47 @@ async function initDatabase(db) {
     }
   }
   console.log('SQLite database initialized successfully');
+
+  // Migration: Fix invoices.customer_id FK constraint to reference users(id) instead of customers(id)
+  try {
+    const fkList = db.pragma('foreign_key_list(invoices)');
+    const custFk = fkList.find(fk => fk.from === 'customer_id');
+    if (custFk && custFk.table !== 'users') {
+      console.log('Migrating invoices.customer_id FK to reference users(id)...');
+      db.exec('PRAGMA foreign_keys = OFF');
+      db.exec(`
+        CREATE TABLE invoices_v2 (
+          id TEXT PRIMARY KEY,
+          invoice_id TEXT,
+          customer_id TEXT REFERENCES users(id),
+          repair_order_id TEXT REFERENCES repair_orders(id),
+          order_id TEXT REFERENCES orders(id),
+          date TEXT,
+          due_date TEXT,
+          status TEXT DEFAULT 'Pending',
+          items TEXT DEFAULT '[]',
+          subtotal REAL DEFAULT 0,
+          cgst REAL DEFAULT 0,
+          sgst REAL DEFAULT 0,
+          service_charge REAL DEFAULT 0,
+          total_amount REAL DEFAULT 0,
+          payment_instructions TEXT DEFAULT 'System Generated Invoice',
+          created_at TEXT DEFAULT (datetime('now')),
+          updated_at TEXT DEFAULT (datetime('now'))
+        )
+      `);
+      db.exec(`INSERT INTO invoices_v2 (id, invoice_id, customer_id, repair_order_id, order_id, date, due_date, status, items, subtotal, cgst, sgst, service_charge, total_amount, payment_instructions, created_at, updated_at) SELECT id, invoice_id, customer_id, repair_order_id, order_id, date, due_date, status, items, subtotal, cgst, sgst, service_charge, total_amount, payment_instructions, created_at, updated_at FROM invoices`);
+      const invoiceCount = db.prepare('SELECT COUNT(*) as c FROM invoices_v2').get().c;
+      db.exec('DROP TABLE invoices');
+      db.exec('ALTER TABLE invoices_v2 RENAME TO invoices');
+      db.exec('PRAGMA foreign_keys = ON');
+      console.log(`Invoices table migrated successfully (${invoiceCount} records preserved)`);
+    }
+  } catch (e) {
+    if (!e.message.toLowerCase().includes('no such table')) {
+      console.warn('Invoice FK migration warning:', e.message);
+    }
+  }
 
   // Auto-seed categories and products if empty
   try {

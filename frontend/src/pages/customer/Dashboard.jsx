@@ -235,6 +235,16 @@ const Dashboard = () => {
                 </div>
               </div>
 
+              {currentRepair.repairStatus === 'Cancellation Requested' && (
+                <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-xl">
+                  <p className="text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-2">
+                    <AlertTriangle size={14} />
+                    Cancellation requested. Waiting for admin approval.
+                    {currentRepair.cancelReason && <span className="font-normal">Reason: {currentRepair.cancelReason}</span>}
+                  </p>
+                </div>
+              )}
+
               {/* Timeline */}
               <div className="relative">
                 <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-700" />
@@ -271,6 +281,29 @@ const Dashboard = () => {
                   })}
                 </div>
               </div>
+
+              {/* Cancel Button */}
+              {currentRepair && !['Cancelled', 'Delivered', 'Repair Completed', 'Ready For Pickup', 'Cancellation Requested'].includes(currentRepair.repairStatus) && currentRepair.repairStatus !== 'Cancellation Requested' && (
+                <div className="mb-4 flex justify-end">
+                  <button
+                    onClick={async () => {
+                      const reason = window.prompt('Please enter the reason for cancellation:');
+                      if (reason === null) return;
+                      try {
+                        const { cancelRepair } = await import('../../api/repairsApi');
+                        await cancelRepair(currentRepair._id, reason);
+                        alert('Cancellation request submitted. Awaiting admin approval.');
+                        fetchDashboardData();
+                      } catch (err) {
+                        alert(err.response?.data?.message || 'Failed to request cancellation');
+                      }
+                    }}
+                    className="text-xs font-bold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-lg transition-all"
+                  >
+                    Request Cancellation
+                  </button>
+                </div>
+              )}
 
               {/* Approve Cost Button */}
               {currentRepair.repairStatus === 'Awaiting Approval' && currentRepair.estimatedCost && (
@@ -476,7 +509,14 @@ const Dashboard = () => {
                           <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400">{o.orderId}</span>
                         </td>
                         <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white text-sm">
-                          {o.products?.length || 0} item(s)
+                          <div className="flex items-center gap-1.5">
+                            {o.products?.[0]?.image && (
+                              <img src={o.products[0].image} alt=""
+                                className="w-6 h-6 rounded object-cover border border-slate-200 dark:border-slate-600"
+                                onError={e => { e.target.style.display = 'none'; }} />
+                            )}
+                            <span>{o.products?.length || 0} item(s)</span>
+                          </div>
                         </td>
                         <td className="py-3.5 px-4">
                           <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${

@@ -1,5 +1,6 @@
 const Invoice = require('../models/Invoice');
 const User = require('../models/User');
+const { pool } = require('../config/db');
 
 // @desc    Create a new invoice
 // @route   POST /api/invoices
@@ -10,6 +11,27 @@ const createInvoice = async (req, res) => {
 
     if (!customer || !dueDate || !items || items.length === 0) {
       return res.status(400).json({ message: 'Customer, due date, and invoice items are required' });
+    }
+
+    // Validate customer exists in users table (FK constraint safety)
+    const customerUser = await User.findById(customer);
+    if (!customerUser) {
+      return res.status(400).json({ message: 'Selected customer not found in users table' });
+    }
+
+    // Resolve linked order/repair - if ID doesn't exist, skip the link (optional fields)
+    const orderVal = order?.id || order?._id || order || null;
+    let resolvedOrder = orderVal;
+    if (orderVal) {
+      const orderExists = await pool.query('SELECT id FROM orders WHERE id = $1', [orderVal]);
+      if (orderExists.rows.length === 0) resolvedOrder = null;
+    }
+
+    const repairVal = repairOrder?.id || repairOrder?._id || repairOrder || null;
+    let resolvedRepair = repairVal;
+    if (repairVal) {
+      const repairExists = await pool.query('SELECT id FROM repair_orders WHERE id = $1', [repairVal]);
+      if (repairExists.rows.length === 0) resolvedRepair = null;
     }
 
     // Clean and calculate item totals
@@ -38,9 +60,9 @@ const createInvoice = async (req, res) => {
 
     const invoice = await Invoice.create({
       invoiceId,
-      customer,
-      repairOrder: repairOrder || undefined,
-      order: order || undefined,
+      customer: customerUser.id || customerUser._id,
+      repairOrder: resolvedRepair,
+      order: resolvedOrder,
       date: date || undefined,
       dueDate,
       status: status || 'Pending',
@@ -55,7 +77,10 @@ const createInvoice = async (req, res) => {
 
     res.status(201).json(invoice);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    const msg = error.message && error.message.toLowerCase().includes('foreign key')
+      ? 'Database constraint error: The selected customer or linked order/repair does not exist. Please verify your selection.'
+      : error.message;
+    res.status(500).json({ message: msg });
   }
 };
 
@@ -120,7 +145,7 @@ const getInvoiceById = async (req, res) => {
 
     // Access check: Admin/Technician or Invoice Owner
     // Note: Invoice model stores customer_id as user_id (see populateInvoice)
-    const isOwner = invoice.customer._id.toString() === req.user._id.toString();
+    const isOwner = invoice.customer && String(invoice.customer._id || invoice.customer.id) === String(req.user._id);
     const isStaff = ['admin', 'technician'].includes(req.user.role);
 
     if (!isOwner && !isStaff) {

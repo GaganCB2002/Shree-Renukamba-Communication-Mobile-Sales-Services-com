@@ -29,4 +29,9 @@ const detectIntent = async (message) => {
   return 'general';
 };
 
-module.exports = { getAIResponse, detectIntent };
+const analyzeWhatsAppMessage = async (from, message) => {
+  const intent = await detectIntent(message);
+  return { from, message, intent, response: await getAIResponse([{ content: message }]) };
+};
+
+module.exports = { getAIResponse, detectIntent, analyzeWhatsAppMessage };

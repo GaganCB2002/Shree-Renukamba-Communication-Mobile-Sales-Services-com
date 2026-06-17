@@ -22,6 +22,32 @@ class DeviceInstance {
     this.createdAt = row.created_at;
     this.updatedAt = row.updated_at;
   }
+
+  async save() {
+    const sql = `
+      UPDATE devices
+      SET customer_id = $1, brand = $2, model = $3, imei = $4, condition = $5, images = $6
+      WHERE id = $7
+      RETURNING *
+    `;
+    const vals = [
+      this.customer?.id || this.customer?._id || this.customer,
+      this.brand,
+      this.model,
+      this.imei,
+      this.condition || 'Good',
+      JSON.stringify(this.images || []),
+      this.id
+    ];
+    const res = await pool.query(sql, vals);
+    if (res.rows[0]) {
+      this.brand = res.rows[0].brand;
+      this.model = res.rows[0].model;
+      this.imei = res.rows[0].imei;
+      this.condition = res.rows[0].condition;
+    }
+    return this;
+  }
 }
 
 class Device {
@@ -41,6 +67,34 @@ class Device {
     return new DeviceInstance(res.rows[0]);
   }
 
+  static async find(query = {}) {
+    let sql = 'SELECT * FROM devices';
+    let vals = [];
+    let conditions = [];
+    if (query.customer || query.customerId) {
+      conditions.push(`customer_id = $${vals.length + 1}`);
+      vals.push(query.customer || query.customerId);
+    }
+    if (query.brand) {
+      conditions.push(`brand = $${vals.length + 1}`);
+      vals.push(query.brand);
+    }
+    if (query.model) {
+      conditions.push(`model = $${vals.length + 1}`);
+      vals.push(query.model);
+    }
+    if (query._id || query.id) {
+      conditions.push(`id = $${vals.length + 1}`);
+      vals.push(query._id || query.id);
+    }
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+    sql += ' ORDER BY created_at DESC';
+    const res = await pool.query(sql, vals);
+    return res.rows.map(r => new DeviceInstance(r));
+  }
+
   static async findById(id) {
     return this.findOne({ _id: id });
   }
@@ -54,7 +108,7 @@ class Device {
     `;
     const vals = [
       id,
-      data.customer,
+      data.customer?.id || data.customer?._id || data.customer,
       data.brand,
       data.model,
       data.imei,

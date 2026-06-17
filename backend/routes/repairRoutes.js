@@ -10,6 +10,8 @@ const {
   setRepairCost,
   customerAcceptCost,
   cancelRepair,
+  approveCancelRepair,
+  rejectCancelRepair,
 } = require('../controllers/repairController');
 const { protect, technician } = require('../middleware/authMiddleware');
 
@@ -23,5 +25,7 @@ router.route('/:id/details').put(protect, technician, updateRepairDetails);
 router.route('/:id/cost').put(protect, technician, setRepairCost);
 router.route('/:id/accept-cost').put(protect, customerAcceptCost);
 router.route('/:id/cancel').put(protect, cancelRepair);
+router.route('/:id/approve-cancel').put(protect, technician, approveCancelRepair);
+router.route('/:id/reject-cancel').put(protect, technician, rejectCancelRepair);
 
 module.exports = router;

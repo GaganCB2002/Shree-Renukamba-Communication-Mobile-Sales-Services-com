@@ -4,7 +4,7 @@ import { PageLoading } from '../../components/LoadingSpinner';
 import ErrorMessage from '../../components/ErrorMessage';
 import EmptyState from '../../components/EmptyState';
 import { getAllRepairs } from '../../api/repairsApi';
-import { getAllOrders, updateOrderStatus, updatePaymentStatus } from '../../api/ordersApi';
+import { getAllOrders, updateOrderStatus, updatePaymentStatus, approveCancelOrder, rejectCancelOrder } from '../../api/ordersApi';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
 import AdminOrderDetailModal from '../../components/AdminOrderDetailModal';
@@ -16,6 +16,7 @@ const ORDER_STATUS_FLOW = [
   'Out for Delivery',
   'Delivered',
   'Cancelled',
+  'Cancellation Requested',
 ];
 
 const ORDER_STATUS_COLORS = {
@@ -25,6 +26,7 @@ const ORDER_STATUS_COLORS = {
   'Out for Delivery': 'bg-yellow-50 text-yellow-700 border-yellow-200',
   'Delivered': 'bg-green-50 text-green-700 border-green-200',
   'Cancelled': 'bg-red-50 text-red-700 border-red-200',
+  'Cancellation Requested': 'bg-rose-50 text-rose-700 border-rose-200',
 };
 
 const AdminOrders = () => {
@@ -367,9 +369,47 @@ const AdminOrders = () => {
                       {new Date(order.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <button onClick={() => setViewOrder(order)} className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-800 font-medium cursor-pointer">
-                        <EyeIcon size={14} /> View Details
-                      </button>
+                      {order.cancelRequested ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={async () => {
+                              try {
+                                await approveCancelOrder(order._id);
+                                showToast('Cancellation approved');
+                                fetchOrders();
+                              } catch (err) {
+                                showToast(err.response?.data?.message || 'Failed to approve');
+                              }
+                            }}
+                            disabled={updatingId === order._id}
+                            className="p-1.5 border border-green-200 hover:border-green-300 text-green-500 hover:text-green-600 rounded-lg transition-colors cursor-pointer"
+                            title="Approve Cancellation"
+                          >
+                            <CheckCircle size={14} />
+                          </button>
+                          <button
+                            onClick={async () => {
+                              const reason = window.prompt('Enter reason for rejection (optional):');
+                              try {
+                                await rejectCancelOrder(order._id, reason || '');
+                                showToast('Cancellation rejected');
+                                fetchOrders();
+                              } catch (err) {
+                                showToast(err.response?.data?.message || 'Failed to reject');
+                              }
+                            }}
+                            disabled={updatingId === order._id}
+                            className="p-1.5 border border-red-200 hover:border-red-300 text-red-500 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                            title="Reject Cancellation"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setViewOrder(order)} className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-800 font-medium cursor-pointer">
+                          <EyeIcon size={14} /> View Details
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

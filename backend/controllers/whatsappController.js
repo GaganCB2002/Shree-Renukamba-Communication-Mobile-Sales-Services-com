@@ -7,8 +7,11 @@ const Notification = require('../models/Notification');
 
 const verifyWebhook = (req, res) => {
   try {
-    const challenge = whatsappService.verifyWebhook(req);
-    res.status(200).send(challenge);
+    const result = whatsappService.verifyWebhook(req);
+    if (result.verified) {
+      return res.status(200).send(result.challenge);
+    }
+    res.status(403).json({ message: 'Webhook verification failed' });
   } catch (err) {
     res.status(403).json({ message: err.message });
   }
@@ -43,21 +46,12 @@ const handleIncoming = async (req, res) => {
 
     const aiAnalysis = await aiService.analyzeWhatsAppMessage(from, messageBody);
 
-    if (aiAnalysis.intent === 'order') {
+    if (aiAnalysis.intent === 'pricing' || aiAnalysis.intent === 'order') {
       await whatsappService.handleIncomingMessage(from, messageBody);
-      const user = await Customer.findOne({ phoneNumber: from }).populate('userId');
-      if (user?.userId) {
-        await Notification.create({
-          user: user.userId._id,
-          title: 'WhatsApp Order Inquiry',
-          message: `New order inquiry via WhatsApp: ${aiAnalysis.product || messageBody}`,
-          type: 'OrderUpdate',
-        });
-      }
     } else if (aiAnalysis.intent === 'repair') {
       await whatsappService.handleIncomingMessage(from, messageBody);
     } else {
-      const response = aiAnalysis.responseMessage || aiAnalysis.details;
+      const response = aiAnalysis.response || aiAnalysis.intent;
       await whatsappService.sendMessage(from, response);
       session.messages.push({ role: 'assistant', content: response });
       await session.save();

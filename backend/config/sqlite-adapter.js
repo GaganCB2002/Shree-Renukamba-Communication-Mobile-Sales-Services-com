@@ -35,8 +35,32 @@ class SqliteAdapter {
     this.dbPath = DB_PATH;
   }
 
+  sanitizeParams(params) {
+    return params.map(p => {
+      if (p === undefined || p === null) return null;
+      if (typeof p === 'boolean') return p ? 1 : 0;
+      if (typeof p === 'string' || Buffer.isBuffer(p)) return p;
+      if (typeof p === 'bigint') return p;
+      if (typeof p === 'number') {
+        if (Number.isFinite(p)) return p;
+        console.warn('sanitizeParams: non-finite number converted to null:', p);
+        return null;
+      }
+      if (p instanceof Date) return p.toISOString();
+      if (Array.isArray(p) || typeof p === 'object') {
+        const id = p?.id || p?._id;
+        if (id) return id;
+        console.warn('sanitizeParams: object/array converted to JSON string:', p);
+        return JSON.stringify(p);
+      }
+      console.warn('sanitizeParams: unexpected type converted to string:', typeof p, p);
+      return String(p);
+    });
+  }
+
   async query(sql, params = []) {
     const conn = getDb();
+    const sanitized = this.sanitizeParams(params);
     const convertedSql = convertSql(sql);
     const stmt = conn.prepare(convertedSql);
     const isSelect = convertedSql.trim().toUpperCase().startsWith('SELECT');
@@ -46,12 +70,12 @@ class SqliteAdapter {
     const hasReturning = convertedSql.toUpperCase().includes('RETURNING');
 
     if (isSelect) {
-      const rows = stmt.all(...params);
+      const rows = stmt.all(...sanitized);
       return { rows };
     }
 
     if (isInsert && hasReturning) {
-      const result = stmt.run(...params);
+      const result = stmt.run(...sanitized);
       const tableMatch = convertedSql.match(/INSERT\s+INTO\s+(\w+)/i);
       if (tableMatch) {
         const table = tableMatch[1];
@@ -63,7 +87,7 @@ class SqliteAdapter {
 
     if (isUpdate && hasReturning) {
       const updateSql = convertedSql.replace(/\s+RETURNING\s+\*?\s*$/i, '');
-      conn.prepare(updateSql).run(...params);
+      conn.prepare(updateSql).run(...sanitized);
       const tableMatch = convertedSql.match(/UPDATE\s+(\w+)/i);
       const whereMatch = convertedSql.match(/WHERE\s+(.+?)(?:\s+RETURNING|\s*$)/i);
       if (tableMatch && whereMatch) {
@@ -71,14 +95,14 @@ class SqliteAdapter {
         const whereClause = whereMatch[1];
         const preWhere = convertedSql.substring(0, convertedSql.indexOf('WHERE'));
         const preWhereCount = (preWhere.match(/\?/g) || []).length;
-        const whereParams = params.slice(preWhereCount);
+        const whereParams = sanitized.slice(preWhereCount);
         const rows = conn.prepare(`SELECT * FROM ${table} WHERE ${whereClause}`).all(...whereParams);
         return { rows };
       }
       return { rows: [] };
     }
 
-    const result = stmt.run(...params);
+    const result = stmt.run(...sanitized);
     return { rows: [], changes: result.changes, lastInsertRowid: result.lastInsertRowid };
   }
 

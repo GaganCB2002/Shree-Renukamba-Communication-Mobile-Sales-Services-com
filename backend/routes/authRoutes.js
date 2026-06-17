@@ -10,6 +10,10 @@ const {
   forgotPassword,
   getSecurityQuestions,
   getUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  deleteUser,
   getAllCustomers,
 } = require('../controllers/authController');
 const { protect, admin } = require('../middleware/authMiddleware');
@@ -23,7 +27,13 @@ router.route('/profile')
   .get(protect, getUserProfile)
   .put(protect, updateUserProfile);
 router.route('/change-password').put(protect, changePassword);
-router.route('/users').get(protect, admin, getUsers);
+router.route('/users')
+  .get(protect, admin, getUsers)
+  .post(protect, admin, createUser);
+router.route('/users/:id')
+  .get(protect, admin, getUserById)
+  .put(protect, admin, updateUser)
+  .delete(protect, admin, deleteUser);
 router.route('/customers').get(protect, admin, getAllCustomers);
 
 module.exports = router;
