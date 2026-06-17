@@ -50,6 +50,11 @@ const glassCard = {
   maxHeight: '90vh', overflowY: 'auto',
 };
 
+const glassCardClass = 'login-card';
+const titleClass = 'login-title';
+const subtitleClass = 'login-subtitle';
+const testGridClass = 'login-test-grid';
+
 const Login = () => {
   const { t } = useLanguage();
   const dispatch = useDispatch();
@@ -279,20 +284,36 @@ const Login = () => {
         @media (prefers-color-scheme: dark) {
           select option { background: #1e293b; color: #f1f5f9; }
         }
+        @media (max-width: 480px) {
+          .login-card { padding: 20px 12px !important; }
+          .login-title { font-size: 1.6em !important; }
+          .login-test-grid { grid-template-columns: 1fr !important; }
+          .login-subtitle { font-size: 0.75em !important; }
+        }
+        @media (min-width: 481px) and (max-width: 768px) {
+          .login-card { padding: 25px 16px !important; }
+        }
+        @media (min-width: 1024px) {
+          .login-card { max-width: 440px !important; }
+        }
+        @media (max-height: 700px) {
+          .login-card { max-height: 96vh !important; padding-top: 15px !important; padding-bottom: 15px !important; }
+          .login-title { font-size: 1.5em !important; margin-bottom: 2px !important; }
+        }
       `}</style>
       <div className="absolute inset-0 animate-hue">
         <img src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&q=80&w=1920" alt="" className="w-full h-full object-cover" />
       </div>
       <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(15,23,42,0.75) 50%, rgba(0,0,0,0.7) 100%)' }}></div>
 
-      <div style={glassCard}>
+      <div style={glassCard} className={glassCardClass}>
         {/* ─── HEADER ─── */}
         {mode !== 'forgot' && (
           <>
-            <h2 style={{ fontSize: '2em', color: '#fff', textAlign: 'center', marginBottom: '4px', fontWeight: 600 }}>
+            <h2 className={titleClass} style={{ fontSize: '2em', color: '#fff', textAlign: 'center', marginBottom: '4px', fontWeight: 600 }}>
               {mode === 'login' ? 'Login' : 'Register'}
             </h2>
-            <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: '0.85em', marginBottom: '18px' }}>
+            <p className={subtitleClass} style={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: '0.85em', marginBottom: '18px' }}>
               {mode === 'login' ? t('login.welcome') : 'Create your account to get started.'}
             </p>
           </>
@@ -301,10 +322,10 @@ const Login = () => {
         {/* ─── FORGOT PASSWORD HEADER ─── */}
         {mode === 'forgot' && (
           <>
-            <h2 style={{ fontSize: '1.6em', color: '#fff', textAlign: 'center', marginBottom: '4px', fontWeight: 600 }}>
+            <h2 className={titleClass} style={{ fontSize: '1.6em', color: '#fff', textAlign: 'center', marginBottom: '4px', fontWeight: 600 }}>
               {forgotStep === 'email' ? 'Forgot Password' : forgotStep === 'question' ? 'Security Question' : 'Reset Password'}
             </h2>
-            <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: '0.85em', marginBottom: '18px' }}>
+            <p className={subtitleClass} style={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: '0.85em', marginBottom: '18px' }}>
               {forgotStep === 'email' ? 'Enter your email to verify your identity' :
                forgotStep === 'question' ? 'Answer the security question to proceed' :
                'Create a new password for your account'}
@@ -330,7 +351,7 @@ const Login = () => {
             {/* Test accounts */}
             <div style={{ marginBottom: '18px' }}>
               <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '0.75em', marginBottom: '8px' }}>{t('login.testAccounts')}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div className={testGridClass} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 {testAccounts.map((acc) => {
                   const Icon = acc.icon;
                   return (

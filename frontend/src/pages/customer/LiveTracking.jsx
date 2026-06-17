@@ -135,7 +135,7 @@ const LiveTracking = () => {
 
       {/* Tabs */}
       {(hasRepairs || hasOrders) && (
-        <div className="flex gap-1 bg-white dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700 w-fit">
+        <div className="flex gap-1 bg-white dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700 w-fit max-w-full overflow-x-auto">
           {hasRepairs && (
             <button type="button" onClick={() => setActiveTab('repairs')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${

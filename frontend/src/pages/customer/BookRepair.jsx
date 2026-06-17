@@ -104,7 +104,7 @@ const BookRepair = () => {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="min-h-[60vh] flex flex-col items-center justify-center py-16"
+        className="min-h-[40vh] sm:min-h-[60vh] flex flex-col items-center justify-center py-8 sm:py-16"
       >
         <motion.div
           initial={{ scale: 0 }}
@@ -169,23 +169,23 @@ const BookRepair = () => {
           <p className="text-secondary-600 text-lg">Let's get your device back in working order.</p>
         </div>
 
-        <div className="relative max-w-3xl mx-auto mb-16 px-4">
-          <div className="absolute top-5 left-10 right-10 h-0.5 bg-secondary-100 -z-10"></div>
-          <div className="absolute top-5 left-10 h-0.5 bg-primary-600 -z-10 transition-all duration-500" style={{ width: `${(step - 1) * 33.33}%` }}></div>
+        <div className="relative max-w-3xl mx-auto mb-8 sm:mb-16 px-0 sm:px-4 overflow-x-auto">
+          <div className="absolute top-5 left-[15%] right-[15%] sm:left-10 sm:right-10 h-0.5 bg-secondary-100 -z-10"></div>
+          <div className="absolute top-5 left-[15%] sm:left-10 h-0.5 bg-primary-600 -z-10 transition-all duration-500" style={{ width: `calc(${(step - 1) * 33.33}% - ${(step - 1) * 15}%)` }}></div>
 
-          <div className="flex justify-between relative">
+          <div className="flex justify-between relative min-w-[320px] sm:min-w-0 px-2 sm:px-0">
             {['Device', 'Issue', 'Details', 'Confirm'].map((label, idx) => {
               const num = idx + 1;
               const isActive = step === num;
               const isPast = step > num;
               return (
-                <div key={num} className="flex flex-col items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors bg-white
+                <div key={num} className="flex flex-col items-center gap-2 sm:gap-3">
+                  <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition-colors bg-white
                     ${isActive ? 'border-primary-600 text-primary-600 shadow-sm' :
                       isPast ? 'bg-primary-600 border-primary-600 text-white' : 'border-secondary-200 text-secondary-400'}`}>
-                    {isPast ? <Check size={16} /> : num}
+                    {isPast ? <Check size={14} /> : num}
                   </div>
-                  <span className={`text-xs font-bold tracking-wide ${isActive || isPast ? 'text-primary-950' : 'text-secondary-400'}`}>
+                  <span className={`text-[10px] sm:text-xs font-bold tracking-wide ${isActive || isPast ? 'text-primary-950' : 'text-secondary-400'}`}>
                     {label}
                   </span>
                 </div>

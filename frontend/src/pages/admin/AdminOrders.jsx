@@ -206,7 +206,7 @@ const AdminOrders = () => {
 
       {/* Status summary cards */}
       {activeTab === 'ecommerce' && (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
             <p className="text-xs text-amber-600 font-semibold">Pending</p>
             <p className="text-2xl font-bold text-amber-800">{pendingOrders.length}</p>
@@ -256,7 +256,7 @@ const AdminOrders = () => {
         filteredRepairs.length === 0 ? (
           <EmptyState title="No repair orders" description="No repair orders match your search." icon={Wrench} />
         ) : (
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-white rounded-2xl border border-border overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-border bg-gray-50/50">
@@ -313,7 +313,7 @@ const AdminOrders = () => {
             icon={ShoppingBag}
           />
         ) : (
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-white rounded-2xl border border-border overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-border bg-gray-50/50">

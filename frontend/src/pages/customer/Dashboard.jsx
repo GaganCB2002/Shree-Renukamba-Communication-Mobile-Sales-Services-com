@@ -138,17 +138,17 @@ const Dashboard = () => {
               Track your repairs, view invoices, and manage your devices all in one place.
             </p>
           </div>
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <Link
               to="/dashboard/repairs/new"
-              className="flex items-center gap-2 px-5 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl text-sm font-semibold transition-all"
+              className="flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl text-xs sm:text-sm font-semibold transition-all"
             >
               <Wrench size={16} />
               <span>Book Repair</span>
             </Link>
           </div>
         </div>
-        <div className="flex items-center gap-6 mt-5 pt-5 border-t border-white/20">
+        <div className="flex items-center gap-4 sm:gap-6 mt-5 pt-5 border-t border-white/20 flex-wrap">
           <div className="flex items-center gap-2">
             <Smartphone size={16} className="text-indigo-200" />
             <span className="text-sm text-indigo-100">{activeRepairs.length} active repair{activeRepairs.length !== 1 ? 's' : ''}</span>
