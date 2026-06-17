@@ -1,9 +1,12 @@
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const Customer = require('../models/Customer');
 const { pool } = require('../config/db');
 const generateToken = require('../utils/generateToken');
 const { sendEmail } = require('../services/emailService');
 const { sendEmailNodemailer } = require('../services/nodemailerService');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const registerUser = async (req, res) => {
   try {
@@ -108,6 +111,71 @@ const loginUser = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+const googleLogin = async (req, res) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) {
+      return res.status(400).json({ message: 'Google credential is required' });
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture } = payload;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Google account must have an email' });
+    }
+
+    let user = await User.findOne({ googleId });
+
+    if (!user) {
+      user = await User.findOne({ email });
+    }
+
+    if (user) {
+      if (!user.googleId) {
+        user.googleId = googleId;
+        user.authProvider = user.authProvider === 'email' ? 'both' : 'google';
+      }
+      if (!user.profileImage && picture) {
+        user.profileImage = picture;
+      }
+      await user.save();
+    } else {
+      const defaultPassword = googleId + '_' + Date.now();
+      user = await User.create({
+        fullName: name || email.split('@')[0],
+        email,
+        password: defaultPassword,
+        googleId,
+        authProvider: 'google',
+        profileImage: picture || '',
+        role: 'customer',
+      });
+
+      await Customer.create({ userId: user._id });
+    }
+
+    res.json({
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      address: user.address,
+      profileImage: user.profileImage,
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    console.error('[GoogleLogin] Error:', error.message);
+    res.status(500).json({ message: 'Google authentication failed' });
   }
 };
 
@@ -450,6 +518,7 @@ const getAllCustomers = async (req, res) => {
 module.exports = {
   registerUser,
   loginUser,
+  googleLogin,
   getUserProfile,
   updateUserProfile,
   changePassword,

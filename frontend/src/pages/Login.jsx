@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Mail, Lock, Eye, EyeOff, Loader2, UserCog, User, UserPlus, Phone, CheckCircle, ArrowLeft, HelpCircle } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { useLanguage } from '../contexts/LanguageContext';
-import { login, register, clearError } from '../redux/slices/authSlice';
+import { login, register, googleLogin, clearError } from '../redux/slices/authSlice';
 import { getSecurityQuestions, forgotPassword } from '../api/authApi';
 
 const securityQuestionOptions = [
@@ -349,6 +350,26 @@ const Login = () => {
                   );
                 })}
               </div>
+            </div>
+
+            <div style={{ marginBottom: '18px' }}>
+              <GoogleLogin
+                onSuccess={credentialResponse => {
+                  dispatch(googleLogin(credentialResponse.credential));
+                }}
+                onError={() => setLocalError('Google sign-in failed')}
+                theme="outline"
+                size="large"
+                text="signin_with"
+                shape="rectangular"
+                width="100%"
+              />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.2)' }} />
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8em' }}>or continue with email</span>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.2)' }} />
             </div>
 
             <form onSubmit={submitHandler}>

@@ -5,6 +5,11 @@ export const loginUser = async (data) => {
   return response.data;
 };
 
+export const googleLoginApi = async (credential) => {
+  const response = await api.post('/auth/google', { credential });
+  return response.data;
+};
+
 export const registerUser = async (data) => {
   const response = await api.post('/auth/register', data);
   return response.data;

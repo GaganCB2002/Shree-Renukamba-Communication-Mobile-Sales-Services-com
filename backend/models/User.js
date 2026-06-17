@@ -23,6 +23,8 @@ class UserInstance {
     this.address = typeof row.address === 'string' ? JSON.parse(row.address) : (row.address || {});
     this.securityQuestions = typeof row.security_questions === 'string' ? JSON.parse(row.security_questions) : (row.security_questions || []);
     this.profileImage = row.profile_image || '';
+    this.googleId = row.google_id || '';
+    this.authProvider = row.auth_provider || 'email';
     this.otp = row.otp;
     this.otpExpires = row.otp_expires;
     this.passwordHistory = typeof row.password_history === 'string' ? JSON.parse(row.password_history) : (row.password_history || []);
@@ -63,9 +65,9 @@ class UserInstance {
     const sql = `
       UPDATE users 
       SET full_name = $1, phone_number = $2, email = $3, password = $4, role = $5, 
-          address = $6, security_questions = $7, profile_image = $8, otp = $9, 
-          otp_expires = $10, password_history = $11
-      WHERE id = $12
+          address = $6, security_questions = $7, profile_image = $8, google_id = $9,
+          auth_provider = $10, otp = $11, otp_expires = $12, password_history = $13
+      WHERE id = $14
       RETURNING *
     `;
     const vals = [
@@ -77,6 +79,8 @@ class UserInstance {
       JSON.stringify(this.address),
       JSON.stringify(this.securityQuestions),
       this.profileImage,
+      this.googleId,
+      this.authProvider,
       this.otp,
       this.otpExpires instanceof Date ? this.otpExpires.toISOString() : this.otpExpires,
       JSON.stringify(this.passwordHistory),
@@ -148,6 +152,10 @@ class User {
       conditions.push(`phone_number = $${vals.length + 1}`);
       vals.push(query.phoneNumber);
     }
+    if (query.googleId) {
+      conditions.push(`google_id = $${vals.length + 1}`);
+      vals.push(query.googleId);
+    }
     if (query.$or) {
       const emailVal = query.$or.find(o => o.email)?.email;
       const phoneVal = query.$or.find(o => o.phoneNumber)?.phoneNumber;
@@ -210,8 +218,8 @@ class User {
     }
 
     const sql = `
-      INSERT INTO users (id, full_name, phone_number, email, password, role, address, security_questions, profile_image, otp, otp_expires, password_history)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      INSERT INTO users (id, full_name, phone_number, email, password, role, address, security_questions, profile_image, google_id, auth_provider, otp, otp_expires, password_history)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
     `;
     const vals = [
@@ -224,6 +232,8 @@ class User {
       JSON.stringify(data.address || {}),
       JSON.stringify(sqs),
       data.profileImage || '',
+      data.googleId || '',
+      data.authProvider || 'email',
       data.otp,
       data.otpExpires instanceof Date ? data.otpExpires.toISOString() : data.otpExpires,
       JSON.stringify(data.passwordHistory || [password])

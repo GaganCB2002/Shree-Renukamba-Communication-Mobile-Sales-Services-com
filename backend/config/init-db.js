@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS users (
   address TEXT DEFAULT '{}',
   security_questions TEXT DEFAULT '[]',
   profile_image TEXT DEFAULT '',
+  google_id TEXT,
+  auth_provider TEXT DEFAULT 'email',
   otp TEXT,
   otp_expires TEXT,
   password_history TEXT DEFAULT '[]',
@@ -245,6 +247,9 @@ ALTER TABLE orders ADD COLUMN cancel_requested INTEGER DEFAULT 0;
 ALTER TABLE orders ADD COLUMN cancel_reason TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN cancel_approved INTEGER DEFAULT 0;
 ALTER TABLE orders ADD COLUMN cancelled_at TEXT;
+
+ALTER TABLE users ADD COLUMN google_id TEXT;
+ALTER TABLE users ADD COLUMN auth_provider TEXT DEFAULT 'email';
 `;
   return schema;
 }
