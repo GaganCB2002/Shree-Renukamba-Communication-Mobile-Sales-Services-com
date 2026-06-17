@@ -523,6 +523,7 @@ module.exports = {
   registerUser,
   loginUser,
   googleLogin,
+  getGoogleClientId,
   getUserProfile,
   updateUserProfile,
   changePassword,
