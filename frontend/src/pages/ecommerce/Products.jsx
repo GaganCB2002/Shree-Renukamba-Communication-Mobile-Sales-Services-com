@@ -436,7 +436,7 @@ const Products = () => {
 
                   <div className="bg-secondary-50 rounded-2xl h-60 mb-5 relative overflow-hidden flex items-center justify-center">
                     {product.images && product.images.length > 0 ? (
-                      <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span class=\"text-7xl\">📱</span>'; }} />
+                      <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span class="text-7xl">📱</span>'; }} />
                     ) : (
                       <span className="text-7xl">📱</span>
                     )}

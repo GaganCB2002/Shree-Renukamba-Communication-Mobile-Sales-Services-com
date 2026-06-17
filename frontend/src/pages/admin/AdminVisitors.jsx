@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import {
   Users, Eye, Clock, Globe, Monitor, Smartphone, Tablet,
-  Chrome, Search, X, MapPin, ChevronDown, ChevronUp,
+  Search, X, MapPin,
 } from 'lucide-react';
 import { getVisitors, getVisitorStats } from '../../api/visitorApi';
 import { PageLoading } from '../../components/LoadingSpinner';
 
 const browserIcons = {
-  Chrome: <Chrome size={14} />,
+  Chrome: <Globe size={14} />,
   Firefox: <Globe size={14} />,
   Safari: <Globe size={14} />,
   Edge: <Globe size={14} />,
@@ -27,6 +27,12 @@ const AdminVisitors = () => {
   const [selected, setSelected] = useState(null);
   const [expanded, setExpanded] = useState(null);
   const [dateFilter, setDateFilter] = useState('all');
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -58,11 +64,11 @@ const AdminVisitors = () => {
 
     if (!matchSearch) return false;
     if (dateFilter === 'today') {
-      const today = new Date().toDateString();
+      const today = new Date(now).toDateString();
       return new Date(v.lastVisit).toDateString() === today;
     }
     if (dateFilter === 'week') {
-      const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
       return new Date(v.lastVisit).getTime() > weekAgo;
     }
     return true;
@@ -78,7 +84,7 @@ const AdminVisitors = () => {
 
   const timeAgo = (d) => {
     if (!d) return '';
-    const diff = Date.now() - new Date(d).getTime();
+    const diff = now - new Date(d).getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 1) return 'Just now';
     if (mins < 60) return `${mins}m ago`;

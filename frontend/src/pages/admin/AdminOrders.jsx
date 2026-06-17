@@ -41,24 +41,6 @@ const AdminOrders = () => {
   const [updatingId, setUpdatingId] = useState(null);
   const [viewOrder, setViewOrder] = useState(null);
 
-  const handleStatusUpdate = async (orderId, newStatus) => {
-    try {
-      setUpdatingId(orderId);
-      await updateOrderStatus(orderId, newStatus);
-      showToast(`Order status updated to ${newStatus}`);
-      setStatusDropdown(null);
-      fetchOrders();
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to update status');
-    } finally {
-      setUpdatingId(null);
-    }
-  };
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -72,6 +54,24 @@ const AdminOrders = () => {
       setError(err.response?.data?.message || 'Failed to load orders');
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const handleStatusUpdate = async (orderId, newStatus) => {
+    try {
+      setUpdatingId(orderId);
+      await updateOrderStatus(orderId, newStatus);
+      showToast(`Order status updated to ${newStatus}`);
+      setStatusDropdown(null);
+      fetchOrders();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to update status');
+    } finally {
+      setUpdatingId(null);
     }
   };
 

@@ -62,10 +62,6 @@ const AdminBilling = () => {
     }
   };
 
-  useEffect(() => {
-    fetchBillingData();
-  }, []);
-
   const fetchBillingData = async () => {
     try {
       setLoading(true);
@@ -82,6 +78,12 @@ const AdminBilling = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchBillingData();
+  }, []);
+
+
 
   // --- ITEM HANDLERS ---
   const handleAddItemRow = () => {

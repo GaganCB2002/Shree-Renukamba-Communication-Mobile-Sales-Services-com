@@ -64,6 +64,24 @@ const DashboardLayout = () => {
     }
   }, [userInfo, navigate, location.pathname]);
 
+  const fetchNotifications = async () => {
+    try {
+      const data = await getMyNotifications();
+      setNotifications(data.slice(0, 10));
+    } catch (err) {
+      // silent
+    }
+  };
+
+  const fetchUnreadCount = async () => {
+    try {
+      const data = await getUnreadCount();
+      setUnreadCount(data.count || 0);
+    } catch (err) {
+      // silent
+    }
+  };
+
   useEffect(() => {
     if (userInfo) {
       fetchNotifications();
@@ -90,23 +108,7 @@ const DashboardLayout = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchNotifications = async () => {
-    try {
-      const data = await getMyNotifications();
-      setNotifications(data.slice(0, 10));
-    } catch (err) {
-      // silent
-    }
-  };
 
-  const fetchUnreadCount = async () => {
-    try {
-      const data = await getUnreadCount();
-      setUnreadCount(data.count || 0);
-    } catch (err) {
-      // silent
-    }
-  };
 
   if (!userInfo) {
     return (

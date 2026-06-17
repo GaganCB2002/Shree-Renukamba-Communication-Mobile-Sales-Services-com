@@ -19,10 +19,11 @@ const {
   getGoogleClientId,
 } = require('../controllers/authController');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { loginRateLimiter } = require('../middleware/rateLimiter');
 
-router.route('/register').post(registerUser);
-router.route('/login').post(loginUser);
-router.route('/google').post(googleLogin);
+router.route('/register').post(loginRateLimiter, registerUser);
+router.route('/login').post(loginRateLimiter, loginUser);
+router.route('/google').post(loginRateLimiter, googleLogin);
 router.route('/google-client-id').get(getGoogleClientId);
 router.route('/forgot-password').post(forgotPassword);
 router.route('/get-security-questions').post(getSecurityQuestions);

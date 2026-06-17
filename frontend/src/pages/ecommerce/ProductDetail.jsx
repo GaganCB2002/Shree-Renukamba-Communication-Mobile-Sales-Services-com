@@ -132,7 +132,7 @@ const ProductDetail = () => {
                       src={allImages[selectedImage]}
                       alt={product.title}
                       className="w-full h-full object-cover"
-                      onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span class=\"text-6xl\">📱</span>'; }}
+                      onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span class="text-6xl">📱</span>'; }}
                     />
                   )}
                   {product.discount > 0 && viewMode === '2d' && (
@@ -152,7 +152,7 @@ const ProductDetail = () => {
                           selectedImage === i ? 'border-primary-600 shadow-md' : 'border-border hover:border-primary-300'
                         }`}
                       >
-                        <img src={img} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span class=\"text-lg\">📱</span>'; }} />
+                        <img src={img} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span class="text-lg">📱</span>'; }} />
                       </button>
                     ))}
                   </div>
@@ -298,7 +298,7 @@ const ProductDetail = () => {
                 return (
                   <Link key={rp._id} to={`/products/${rp._id}`} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-border group hover:shadow-soft transition-all">
                     <div className="h-48 bg-secondary-100 overflow-hidden">
-                      <img src={imgSrc} alt={rp.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span class=\"text-4xl\">📱</span>'; }} />
+                      <img src={imgSrc} alt={rp.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span class="text-4xl">📱</span>'; }} />
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-primary-950 text-sm mb-1 group-hover:text-primary-600 transition-colors">{rp.title}</h3>

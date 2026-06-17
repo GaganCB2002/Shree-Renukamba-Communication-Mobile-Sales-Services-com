@@ -5,6 +5,7 @@ const { pool } = require('../config/db');
 const generateToken = require('../utils/generateToken');
 const { sendEmail } = require('../services/emailService');
 const { sendEmailNodemailer } = require('../services/nodemailerService');
+const { resetLoginAttempts } = require('../middleware/rateLimiter');
 
 const googleClient = new OAuth2Client();
 
@@ -108,6 +109,7 @@ const loginUser = async (req, res) => {
     }
 
     if (await user.matchPassword(password)) {
+      resetLoginAttempts(req);
       res.json({
         _id: user._id,
         fullName: user.fullName,
@@ -179,6 +181,7 @@ const googleLogin = async (req, res) => {
       await Customer.create({ userId: user._id });
     }
 
+    resetLoginAttempts(req);
     res.json({
       _id: user._id,
       fullName: user.fullName,

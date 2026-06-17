@@ -37,10 +37,6 @@ const AdminCoupons = () => {
     setShowModal(true);
   };
 
-  useEffect(() => {
-    fetchCoupons();
-  }, []);
-
   const fetchCoupons = async () => {
     try {
       setLoading(true);
@@ -53,6 +49,12 @@ const AdminCoupons = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchCoupons();
+  }, []);
+
+
 
   const openEdit = (coupon) => {
     setEditing(coupon);

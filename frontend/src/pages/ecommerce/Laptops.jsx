@@ -209,7 +209,7 @@ const Laptops = () => {
                         src={(product.images && product.images[0]) || laptopImages[idx % laptopImages.length]}
                         alt={product.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span class=\"text-5xl\">📱</span>'; }}
+                        onError={e => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span class="text-5xl">📱</span>'; }}
                       />
                       {product.discount > 0 && (
                         <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
