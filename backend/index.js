@@ -48,7 +48,7 @@ function startServer(port) {
 
   const allowedOrigins = process.env.NODE_ENV === 'development'
     ? ['http://localhost:5173']
-    : (process.env.FRONTEND_URL || 'https://shree-renukamba.vercel.app').split(',');
+    : (process.env.FRONTEND_URL || 'https://shree-renukamba-communication-mobil.vercel.app').split(',');
 
   app.use(cors({
     origin: allowedOrigins,
