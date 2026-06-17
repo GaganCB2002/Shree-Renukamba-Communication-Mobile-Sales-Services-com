@@ -20,69 +20,6 @@ process.on('unhandledRejection', (reason) => {
 
 const app = express();
 
-connectDB();
-
-app.use(helmet());
-
-app.use(cors({
-  origin: process.env.NODE_ENV === 'development' ? 'http://localhost:5173' : '*',
-  credentials: true,
-}));
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 500,
-});
-app.use('/api', limiter);
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { message: 'Too many login attempts, please try again later' },
-});
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.use(xss());
-
-app.use('/uploads', express.static(require('path').join(__dirname, 'uploads')));
-
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
-
-app.get('/', (req, res) => {
-  res.json({ message: 'Shree Renukamba Communication API is running...' });
-});
-
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/categories', require('./routes/categoryRoutes'));
-app.use('/api/products', require('./routes/productRoutes'));
-app.use('/api/repairs', require('./routes/repairRoutes'));
-app.use('/api/orders', require('./routes/orderRoutes'));
-app.use('/api/inventory', require('./routes/inventoryRoutes'));
-app.use('/api/notifications', require('./routes/notificationRoutes'));
-app.use('/api/invoices', require('./routes/invoiceRoutes'));
-app.use('/api/coupons', require('./routes/couponRoutes'));
-app.use('/api/analytics', require('./routes/analyticsRoutes'));
-app.use('/api/whatsapp', require('./routes/whatsappRoutes'));
-app.use('/api/ai', require('./routes/aiRoutes'));
-app.use('/api/upload', require('./routes/uploadRoutes'));
-app.use('/api/upload/github', require('./routes/githubUploadRoutes'));
-app.use('/api/activity-logs', require('./routes/activityLogRoutes'));
-app.use('/api/file-data', require('./routes/fileProductRoutes'));
-app.use('/api/price-list', require('./routes/priceListRoutes'));
-app.use('/api/settings', require('./routes/settingsRoutes'));
-
-app.use(notFound);
-app.use(errorHandler);
-
-const { startReminderService } = require('./services/reminderService');
-startReminderService();
-
 const PORT = process.env.PORT || 5000;
 
 function startServer(port) {
@@ -104,4 +41,69 @@ function startServer(port) {
   process.on('SIGINT', () => server.close(() => process.exit(0)));
 }
 
-startServer(PORT);
+(async () => {
+  await connectDB();
+
+  app.use(helmet());
+
+  app.use(cors({
+    origin: process.env.NODE_ENV === 'development' ? 'http://localhost:5173' : '*',
+    credentials: true,
+  }));
+
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 500,
+  });
+  app.use('/api', limiter);
+
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: { message: 'Too many login attempts, please try again later' },
+  });
+  app.use('/api/auth/login', authLimiter);
+  app.use('/api/auth/register', authLimiter);
+
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
+  app.use(xss());
+
+  app.use('/uploads', express.static(require('path').join(__dirname, 'uploads')));
+
+  if (process.env.NODE_ENV === 'development') {
+    app.use(morgan('dev'));
+  }
+
+  app.get('/', (req, res) => {
+    res.json({ message: 'Shree Renukamba Communication API is running...' });
+  });
+
+  app.use('/api/auth', require('./routes/authRoutes'));
+  app.use('/api/categories', require('./routes/categoryRoutes'));
+  app.use('/api/products', require('./routes/productRoutes'));
+  app.use('/api/repairs', require('./routes/repairRoutes'));
+  app.use('/api/orders', require('./routes/orderRoutes'));
+  app.use('/api/inventory', require('./routes/inventoryRoutes'));
+  app.use('/api/notifications', require('./routes/notificationRoutes'));
+  app.use('/api/invoices', require('./routes/invoiceRoutes'));
+  app.use('/api/coupons', require('./routes/couponRoutes'));
+  app.use('/api/analytics', require('./routes/analyticsRoutes'));
+  app.use('/api/whatsapp', require('./routes/whatsappRoutes'));
+  app.use('/api/ai', require('./routes/aiRoutes'));
+  app.use('/api/upload', require('./routes/uploadRoutes'));
+  app.use('/api/upload/github', require('./routes/githubUploadRoutes'));
+  app.use('/api/activity-logs', require('./routes/activityLogRoutes'));
+  app.use('/api/file-data', require('./routes/fileProductRoutes'));
+  app.use('/api/price-list', require('./routes/priceListRoutes'));
+  app.use('/api/settings', require('./routes/settingsRoutes'));
+
+  app.use(notFound);
+  app.use(errorHandler);
+
+  const { startReminderService } = require('./services/reminderService');
+  startReminderService();
+
+  startServer(PORT);
+})();
